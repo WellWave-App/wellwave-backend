@@ -16,6 +16,6 @@ export class AppService implements OnModuleInit {
   }
 
   getHello(): string {
-    return 'Hello World!';
+    return 'Hello-docker-2-3!';
   }
 }
