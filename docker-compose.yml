@@ -9,10 +9,32 @@ services:
       MYSQL_USER: wellwave
       MYSQL_PASSWORD: wellwave123
     ports:
-      - "3307:3306"
+      - '3307:3306'
     volumes:
       - mysql-data:/var/lib/mysql
 
+  nestjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nestjs-app
+    container_name: nestjs-app
+    restart: always
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mysql
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USERNAME=wellwave
+      - DB_PASSWORD=wellwave123
+      - DB_DATABASE=wellwavedb
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:dev
+    
 volumes:
   mysql-data:
     driver: local
