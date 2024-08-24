@@ -1,17 +1,16 @@
 version: '3.8'
 services:
-  mysql:
-    image: mysql:8.0
+  postgres:
+    image: postgres:16.3
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: wellwave123
-      MYSQL_DATABASE: wellwavedb
-      MYSQL_USER: wellwave
-      MYSQL_PASSWORD: wellwave123
+      POSTGRES_PASSWORD: wellwave123
+      POSTGRES_DB: wellwavedb
+      POSTGRES_USER: wellwave
     ports:
-      - '3307:3306'
+      - '5432:5432'
     volumes:
-      - mysql-data:/var/lib/mysql
+      - postgres-data:/var/lib/postgresql/data
 
   nestjs:
     build:
@@ -23,18 +22,18 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - mysql
+      - postgres
     environment:
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_USERNAME=wellwave
-      - DB_PASSWORD=wellwave123
-      - DB_DATABASE=wellwavedb
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=wellwave
+      - POSTGRES_PASSWORD=wellwave123
+      - POSTGRES_DATABASE=wellwavedb
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     command: npm run start:dev
     
 volumes:
-  mysql-data:
+  postgres-data:
     driver: local
