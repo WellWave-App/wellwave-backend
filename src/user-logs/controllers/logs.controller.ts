@@ -59,6 +59,15 @@ export class LogsController {
     return this.logsService.getTodayLogsByUser(userId, type);
   }
   
+  @Get('user/:userId/weekly')
+  async getWeeklyLogsByUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('startDate') startDate: string,
+    @Query('type') type?: LogType
+  ): Promise<LogEntity[]> {
+    return this.logsService.getWeeklyLogsByUser(userId, startDate, type);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateLogDto: UpdateLogDto) {
     return this.logsService.update(+id, updateLogDto);

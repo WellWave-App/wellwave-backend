@@ -1,5 +1,5 @@
 // logs/logs.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateLogDto } from '../dto/create-log.dto';
@@ -144,6 +144,44 @@ export class LogsService {
       whereCondition.type = type;
     }
 
+    return this.logsRepository.find({
+      where: whereCondition,
+      order: { date: 'DESC', lid: 'DESC' },
+    });
+  }
+
+  async getWeeklyLogsByUser(
+    userId: number,
+    startDate: string,
+    type?: LogType,
+  ): Promise<LogEntity[]> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const start = new Date(startDate);
+    if (isNaN(start.getTime())) {
+      throw new BadRequestException('Invalid start date');
+    }
+
+    // Ensure start date is set to the beginning of the day
+    start.setUTCHours(0, 0, 0, 0);
+
+    // Calculate the end of the week (7 days from start date)
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    end.setUTCHours(23, 59, 59, 999);
+
+    const whereCondition: any = {
+      userId,
+      date: Between(start, end),
+    };
+
+    if (type) {
+      whereCondition.type = type;
+    }
+ 
     return this.logsRepository.find({
       where: whereCondition,
       order: { date: 'DESC', lid: 'DESC' },
