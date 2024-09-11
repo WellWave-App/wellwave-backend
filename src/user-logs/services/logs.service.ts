@@ -1,7 +1,7 @@
 // logs/logs.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
 import { LogEntity, LogType } from '../../typeorm/entities/log.entity';
@@ -17,9 +17,13 @@ export class LogsService {
   ) {}
 
   async create(createLogDto: CreateLogDto): Promise<LogEntity> {
-    const user = await this.usersRepository.findOne({ where: { id: createLogDto.userId } });
+    const user = await this.usersRepository.findOne({
+      where: { id: createLogDto.userId },
+    });
     if (!user) {
-      throw new NotFoundException(`User with ID ${createLogDto.userId} not found`);
+      throw new NotFoundException(
+        `User with ID ${createLogDto.userId} not found`,
+      );
     }
     const log = this.logsRepository.create({
       ...createLogDto,
@@ -33,7 +37,10 @@ export class LogsService {
   }
 
   async findOne(id: number): Promise<LogEntity> {
-    const log = await this.logsRepository.findOne({ where: { lid: id }, relations: ['user'] });
+    const log = await this.logsRepository.findOne({
+      where: { lid: id },
+      relations: ['user'],
+    });
     if (!log) {
       throw new NotFoundException(`Log with ID ${id} not found`);
     }
@@ -53,20 +60,93 @@ export class LogsService {
     }
   }
 
-  async getLogsByUserAndType(userId: number, type: LogType): Promise<LogEntity[]> {
+  // async getLogsByUserAndType(
+  //   userId: number,
+  //   type?: LogType,
+  // ): Promise<LogEntity[]> {
+  //   const user = await this.usersRepository.findOne({ where: { id: userId } });
+  //   if (!user) {
+  //     throw new NotFoundException(`User with ID ${userId} not found`);
+  //   }
+
+  //   const whereCondition: any = { user: { id: userId } };
+  //   if (type) {
+  //     whereCondition.type = type;
+  //   }
+
+  //   return await this.logsRepository.find({
+  //     where: whereCondition,
+  //     order: {
+  //       date: 'DESC',
+  //     },
+  //   });
+  // }
+
+  async getLogsByUserAndType(
+    userId: number,
+    type?: LogType,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<LogEntity[]> {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    return await this.logsRepository.find({
-      where: {
-        user: { id: userId },
-        type: type
-      },
-      order: {
-        date: 'DESC'
+    const whereCondition: any = { user: { id: userId } };
+    if (type) {
+      whereCondition.type = type;
+    }
+
+    if (startDate || endDate) {
+      whereCondition.date = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        whereCondition.date = MoreThanOrEqual(start);
       }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        whereCondition.date =
+          endDate === startDate
+            ? Between(whereCondition.date, end)
+            : LessThanOrEqual(end);
+      }
+    }
+
+    return await this.logsRepository.find({
+      where: whereCondition,
+      order: { date: 'DESC', lid: 'DESC' },
+    });
+  }
+
+  async getTodayLogsByUser(
+    userId: number,
+    type?: LogType,
+  ): Promise<LogEntity[]> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const whereCondition: any = {
+      userId,
+      date: Between(today, tomorrow),
+    };
+
+    if (type) {
+      whereCondition.type = type;
+    }
+
+    return this.logsRepository.find({
+      where: whereCondition,
+      order: { date: 'DESC', lid: 'DESC' },
     });
   }
 }

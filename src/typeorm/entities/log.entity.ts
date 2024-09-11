@@ -1,5 +1,12 @@
 // logs/entities/log.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  JoinColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 
 export enum LogType {
@@ -18,7 +25,7 @@ export class LogEntity {
   @PrimaryGeneratedColumn()
   lid: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ default: new Date()})
   date: Date;
 
   @Column('float')
@@ -30,9 +37,10 @@ export class LogEntity {
   })
   type: LogType;
 
-  @ManyToOne(() => User, user => user.logs)
+  @ManyToOne(() => User, (user) => user.logs)
+  @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
+  @Column({ name: 'userId' })
   userId: number;
 }
