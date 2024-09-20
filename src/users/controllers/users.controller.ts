@@ -26,18 +26,18 @@ export class UsersController {
     return this.usersService.findAll(page, limit);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  @Get(':uid')
+  findOne(@Param('uid') UID: string) {
+    return this.usersService.findOne(+UID);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @Patch(':uid')
+  update(@Param('uid') UID: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(+UID, updateUserDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @Delete(':uid')
+  remove(@Param('uid') UID: string) {
+    return this.usersService.remove(+UID);
   }
 }

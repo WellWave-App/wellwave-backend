@@ -6,10 +6,11 @@ import {
   ManyToOne,
   CreateDateColumn,
   JoinColumn,
+  Unique,
 } from 'typeorm';
-import { User } from './user.entity';
+import { UserEntity } from './users.entity';
 
-export enum LogType {
+export enum LOG_NAME {
   HDL_LOG = 'HDL_LOG',
   LDL_LOG = 'LDL_LOG',
   WEIGHT_LOG = 'WEIGHT_LOG',
@@ -20,27 +21,28 @@ export enum LogType {
   STEP_LOG = 'STEP_LOG',
 }
 
-@Entity('logs')
+@Entity('LOGS')
+// @Unique(['UID', 'DATE', 'LOG_NAME'])
 export class LogEntity {
   @PrimaryGeneratedColumn()
-  lid: number;
+  LID: number;
 
-  @CreateDateColumn({ default: new Date()})
-  date: Date;
+  @Column({ type: 'date', default: new Date() })
+  DATE: Date;
 
   @Column('float')
-  value: number;
+  VALUE: number;
 
   @Column({
     type: 'enum',
-    enum: LogType,
+    enum: LOG_NAME,
   })
-  type: LogType;
+  LOG_NAME: LOG_NAME;
 
-  @ManyToOne(() => User, (user) => user.logs)
-  @JoinColumn({ name: 'userId' })
-  user: User;
+  @ManyToOne(() => UserEntity, (USER) => USER.LOGS)
+  @JoinColumn({ name: 'UID' })
+  USER: UserEntity;
 
-  @Column({ name: 'userId' })
-  userId: number;
+  @Column({ name: 'UID' })
+  UID: number;
 }

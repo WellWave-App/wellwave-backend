@@ -5,38 +5,42 @@ import { Type } from 'class-transformer';
 export class UpdateUserDto {
   @IsString()
   @IsOptional()
-  username?: string;
+  USERNAME?: string;
 
   @IsEmail()
   @IsOptional()
-  email?: string;
+  EMAIL?: string;
 
   @IsISO8601()
   @IsOptional()
   @Type(() => Date)
-  birth_date?: Date;
+  YEAR_OF_BIRTH?: Date;
 
   @IsBoolean()
   @IsOptional()
-  gender?: boolean;
+  GENDER?: boolean;
 
   @IsNumber()
   @IsOptional()
-  height?: number;
+  HEIGHT?: number;
 
   @IsNumber()
   @IsOptional()
-  gem?: number;
+  WEIGHT?: number;
 
   @IsNumber()
   @IsOptional()
-  exp?: number;
+  GEM?: number;
 
   @IsNumber()
   @IsOptional()
-  weight_goal?: number;
+  EXP?: number;
+
+  @IsNumber()
+  @IsOptional()
+  WEIGHT_goal?: number;
 
   @IsString()
   @IsOptional()
-  reminder_noti_time?: string;
+  REMINDER_NOTI_TIME?: string;
 }
