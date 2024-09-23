@@ -65,24 +65,6 @@ export class LogsService {
     }
   }
 
-  async findAll(): Promise<LogEntity[]> {
-    return await this.logsRepository
-      .find
-      // { relations: ['USER'] }
-      ();
-  }
-
-  async findOne(lid: number): Promise<LogEntity> {
-    const log = await this.logsRepository.findOne({
-      where: { LID: lid },
-      relations: ['USER'],
-    });
-    if (!log) {
-      throw new NotFoundException(`Log with ID ${lid} not found`);
-    }
-    return log;
-  }
-
   async update(lid: number, updateLogDto: UpdateLogDto): Promise<LogEntity> {
     const log = await this.findOne(lid);
     Object.assign(log, updateLogDto);
@@ -96,34 +78,28 @@ export class LogsService {
     }
   }
 
-  // async getLogsByUserAndType(
-  //   userId: number,
-  //   type?: LOG_NAME,
-  // ): Promise<LogEntity[]> {
-  //   const user = await this.usersRepository.findOne({ where: { id: userId } });
-  //   if (!user) {
-  //     throw new NotFoundException(`User with ID ${userId} not found`);
-  //   }
+  async findAll(): Promise<{ logs: LogEntity[] }> {
+    const logs = await this.logsRepository.find();
+    return { logs }; // Return logs in the object
+  }
 
-  //   const whereCondition: any = { user: { id: userId } };
-  //   if (type) {
-  //     whereCondition.type = type;
-  //   }
-
-  //   return await this.logsRepository.find({
-  //     where: whereCondition,
-  //     order: {
-  //       date: 'DESC',
-  //     },
-  //   });
-  // }
+  async findOne(lid: number): Promise<LogEntity> {
+    const log = await this.logsRepository.findOne({
+      where: { LID: lid },
+      relations: ['USER'],
+    });
+    if (!log) {
+      throw new NotFoundException(`Log with ID ${lid} not found`);
+    }
+    return log;
+  }
 
   async getLogsByUserAndType(
     uid: number,
     logName?: LOG_NAME,
     startDate?: Date,
     endDate?: Date,
-  ): Promise<LogEntity[]> {
+  ): Promise<{ logs: LogEntity[] }> {
     const user = await this.usersRepository.findOne({ where: { UID: uid } });
     if (!user) {
       throw new NotFoundException(`User with ID ${uid} not found`);
@@ -142,23 +118,24 @@ export class LogsService {
       whereCondition.DATE = Between(new Date('1970-01-01'), new Date(endDate));
     }
 
-    return await this.logsRepository.find({
+    const logs = await this.logsRepository.find({
       where: whereCondition,
       order: { DATE: 'DESC', LID: 'DESC' },
     });
+
+    return { logs }; // Return logs in the object
   }
 
   async getTodayLogsByUser(
     uid: number,
     logName?: LOG_NAME,
-  ): Promise<LogEntity[]> {
+  ): Promise<{ logs: LogEntity[] }> {
     const user = await this.usersRepository.findOne({ where: { UID: uid } });
     if (!user) {
       throw new NotFoundException(`User with ID ${uid} not found`);
     }
 
     const today = new Date();
-    // today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -171,17 +148,19 @@ export class LogsService {
       whereCondition.LOG_NAME = logName;
     }
 
-    return this.logsRepository.find({
+    const logs = await this.logsRepository.find({
       where: whereCondition,
       order: { DATE: 'DESC', LID: 'DESC' },
     });
+
+    return { logs }; // Return logs in the object
   }
 
   async getWeeklyLogsByUser(
     uid: number,
     startDate: string,
     logName?: LOG_NAME,
-  ): Promise<LogEntity[]> {
+  ): Promise<{ logs: LogEntity[] }> {
     const user = await this.usersRepository.findOne({ where: { UID: uid } });
     if (!user) {
       throw new NotFoundException(`User with ID ${uid} not found`);
@@ -192,13 +171,8 @@ export class LogsService {
       throw new BadRequestException('Invalid start date');
     }
 
-    // Ensure start date is set to the beginning of the day
-    // start.setUTCHours(0, 0, 0, 0);
-
-    // Calculate the end of the week (7 days from start date)
     const end = new Date(start);
     end.setDate(end.getDate() + 7);
-    // end.setUTCHours(23, 59, 59, 999);
 
     const whereCondition: any = {
       UID: uid,
@@ -209,9 +183,11 @@ export class LogsService {
       whereCondition.LOG_NAME = logName;
     }
 
-    return this.logsRepository.find({
+    const logs = await this.logsRepository.find({
       where: whereCondition,
       order: { DATE: 'DESC', LID: 'DESC' },
     });
+
+    return { logs }; // Return logs in the object
   }
 }

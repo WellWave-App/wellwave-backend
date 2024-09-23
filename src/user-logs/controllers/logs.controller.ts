@@ -30,7 +30,7 @@ export class LogsController {
     @Query('logName') logName?: LOG_NAME,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-  ): Promise<LogEntity[]> {
+  ){
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
     return this.logsService.getLogsByUserAndType(uid, logName, start, end);
@@ -40,7 +40,7 @@ export class LogsController {
   async getTodayLogsByUser(
     @Param('uid', ParseIntPipe) uid: number,
     @Query('logName') logName?: LOG_NAME
-  ): Promise<LogEntity[]> {
+  ){
     return this.logsService.getTodayLogsByUser(uid, logName);
   }
   
@@ -49,7 +49,7 @@ export class LogsController {
     @Param('uid', ParseIntPipe) uid: number,
     @Query('startDate') startDate: string,
     @Query('logName') logName?: LOG_NAME
-  ): Promise<LogEntity[]> {
+  ){
     return this.logsService.getWeeklyLogsByUser(uid, startDate, logName);
   }
 
