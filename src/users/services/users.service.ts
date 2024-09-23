@@ -20,13 +20,13 @@ export class UsersService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ users: UserEntity[]; total: number }> {
+  ): Promise<{ USERS: UserEntity[]; total: number }> {
     const [users, total] = await this.usersRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
       // relations: ['logs']
     });
-    return { users, total };
+    return { USERS: users, total };
   }
 
   async findOne(uid: number): Promise<UserEntity> {
