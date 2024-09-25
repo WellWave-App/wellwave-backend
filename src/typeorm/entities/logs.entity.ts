@@ -30,7 +30,7 @@ export class LogEntity {
   @Column({ type: 'date', default: new Date() })
   DATE: Date;
 
-  @Column('float')
+  @Column({type: 'float'})
   VALUE: number;
 
   @Column({

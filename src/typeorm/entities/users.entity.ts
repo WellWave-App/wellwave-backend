@@ -1,5 +1,11 @@
 import { LogEntity } from 'src/typeorm/entities/logs.entity';
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, Unique } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  Unique,
+} from 'typeorm';
 
 @Entity({ name: 'USERS' })
 // @Unique(["UID"])
@@ -16,16 +22,16 @@ export class UserEntity {
   @Column()
   EMAIL: string;
 
-  @Column()
+  @Column({ type: 'int' })
   YEAR_OF_BIRTH: number;
 
-  @Column()
+  @Column({ type: 'boolean' })
   GENDER: boolean;
 
-  @Column()
+  @Column({ type: 'int' })
   HEIGHT: number;
 
-  @Column()
+  @Column({ type: 'int' })
   WEIGHT: number;
 
   @Column({ default: 0 })
@@ -34,13 +40,13 @@ export class UserEntity {
   @Column({ default: 0 })
   EXP: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   USER_GOAL: number;
 
   @Column({ nullable: true })
   REMINDER_NOTI_TIME?: string;
 
-  @Column({ default: new Date() })
+  @Column({ type: 'date', default: new Date() })
   createAt: Date;
 
   @OneToMany(() => LogEntity, (LOGS) => LOGS.USER)
