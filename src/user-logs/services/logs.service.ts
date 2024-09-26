@@ -158,36 +158,50 @@ export class LogsService {
 
   async getWeeklyLogsByUser(
     uid: number,
-    startDate: string,
+    date: string, // date format: 'YYYY-MM-DD'
     logName?: LOG_NAME,
   ): Promise<{ LOGS: LogEntity[] }> {
+    // Fetch user from the database
     const user = await this.usersRepository.findOne({ where: { UID: uid } });
     if (!user) {
       throw new NotFoundException(`User with ID ${uid} not found`);
     }
 
-    const start = new Date(startDate);
-    if (isNaN(start.getTime())) {
+    // Convert string date to Date object
+    const inputDate = new Date(date);
+    if (isNaN(inputDate.getTime())) {
       throw new BadRequestException('Invalid start date');
     }
 
-    const end = new Date(start);
-    end.setDate(end.getDate() + 7);
+    // Determine the day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    const dayOfWeek = inputDate.getDay();
 
+    // Calculate the start of the week (Monday)
+    const start = new Date(inputDate);
+    const daysToMonday = (dayOfWeek + 6) % 7; // Convert Sunday (0) to 6, Monday (1) to 0, etc.
+    start.setDate(inputDate.getDate() - daysToMonday); // Move back to Monday
+
+    // Calculate the end of the week (Sunday)
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6); // Add 6 days to get to Sunday
+
+    // Define the query conditions
     const whereCondition: any = {
       UID: uid,
-      DATE: Between(start, end),
+      DATE: Between(start, end), // Look for logs between start and end of the week
     };
 
+    // If logName is provided, add it to the query conditions
     if (logName) {
       whereCondition.LOG_NAME = logName;
     }
 
+    // Fetch logs from the repository based on the conditions
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
       order: { DATE: 'DESC', LID: 'DESC' },
     });
 
-    return { LOGS }; // Return logs in the object
+    return { LOGS }; // Return logs in an object
   }
 }

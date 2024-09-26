@@ -47,10 +47,10 @@ export class LogsController {
   @Get('user/:uid/weekly')
   async getWeeklyLogsByUser(
     @Param('uid', ParseIntPipe) uid: number,
-    @Query('startDate') startDate: string,
+    @Query('date') date: string,
     @Query('logName') logName?: LOG_NAME
   ){
-    return this.logsService.getWeeklyLogsByUser(uid, startDate, logName);
+    return this.logsService.getWeeklyLogsByUser(uid, date, logName);
   }
 
   // @Get('user/:uid')
