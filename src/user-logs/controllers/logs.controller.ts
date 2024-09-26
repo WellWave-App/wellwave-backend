@@ -23,7 +23,6 @@ export class LogsController {
     return this.logsService.findOne(+id);
   }
 
-
   @Get('user/:uid')
   async getLogsByUser(
     @Param('uid', ParseIntPipe) uid: number,
