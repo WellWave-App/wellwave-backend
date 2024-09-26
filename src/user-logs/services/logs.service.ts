@@ -71,11 +71,16 @@ export class LogsService {
     return await this.logsRepository.save(log);
   }
 
-  async remove(lid: number): Promise<void> {
+  async remove(lid: number): Promise<{ message: string; success: boolean }> {
     const result = await this.logsRepository.delete(lid);
     if (result.affected === 0) {
       throw new NotFoundException(`Log with ID ${lid} not found`);
     }
+    
+    return {
+      message: `Log with LID ${lid} successfully deleted`,
+      success: true,
+    };
   }
 
   async findAll(): Promise<{ LOGS: LogEntity[] }> {

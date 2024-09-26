@@ -13,7 +13,10 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
-    const user = this.usersRepository.create({...createUserDto, createAt: new Date()});
+    const user = this.usersRepository.create({
+      ...createUserDto,
+      createAt: new Date(),
+    });
     return await this.usersRepository.save(user);
   }
 
@@ -43,10 +46,16 @@ export class UsersService {
     return await this.usersRepository.save(user);
   }
 
-  async remove(uid: number): Promise<void> {
+  async remove(uid: number): Promise<{ message: string; success: boolean }> {
     const result = await this.usersRepository.delete(uid);
+
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${uid} not found`);
     }
+
+    return {
+      message: `User with UID ${uid} successfully deleted`,
+      success: true,
+    };
   }
 }
