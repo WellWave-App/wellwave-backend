@@ -1,4 +1,3 @@
-import { LogEntity } from 'src/.typeorm/entities/logs.entity'
 import {
   Entity,
   Column,
@@ -8,6 +7,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { RiskAssessmentEntity } from './assessment.entity';
+import { LogEntity } from './logs.entity';
 
 @Entity({ name: 'USERS' })
 // @Unique(["UID"])
@@ -47,6 +47,9 @@ export class UserEntity {
 
   @Column({ nullable: true })
   REMINDER_NOTI_TIME?: string;
+
+  @Column({ nullable: true })
+  IMAGE_URL?: string;
 
   @Column({ type: 'date', default: new Date() })
   createAt: Date;
