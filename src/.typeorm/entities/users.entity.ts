@@ -1,25 +1,27 @@
-import { LogEntity } from 'src/typeorm/entities/logs.entity';
+import { LogEntity } from 'src/.typeorm/entities/logs.entity';
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
   OneToMany,
   Unique,
+  BeforeInsert,
+  BeforeUpdate,
 } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Entity({ name: 'USERS' })
-// @Unique(["UID"])
 export class UserEntity {
   @PrimaryGeneratedColumn()
   UID: number;
 
-  @Column()
+  @Column({ unique: true})
   USERNAME: string;
 
-  // @Column()
-  // PASSWORD: string;
-
   @Column()
+  PASSWORD: string;
+
+  @Column({ unique: true})
   EMAIL: string;
 
   @Column({ type: 'int' })
@@ -51,4 +53,18 @@ export class UserEntity {
 
   @OneToMany(() => LogEntity, (LOGS) => LOGS.USER)
   LOGS: LogEntity[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
+    if (this.PASSWORD) {
+      const salt = await bcrypt.genSalt();
+      this.PASSWORD = await bcrypt.hash(this.PASSWORD, salt);
+    }
+  }
+
+  // // Method to check if entered password matches the stored hash
+  // async validatePassword(password: string): Promise<boolean> {
+  //   return bcrypt.compare(password, this.PASSWORD);
+  // }
 }

@@ -9,8 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
-import { LogEntity, LOG_NAME } from '../../typeorm/entities/logs.entity';
-import { UserEntity } from '../../typeorm/entities/users.entity';
+import { LogEntity, LOG_NAME } from '../../.typeorm/entities/logs.entity';
+import { UserEntity } from '../../.typeorm/entities/users.entity';
 
 @Injectable()
 export class LogsService {
