@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { IsString, IsEmail, IsISO8601, IsBoolean, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsISO8601, IsBoolean, IsNumber, IsOptional, IsUrl } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateUserDto {
@@ -38,8 +38,12 @@ export class UpdateUserDto {
 
   @IsNumber()
   @IsOptional()
-  WEIGHT_goal?: number;
+  WEIGHT_GOAL?: number;
 
+  @IsUrl()
+  @IsOptional()
+  IMAGE_URL?: string
+  
   @IsString()
   @IsOptional()
   REMINDER_NOTI_TIME?: string;
