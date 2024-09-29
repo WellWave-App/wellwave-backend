@@ -1,4 +1,4 @@
-import { LogEntity } from 'src/typeorm/entities/logs.entity';
+import { LogEntity } from 'src/.typeorm/entities/logs.entity'
 import {
   Entity,
   Column,

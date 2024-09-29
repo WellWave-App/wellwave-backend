@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseEnumPipe, Query
 import { LogsService } from '../services/logs.service';
 import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
-import { LogEntity, LOG_NAME } from '../../typeorm/entities/logs.entity';
+import { LogEntity, LOG_NAME } from '../../.typeorm/entities/logs.entity';
 
 @Controller('logs')
 export class LogsController {

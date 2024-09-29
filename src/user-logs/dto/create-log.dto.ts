@@ -1,6 +1,6 @@
 import { IsEnum, IsNumber, IsDate, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
-import { LOG_NAME } from '../../typeorm/entities/logs.entity';
+import { LOG_NAME } from '../../.typeorm/entities/logs.entity';
 
 export class CreateLogDto {
   @IsOptional()
