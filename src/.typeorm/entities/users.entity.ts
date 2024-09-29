@@ -46,6 +46,9 @@ export class UserEntity {
   @Column({ nullable: true })
   REMINDER_NOTI_TIME?: string;
 
+  @Column({ nullable: true })
+  IMAGE_URL?: string;
+
   @Column({ type: 'date', default: new Date() })
   createAt: Date;
 

@@ -34,6 +34,10 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
+  IMAGE_URL?: string;
+  
+  @IsString()
+  @IsOptional()
   REMINDER_NOTI_TIME?: string;
 
   // @IsISO8601()
