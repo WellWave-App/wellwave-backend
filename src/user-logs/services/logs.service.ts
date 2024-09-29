@@ -6,7 +6,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  In,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
 import { LogEntity, LOG_NAME } from '../../typeorm/entities/logs.entity';
@@ -76,7 +83,7 @@ export class LogsService {
     if (result.affected === 0) {
       throw new NotFoundException(`Log with ID ${lid} not found`);
     }
-    
+
     return {
       message: `Log with LID ${lid} successfully deleted`,
       success: true,
@@ -194,6 +201,7 @@ export class LogsService {
     const whereCondition: any = {
       UID: uid,
       DATE: Between(start, end), // Look for logs between start and end of the week
+      LOG_NAME: Not(In([LOG_NAME.SLEEP_LOG, LOG_NAME.DRINK_LOG])),
     };
 
     // If logName is provided, add it to the query conditions
