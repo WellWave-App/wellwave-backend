@@ -1,39 +1,38 @@
-import { LogEntity } from 'src/.typeorm/entities/logs.entity';
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
   OneToMany,
-  Unique,
   BeforeInsert,
   BeforeUpdate,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { LogEntity } from './logs.entity';
 
 @Entity({ name: 'USERS' })
 export class UserEntity {
   @PrimaryGeneratedColumn()
   UID: number;
 
-  @Column({ unique: true})
+  @Column({ unique: true, nullable: true })
   USERNAME: string;
 
   @Column()
   PASSWORD: string;
 
-  @Column({ unique: true})
+  @Column({ unique: true })
   EMAIL: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   YEAR_OF_BIRTH: number;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: 'boolean', nullable: true })
   GENDER: boolean;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   HEIGHT: number;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   WEIGHT: number;
 
   @Column({ default: 0 })
@@ -48,7 +47,7 @@ export class UserEntity {
   @Column({ nullable: true })
   REMINDER_NOTI_TIME?: string;
 
-  @Column({ type: 'date', default: new Date() })
+  @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
   createAt: Date;
 
   @OneToMany(() => LogEntity, (LOGS) => LOGS.USER)
@@ -62,9 +61,4 @@ export class UserEntity {
       this.PASSWORD = await bcrypt.hash(this.PASSWORD, salt);
     }
   }
-
-  // // Method to check if entered password matches the stored hash
-  // async validatePassword(password: string): Promise<boolean> {
-  //   return bcrypt.compare(password, this.PASSWORD);
-  // }
 }

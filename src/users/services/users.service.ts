@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserEntity } from '../../.typeorm/entities/users.entity';
+import { RegisterUserDto } from '../dto/register.dot';
 
 @Injectable()
 export class UsersService {
@@ -12,12 +13,20 @@ export class UsersService {
     private usersRepository: Repository<UserEntity>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserEntity> {
+  async create(registerUserDto: RegisterUserDto): Promise<UserEntity> {
     const user = this.usersRepository.create({
-      ...createUserDto,
-      createAt: new Date(),
+      ...registerUserDto,
+      // createAt: new Date(),
     });
     return await this.usersRepository.save(user);
+  }
+
+  async findOneByEmail(email: string): Promise<UserEntity> {
+    const user = await this.usersRepository.findOne({ where: { EMAIL: email } });
+    if (!user) {
+      throw new NotFoundException(`User with email: ${email} is not found`);
+    }
+    return user;
   }
 
   async findAll(
