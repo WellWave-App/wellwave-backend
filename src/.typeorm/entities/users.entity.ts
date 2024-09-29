@@ -5,7 +5,9 @@ import {
   PrimaryGeneratedColumn,
   OneToMany,
   Unique,
+  OneToOne,
 } from 'typeorm';
+import { RiskAssessmentEntity } from './assessment.entity';
 
 @Entity({ name: 'USERS' })
 // @Unique(["UID"])
@@ -51,4 +53,9 @@ export class UserEntity {
 
   @OneToMany(() => LogEntity, (LOGS) => LOGS.USER)
   LOGS: LogEntity[];
+
+  @OneToOne(() => RiskAssessmentEntity, (RiskAssessment) => RiskAssessment.USER)
+  RiskAssessment: RiskAssessmentEntity[];
+
+  
 }
