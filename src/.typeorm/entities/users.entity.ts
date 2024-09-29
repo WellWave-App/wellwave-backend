@@ -1,4 +1,3 @@
-import { LogEntity } from 'src/typeorm/entities/logs.entity';
 import {
   Entity,
   Column,
@@ -6,6 +5,7 @@ import {
   OneToMany,
   Unique,
 } from 'typeorm';
+import { LogEntity } from './logs.entity';
 
 @Entity({ name: 'USERS' })
 // @Unique(["UID"])
