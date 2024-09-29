@@ -3,34 +3,41 @@ import { Type } from 'class-transformer';
 
 export class CreateUserDto {
   @IsString()
-  username: string;
+  USERNAME: string;
 
   @IsEmail()
-  email: string;
+  EMAIL: string;
 
-  @IsISO8601()
-  @Type(() => Date)
-  birth_date: Date;
+  @IsNumber()
+  YEAR_OF_BIRTH: number;
 
   @IsBoolean()
-  gender: boolean;
+  GENDER: boolean;
 
   @IsNumber()
-  height: number;
+  HEIGHT: number;
 
   @IsNumber()
-  @IsOptional()
-  gem?: number;
-
-  @IsNumber()
-  @IsOptional()
-  exp?: number;
+  WEIGHT: number;
 
   @IsNumber()
   @IsOptional()
-  weight_goal?: number;
+  GEM?: number;
+
+  @IsNumber()
+  @IsOptional()
+  EXP?: number;
+
+  @IsNumber()
+  @IsOptional()
+  USER_GOAL?: number;
 
   @IsString()
   @IsOptional()
-  reminder_noti_time?: string;
+  REMINDER_NOTI_TIME?: string;
+
+  // @IsISO8601()
+  // // @IsOptional()
+  // @Type(() => Date)
+  // createAt?: Date
 }

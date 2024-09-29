@@ -1,18 +1,19 @@
-import { IsEnum, IsNumber, IsDate } from 'class-validator';
+import { IsEnum, IsNumber, IsDate, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
-import { LogType } from '../../typeorm/entities/log.entity';
+import { LOG_NAME } from '../../typeorm/entities/logs.entity';
 
 export class CreateLogDto {
+  @IsOptional()
   @IsDate()
   @Type(() => Date)
-  date: Date;
+  DATE?: Date;
 
   @IsNumber()
-  value: number;
+  VALUE: number;
 
-  @IsEnum(LogType)
-  type: LogType;
+  @IsEnum(LOG_NAME)
+  LOG_NAME: LOG_NAME;
 
   @IsNumber()
-  userId: number;
+  UID: number;
 }
