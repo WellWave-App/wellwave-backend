@@ -80,6 +80,7 @@ export class LogsService {
 
   async remove(lid: number): Promise<{ message: string; success: boolean }> {
     const result = await this.logsRepository.delete(lid);
+    
     if (result.affected === 0) {
       throw new NotFoundException(`Log with ID ${lid} not found`);
     }
@@ -170,17 +171,23 @@ export class LogsService {
 
   async getWeeklyLogsByUser(
     uid: number,
-    date: string, // date format: 'YYYY-MM-DD'
+    date?: string, // date format: 'YYYY-MM-DD'
     logName?: LOG_NAME,
-  ): Promise<{ LOGS: LogEntity[] }> {
+  ): Promise<{
+    LOGS: LogEntity[];
+    WeekDateInformation: {
+      dateSelected: string;
+      startOfWeek: string;
+      endOfWeek: string;
+    };
+  }> {
     // Fetch user from the database
     const user = await this.usersRepository.findOne({ where: { UID: uid } });
     if (!user) {
       throw new NotFoundException(`User with ID ${uid} not found`);
     }
-
     // Convert string date to Date object
-    const inputDate = new Date(date);
+    const inputDate = date ? new Date(date) : new Date();
     if (isNaN(inputDate.getTime())) {
       throw new BadRequestException('Invalid start date');
     }
@@ -215,6 +222,21 @@ export class LogsService {
       order: { DATE: 'DESC', LID: 'DESC' },
     });
 
-    return { LOGS }; // Return logs in an object
+    const WeekDateInformation = {
+      dateSelected: date
+        ? this.formatDate(new Date(date))
+        : this.formatDate(new Date()),
+      startOfWeek: this.formatDate(start),
+      endOfWeek: this.formatDate(end),
+    };
+
+    return { LOGS, WeekDateInformation }; // Return logs in an object
+  }
+
+  formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

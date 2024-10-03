@@ -61,7 +61,7 @@ export class UserEntity {
   @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
   createAt: Date;
 
-  @OneToMany(() => LogEntity, (LOGS) => LOGS.USER)
+  @OneToMany(() => LogEntity, (LOGS) => LOGS.USER, { cascade: true })
   LOGS: LogEntity[];
 
   @BeforeInsert()
