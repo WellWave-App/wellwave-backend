@@ -9,6 +9,14 @@ import {
 import * as bcrypt from 'bcrypt';
 import { LogEntity } from './logs.entity';
 
+export enum USER_GOAL {
+  BUILD_MUSCLE = 0,
+  LOSE_WEIGHT = 1,
+  STAY_HEALTHY = 2,
+}
+
+// GENDER: true = MALE, false = FEMALE
+
 @Entity({ name: 'USERS' })
 export class UserEntity {
   @PrimaryGeneratedColumn()
@@ -41,14 +49,14 @@ export class UserEntity {
   @Column({ default: 0 })
   EXP: number;
 
-  @Column({ type: 'int', nullable: true })
-  USER_GOAL: number;
+  @Column({ type: 'enum', enum: USER_GOAL, nullable: true })
+  USER_GOAL: USER_GOAL;
 
   @Column({ nullable: true })
   REMINDER_NOTI_TIME?: string;
 
-  @Column({ nullable: true})
-  IMAGE_URL?: string
+  @Column({ nullable: true })
+  IMAGE_URL?: string;
 
   @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
   createAt: Date;
