@@ -19,7 +19,7 @@ export enum LOG_NAME {
   CAL_BURN_LOG = 'CAL_BURN_LOG',
   DRINK_LOG = 'DRINK_LOG',
   STEP_LOG = 'STEP_LOG',
-  WAIST_LINE_LOG = 'WAIST_LINE_LOG'
+  WAIST_LINE_LOG = 'WAIST_LINE_LOG',
 }
 
 @Entity('LOGS')
@@ -31,7 +31,7 @@ export class LogEntity {
   @Column({ type: 'date', default: new Date() })
   DATE: Date;
 
-  @Column({type: 'float'})
+  @Column({ type: 'float' })
   VALUE: number;
 
   @Column({
@@ -40,7 +40,7 @@ export class LogEntity {
   })
   LOG_NAME: LOG_NAME;
 
-  @ManyToOne(() => UserEntity, (USER) => USER.LOGS)
+  @ManyToOne(() => UserEntity, (USER) => USER.LOGS, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'UID' })
   USER: UserEntity;
 

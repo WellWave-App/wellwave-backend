@@ -80,6 +80,7 @@ export class LogsService {
 
   async remove(lid: number): Promise<{ message: string; success: boolean }> {
     const result = await this.logsRepository.delete(lid);
+    
     if (result.affected === 0) {
       throw new NotFoundException(`Log with ID ${lid} not found`);
     }

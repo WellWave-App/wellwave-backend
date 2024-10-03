@@ -52,6 +52,6 @@ export class UserEntity {
   @Column({ type: 'date', default: new Date() })
   createAt: Date;
 
-  @OneToMany(() => LogEntity, (LOGS) => LOGS.USER)
+  @OneToMany(() => LogEntity, (LOGS) => LOGS.USER, { cascade: true })
   LOGS: LogEntity[];
 }
