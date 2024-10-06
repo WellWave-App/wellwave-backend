@@ -37,23 +37,6 @@ export class LogsService {
       throw new NotFoundException(`User with ID ${createLogDto.UID} not found`);
     }
 
-    const date = createLogDto.DATE || new Date();
-
-    // Check for existing log entry
-    const existingLog = await this.logsRepository.findOne({
-      where: {
-        UID: user.UID,
-        DATE: date,
-        LOG_NAME: createLogDto.LOG_NAME,
-      },
-    });
-
-    if (existingLog) {
-      throw new ConflictException(
-        `A log entry for ${createLogDto.LOG_NAME} on ${date} already exists for this user.`,
-      );
-    }
-
     const log = this.logsRepository.create({
       ...createLogDto,
       USER: user,
@@ -65,44 +48,65 @@ export class LogsService {
       if (error.code === '23505') {
         // PostgreSQL unique violation error code
         throw new ConflictException(
-          `A log entry for ${createLogDto.LOG_NAME} on ${date} already exists for this user.`,
+          `A log entry already exists for User ID ${createLogDto.UID}, LOG_NAME ${createLogDto.LOG_NAME}, and DATE ${createLogDto.DATE}`,
         );
       }
       throw error;
     }
   }
 
-  async update(lid: number, updateLogDto: UpdateLogDto): Promise<LogEntity> {
-    const log = await this.findOne(lid);
+  async update(
+    uid: number,
+    logName: LOG_NAME,
+    date: Date,
+    updateLogDto: UpdateLogDto,
+  ): Promise<LogEntity> {
+    const log = await this.findOne(uid, logName, date);
     Object.assign(log, updateLogDto);
     return await this.logsRepository.save(log);
   }
 
-  async remove(lid: number): Promise<{ message: string; success: boolean }> {
-    const result = await this.logsRepository.delete(lid);
-    
+  async remove(
+    uid: number,
+    logName: LOG_NAME,
+    date: Date,
+  ): Promise<{ message: string; success: boolean }> {
+    const result = await this.logsRepository.delete({
+      UID: uid,
+      LOG_NAME: logName,
+      DATE: date,
+    });
+
     if (result.affected === 0) {
-      throw new NotFoundException(`Log with ID ${lid} not found`);
+      throw new NotFoundException(
+        `Log not found for User ID ${uid}, LOG_NAME ${logName}, and DATE ${date}`,
+      );
     }
 
     return {
-      message: `Log with LID ${lid} successfully deleted`,
+      message: `Log successfully deleted for User ID ${uid}, LOG_NAME ${logName}, and DATE ${date}`,
       success: true,
     };
   }
 
   async findAll(): Promise<{ LOGS: LogEntity[] }> {
     const LOGS = await this.logsRepository.find();
-    return { LOGS }; // Return logs in the object
+    return { LOGS };
   }
 
-  async findOne(lid: number): Promise<LogEntity> {
+  async findOne(
+    uid: number,
+    logName: LOG_NAME,
+    date: Date,
+  ): Promise<LogEntity> {
     const log = await this.logsRepository.findOne({
-      where: { LID: lid },
+      where: { UID: uid, LOG_NAME: logName, DATE: date },
       relations: ['USER'],
     });
     if (!log) {
-      throw new NotFoundException(`Log with ID ${lid} not found`);
+      throw new NotFoundException(
+        `Log not found for User ID ${uid}, LOG_NAME ${logName}, and DATE ${date}`,
+      );
     }
     return log;
   }
@@ -118,25 +122,25 @@ export class LogsService {
       throw new NotFoundException(`User with ID ${uid} not found`);
     }
 
-    const whereCondition: any = { USER: { UID: uid } };
+    const whereCondition: any = { UID: uid };
     if (logName) {
       whereCondition.LOG_NAME = logName;
     }
 
     if (startDate && endDate) {
-      whereCondition.DATE = Between(new Date(startDate), new Date(endDate));
+      whereCondition.DATE = Between(startDate, endDate);
     } else if (startDate) {
-      whereCondition.DATE = Between(new Date(startDate), new Date());
+      whereCondition.DATE = Between(startDate, new Date());
     } else if (endDate) {
-      whereCondition.DATE = Between(new Date('1970-01-01'), new Date(endDate));
+      whereCondition.DATE = Between(new Date('1970-01-01'), endDate);
     }
 
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC', LID: 'DESC' },
+      order: { DATE: 'DESC' },
     });
 
-    return { LOGS }; // Return logs in the object
+    return { LOGS };
   }
 
   async getTodayLogsByUser(
@@ -149,6 +153,7 @@ export class LogsService {
     }
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -163,15 +168,15 @@ export class LogsService {
 
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC', LID: 'DESC' },
+      order: { DATE: 'DESC' },
     });
 
-    return { LOGS }; // Return logs in the object
+    return { LOGS };
   }
 
   async getWeeklyLogsByUser(
     uid: number,
-    date?: string, // date format: 'YYYY-MM-DD'
+    date?: string,
     logName?: LOG_NAME,
   ): Promise<{
     LOGS: LogEntity[];
@@ -219,7 +224,7 @@ export class LogsService {
     // Fetch logs from the repository based on the conditions
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC', LID: 'DESC' },
+      order: { DATE: 'DESC' },
     });
 
     const WeekDateInformation = {
