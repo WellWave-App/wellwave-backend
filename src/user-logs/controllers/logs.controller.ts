@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseEnumPipe, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { LogsService } from '../services/logs.service';
 import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
@@ -18,9 +28,13 @@ export class LogsController {
     return this.logsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.logsService.findOne(+id);
+  @Get(':uid/:logName/:date')
+  findOne(
+    @Param('uid', ParseIntPipe) uid: number,
+    @Param('logName') logName: LOG_NAME,
+    @Param('date') date: string,
+  ) {
+    return this.logsService.findOne(uid, logName, new Date(date));
   }
 
   @Get('user/:uid')
@@ -29,45 +43,45 @@ export class LogsController {
     @Query('logName') logName?: LOG_NAME,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-  ){
+  ) {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
     return this.logsService.getLogsByUserAndType(uid, logName, start, end);
   }
 
-  @Get('user/:uid/today')
-  async getTodayLogsByUser(
+  @Get('userWeekly/:uid')
+  getWeeklyLogs(
     @Param('uid', ParseIntPipe) uid: number,
-    @Query('logName') logName?: LOG_NAME
-  ){
-    return this.logsService.getTodayLogsByUser(uid, logName);
-  }
-  
-  @Get('user/:uid/weekly')
-  async getWeeklyLogsByUser(
-    @Param('uid', ParseIntPipe) uid: number,
-    @Query('date') date: string,
-    @Query('logName') logName?: LOG_NAME
-  ){
+    @Query('date') date?: string,
+    @Query('logName') logName?: LOG_NAME,
+  ) {
     return this.logsService.getWeeklyLogsByUser(uid, date, logName);
   }
 
-  // @Get('user/:uid')
-  // async getLogsByUserWithDate(
-  //   @Param('uid', ParseIntPipe) uid: number,
-  //   @Query('logName') logName?: LOG_NAME,
-  //   @Query('date') date?: Date,
-  // ): Promise<LogEntity[]> {
-  //   return this.logsService.getLogsByUserAndType(uid, logName, date, date);
-  // }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLogDto: UpdateLogDto) {
-    return this.logsService.update(+id, updateLogDto);
+  @Get('userToday/:uid')
+  getTodayLogs(
+    @Param('uid', ParseIntPipe) uid: number,
+    @Query('logName') logName?: LOG_NAME,
+  ) {
+    return this.logsService.getTodayLogsByUser(uid, logName);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.logsService.remove(+id);
+  @Patch(':uid/:logName/:date')
+  update(
+    @Param('uid', ParseIntPipe) uid: number,
+    @Param('logName') logName: LOG_NAME,
+    @Param('date') date: string,
+    @Body() updateLogDto: UpdateLogDto,
+  ) {
+    return this.logsService.update(uid, logName, new Date(date), updateLogDto);
+  }
+
+  @Delete(':uid/:logName/:date')
+  remove(
+    @Param('uid', ParseIntPipe) uid: number,
+    @Param('logName') logName: LOG_NAME,
+    @Param('date') date: string,
+  ) {
+    return this.logsService.remove(uid, logName, new Date(date));
   }
 }
