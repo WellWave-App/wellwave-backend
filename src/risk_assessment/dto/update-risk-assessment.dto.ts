@@ -1,13 +1,13 @@
 export class UpdateRiskAssessmentDto {
-    HEIGHT?: number;  // optional
-    WEIGHT?: number;  // optional
-    HDL?: number;
-    LDL?: number;
-    WAIST_LINE?: number;
-    BLOOD_PRESSURE?: number;
-    BLOOD_GLUCOSE?: number;
-    HAS_HYPERTENSION?: boolean;
-    HAS_DIABETES?: boolean;
-    HAS_DYSLIPIDEMIA?: boolean;
-    HAS_OBESITY?: boolean;
+  DIASTOLIC_BLOOD_PRESSURE: number;
+  SYSTOLIC_BLOOD_PRESSURE: number;
+  HDL: number;
+  LDL: number;
+  WAIST_LINE: number;
+  HAS_SMOKE: boolean;
+  HAS_DRINK: boolean;
+  HYPERTENSION: number;
+  DIABETES: number;
+  DYSLIPIDEMIA: number;
+  OBESITY: number;
   }

@@ -16,10 +16,10 @@ export class RiskAssessmentEntity {
   RA_ID: number;
 
   @Column('float')
-  HEIGHT: number;
+  DIASTOLIC_BLOOD_PRESSURE: number;
 
   @Column('float')
-  WEIGHT: number;
+  SYSTOLIC_BLOOD_PRESSURE: number;
 
   @Column('float')
   HDL: number;
@@ -29,24 +29,23 @@ export class RiskAssessmentEntity {
 
   @Column('float')
   WAIST_LINE: number;
-
-  @Column('float')
-  BLOOD_PRESSURE: number;
-
-  @Column('float')
-  BLOOD_GLUCOSE: number;
+  @Column('boolean')
+  HAS_SMOKE: boolean;
 
   @Column('boolean')
-  HAS_HYPERTENSION: boolean;
+  HAS_DRINK: boolean;
 
-  @Column('boolean')
-  HAS_DIABETES: boolean;
+  @Column('int4')
+  HYPERTENSION: number;
 
-  @Column('boolean')
-  HAS_DYSLIPIDEMIA: boolean;
+  @Column('int4')
+  DIABETES: number;
 
-  @Column('boolean')
-  HAS_OBESITY: boolean;
+  @Column('int4')
+  DYSLIPIDEMIA: number;
+
+  @Column('int4')
+  OBESITY: number;
 
   @OneToOne(() => UserEntity, (USER) => USER.RiskAssessment)
   @JoinColumn({ name: 'UID' })

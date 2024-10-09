@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RiskAssessmentEntity } from 'src/.typeorm/entities/assessment.entity'; // แก้ไขตามตำแหน่งไฟล์
 import { UserEntity } from 'src/.typeorm/entities/users.entity'; // แก้ไขตามตำแหน่งไฟล์
-import { CreateRiskAssessmentDto } from '../dto/create-risk-assessment.dto'; // import DTO
-import { UpdateRiskAssessmentDto } from '../dto/update-risk-assessment.dto'; // import DTO
+import { CreateRiskAssessmentDto } from '../dto/create-risk-assessment.dto'; 
+import { UpdateRiskAssessmentDto } from '../dto/update-risk-assessment.dto'; 
 
 @Injectable()
 export class RiskAssessmentService {
