@@ -7,12 +7,14 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
-import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { RegisterUserDto } from '../dto/register.dto';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -22,6 +24,13 @@ export class UsersController {
   @Post('/register')
   create(@Body() registerUserDto: RegisterUserDto) {
     return this.usersService.create(registerUserDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/profile')
+  async getProfile(@Request() req) {
+    const user = await this.usersService.findOneByEmail(req.usEMAIL);
+    return user;
   }
 
   @Get()

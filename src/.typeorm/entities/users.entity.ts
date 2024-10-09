@@ -68,8 +68,8 @@ export class UserEntity {
   @BeforeUpdate()
   async hashPassword() {
     if (this.PASSWORD) {
-      const salt = await bcrypt.genSalt();
-      this.PASSWORD = await bcrypt.hash(this.PASSWORD, salt);
+      // const salt = await bcrypt.genSalt();
+      this.PASSWORD = await bcrypt.hash(this.PASSWORD, 10);
     }
   }
 }
