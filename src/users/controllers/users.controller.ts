@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -29,7 +30,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Get('/profile')
   async getProfile(@Request() req) {
-    const user = await this.usersService.findOneByEmail(req.usEMAIL);
+    const user = await this.usersService.findOneByEmail(req.user.EMAIL);
     return user;
   }
 
@@ -43,11 +44,20 @@ export class UsersController {
     return this.usersService.findOne(+UID);
   }
 
+  // @UseGuards(JwtAuthGuard)
   @Patch(':uid')
-  update(@Param('uid') UID: string, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Request() req,
+    @Param('uid') UID: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    if (req.user.UID !== +UID) {
+      throw new ForbiddenException('You can only update your own profile');
+    }
     return this.usersService.update(+UID, updateUserDto);
   }
 
+  // @UseGuards(JwtAuthGuard)
   @Delete(':uid')
   remove(@Param('uid') UID: string) {
     return this.usersService.remove(+UID);
