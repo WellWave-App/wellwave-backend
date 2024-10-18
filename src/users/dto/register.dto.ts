@@ -1,25 +1,29 @@
-import { IsString, IsEmail, IsStrongPassword } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsEmail,
+  IsStrongPassword,
+  IsOptional,
+  ValidateIf,
+} from 'class-validator';
 
 export class RegisterUserDto {
   @IsEmail()
   EMAIL: string;
 
+  @IsOptional()
   @IsString()
   @IsStrongPassword({
     minLength: 8,
     minLowercase: 1,
     minUppercase: 1,
     minNumbers: 1,
-    minSymbols: 0
+    minSymbols: 0,
   })
-  PASSWORD: string;
-}
+  @ValidateIf((o) => !o.GOOGLE_ID) // Only validate PASSWORD if GOOGLE_ID is not provided
+  PASSWORD?: string;
 
-/* 
-@IsStrongPassword()
-Minimum length (usually 8 characters)
-At least one uppercase letter
-At least one lowercase letter
-At least one number
-*/
+  @IsOptional()
+  @IsString()
+  @ValidateIf((o) => !o.PASSWORD) // Only validate GOOGLE_ID if PASSWORD is not provided
+  GOOGLE_ID?: string;
+}

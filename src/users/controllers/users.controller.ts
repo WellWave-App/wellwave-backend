@@ -14,8 +14,9 @@ import {
 import { UsersService } from '../services/users.service';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { RegisterUserDto } from '../dto/register.dto';
+// import { RegisterUserDto } from '../dto/register.dto';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { CreateUserDto } from '../dto/create-user.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -23,7 +24,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('/register')
-  create(@Body() registerUserDto: RegisterUserDto) {
+  create(@Body() registerUserDto: CreateUserDto) {
     return this.usersService.create(registerUserDto);
   }
 
@@ -39,12 +40,13 @@ export class UsersController {
     return this.usersService.findAll(page, limit);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':uid')
   findOne(@Param('uid') UID: string) {
     return this.usersService.findOne(+UID);
   }
 
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch(':uid')
   update(
     @Request() req,
@@ -57,7 +59,7 @@ export class UsersController {
     return this.usersService.update(+UID, updateUserDto);
   }
 
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete(':uid')
   remove(@Param('uid') UID: string) {
     return this.usersService.remove(+UID);

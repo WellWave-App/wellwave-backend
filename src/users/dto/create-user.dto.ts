@@ -1,24 +1,40 @@
-import { IsString, IsEmail, IsISO8601, IsBoolean, IsNumber, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsEmail,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
-  USERNAME: string;
+  USERNAME?: string;
 
   @IsEmail()
   EMAIL: string;
 
+  @IsOptional()
+  @IsString()
+  @ValidateIf((o) => !o.GOOGLE_ID) // Only validate PASSWORD if GOOGLE_ID is not provided
+  PASSWORD?: string;
+
+  @IsOptional()
+  @IsString()
+  @ValidateIf((o) => !o.PASSWORD) // Only validate GOOGLE_ID if PASSWORD is not provided
+  GOOGLE_ID?: string;
+
   @IsNumber()
-  YEAR_OF_BIRTH: number;
+  YEAR_OF_BIRTH?: number;
 
   @IsBoolean()
-  GENDER: boolean;
+  GENDER?: boolean;
 
   @IsNumber()
-  HEIGHT: number;
+  HEIGHT?: number;
 
   @IsNumber()
-  WEIGHT: number;
+  WEIGHT?: number;
 
   @IsNumber()
   @IsOptional()
@@ -35,13 +51,8 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   IMAGE_URL?: string;
-  
+
   @IsString()
   @IsOptional()
   REMINDER_NOTI_TIME?: string;
-
-  // @IsISO8601()
-  // // @IsOptional()
-  // @Type(() => Date)
-  // createAt?: Date
 }

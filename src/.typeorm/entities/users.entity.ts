@@ -25,11 +25,14 @@ export class UserEntity {
   @Column({ unique: true, nullable: true })
   USERNAME: string;
 
-  @Column()
-  PASSWORD: string;
+  @Column({ nullable: true }) // Make PASSWORD optional
+  PASSWORD?: string;
 
   @Column({ unique: true })
   EMAIL: string;
+
+  @Column({ unique: true, nullable: true }) // Add GOOGLE_ID field
+  GOOGLE_ID?: string;
 
   @Column({ type: 'int', nullable: true })
   YEAR_OF_BIRTH: number;
@@ -68,7 +71,6 @@ export class UserEntity {
   @BeforeUpdate()
   async hashPassword() {
     if (this.PASSWORD) {
-      // const salt = await bcrypt.genSalt();
       this.PASSWORD = await bcrypt.hash(this.PASSWORD, 10);
     }
   }
