@@ -7,6 +7,8 @@ import { UsersModule } from './users/users.module';
 import { LogsModule } from './user-logs/logs.module';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
+import { QuestModule } from './quest/quest.module';
+import { HabitModule } from './habit/habit.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     LogsModule,
     AuthModule,
+    QuestModule,
+    HabitModule,
   ],
   controllers: [AppController],
   providers: [AppService],

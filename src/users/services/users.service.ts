@@ -49,8 +49,19 @@ export class UsersService {
 
   async update(uid: number, updateUserDto: UpdateUserDto): Promise<UserEntity> {
     const user = await this.findOne(uid);
-    Object.assign(user, updateUserDto);
-    return await this.usersRepository.save(user);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Ensure EXP and GEM never go below 0
+    const updatedUser = {
+      ...user,
+      ...updateUserDto,
+      EXP: Math.max(0, updateUserDto.EXP),
+      GEM: Math.max(0, updateUserDto.GEM),
+    };
+
+    return await this.usersRepository.save(updatedUser);
   }
 
   async remove(uid: number): Promise<{ message: string; success: boolean }> {
