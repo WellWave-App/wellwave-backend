@@ -192,6 +192,64 @@ export class QuestService {
     }
   }
 
+  async getSpecificUserQuest(userId: number, questId: number): Promise<any> {
+    try {
+      // Find the specific user quest
+      const userQuest = await this.userQuestRepository.findOne({
+        where: {
+          UID: userId,
+          QID: questId,
+          STATUS: false, // Only get active quests
+        },
+        relations: ['quest'],
+      });
+
+      if (!userQuest) {
+        throw new NotFoundException(
+          'User quest not found or already completed',
+        );
+      }
+
+      // Calculate progress for the quest
+      const progress = await this.calculateQuestProgress(userId, userQuest);
+
+      // Calculate days left
+      const daysLeft = this.calculateDaysLeft(userQuest.END_DATE);
+
+      // Combine all information
+      return {
+        questId: userQuest.QID,
+        questName: userQuest.quest.QUEST_TITLE,
+        questType: userQuest.quest.QUEST_TYPE,
+        description: userQuest.quest.DESCRIPTION,
+        startDate: userQuest.START_DATE,
+        endDate: userQuest.END_DATE,
+        daysLeft,
+        isExpired: new Date() > userQuest.END_DATE,
+        requirements: {
+          activityTargetTime: userQuest.quest.RQ_ACTIVITY_TARGET_TIME,
+          successHabit: userQuest.quest.RQ_SUCCESS_HABIT,
+        },
+        rewards: {
+          gem: userQuest.quest.GEM_REWARDS,
+          exp: userQuest.quest.EXP_REWARDS,
+        },
+        progress: {
+          current: progress.current,
+          target: progress.target,
+          percentage: progress.percentage,
+        },
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        `Failed to get specific user quest: ${error.message}`,
+      );
+    }
+  }
+
   async getUserActiveQuests(userId: number): Promise<any[]> {
     try {
       const activeQuests = await this.userQuestRepository.find({

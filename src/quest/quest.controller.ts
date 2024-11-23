@@ -46,6 +46,14 @@ export class QuestController {
     return this.questService.deleteQuest(id);
   }
 
+  @Get(':userId/:questId')
+  async getSpecificQuest(
+    @Param('userId') userId: number,
+    @Param('questId') questId: number,
+  ) {
+    return this.questService.getSpecificUserQuest(userId, questId);
+  }
+
   @Get(':userId/available')
   getAvailableQuests(
     @Param('userId') userId: number,
