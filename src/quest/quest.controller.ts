@@ -20,6 +20,20 @@ import { UpdateQuestDto } from './dto/update-quest.dto';
 export class QuestController {
   constructor(private readonly questService: QuestService) {}
 
+  @Get('/:userId/active')
+  getUserActiveQuest(@Param('userId', ParseIntPipe) userId: number) {
+    return this.questService.getUserActiveQuests(userId);
+  }
+
+  @Get('/:userId/available')
+  getAvailableQuests(
+    @Param('userId') userId: number,
+    @Query('filter')
+    filterType: QuestFilterType = QuestFilterType.ALL,
+  ) {
+    return this.questService.getAvailableQuests(userId, filterType);
+  }
+  
   @Get()
   getAllQuests() {
     return this.questService.getAllQuests();
@@ -31,7 +45,7 @@ export class QuestController {
     return this.questService.createQuest(createQuestDto);
   }
 
-  @Patch(':id')
+  @Patch('/:id')
   // @UseGuards(AdminGuard)
   updateQuest(
     @Param('id', ParseIntPipe) id: number,
@@ -40,13 +54,13 @@ export class QuestController {
     return this.questService.updateQuest(id, updateQuestDto);
   }
 
-  @Delete(':id')
+  @Delete('/:id')
   // @UseGuards(AdminGuard)
   deleteQuest(@Param('id', ParseIntPipe) id: number) {
     return this.questService.deleteQuest(id);
   }
 
-  @Get(':userId/:questId')
+  @Get('/:userId/:questId')
   async getSpecificQuest(
     @Param('userId') userId: number,
     @Param('questId') questId: number,
@@ -54,26 +68,13 @@ export class QuestController {
     return this.questService.getSpecificUserQuest(userId, questId);
   }
 
-  @Get(':userId/available')
-  getAvailableQuests(
-    @Param('userId') userId: number,
-    @Query('filter')
-    filterType: QuestFilterType = QuestFilterType.ALL,
-  ) {
-    return this.questService.getAvailableQuests(userId, filterType);
-  }
 
-  @Get(':userId/active')
-  getUserActiveQuest(@Param('userId') userId: number) {
-    return this.questService.getUserActiveQuests(userId);
-  }
-
-  @Get(':userId')
+  @Get('/:userId')
   getUserQuests(@Param('userId') userId: number) {
     return this.questService.getUserQuests(userId);
   }
 
-  @Post('join')
+  @Post('/join')
   joinQuest(@Body() joinQuestDto: JoinQuestDto) {
     return this.questService.joinQuest(joinQuestDto);
   }
