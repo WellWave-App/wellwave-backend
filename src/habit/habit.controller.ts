@@ -58,13 +58,13 @@ export class HabitController {
     return this.habitService.completeHabit(completeHabitDto);
   }
 
-  @Get(':userId/habit/:habitId/stats')
-  getHabitStats(
-    @Param('userId') userId: number,
-    @Param('habitId') habitId: number,
-  ) {
-    return this.habitService.getUserHabitStats(userId, habitId);
-  }
+  // @Get(':userId/habit/:habitId/stats')
+  // getHabitStats(
+  //   @Param('userId') userId: number,
+  //   @Param('habitId') habitId: number,
+  // ) {
+  //   return this.habitService.getUserHabitStats(userId, habitId);
+  // }
 
   @Post()
   createHabit(@Body() createHabitdto: CreateHabitDto) {

@@ -450,52 +450,52 @@ export class HabitService {
     return updatedUser;
   }
 
-  async getUserHabitStats(userId: number, habitId: number) {
-    const completedTracks = await this.userHabitTrackRepository.find({
-      where: {
-        UID: userId,
-        HID: habitId,
-        STATUS: true,
-      },
-      order: {
-        TRACK_DATE: 'DESC',
-      },
-      relations: ['habit'],
-    });
+  // async getUserHabitStats(userId: number, habitId: number) {
+  //   const completedTracks = await this.userHabitTrackRepository.find({
+  //     where: {
+  //       UID: userId,
+  //       HID: habitId,
+  //       STATUS: true,
+  //     },
+  //     order: {
+  //       TRACK_DATE: 'DESC',
+  //     },
+  //     relations: ['habit'],
+  //   });
 
-    return {
-      totalCompletions: completedTracks.length,
-      dayGoal: completedTracks[0]?.USER_DAYS_GOAL || null,
-      currentStreak: completedTracks[0]?.STREAK_COUNT || 0,
-      bestStreak: Math.max(
-        ...completedTracks.map((track) => track.STREAK_COUNT),
-        0,
-      ),
-      moodDistribution: this.calculateMoodDistribution(completedTracks),
-      averageTimeUsed: this.calculateAverageTimeUsed(completedTracks),
-      completionPercentage: (
-        completedTracks.length / completedTracks[0].USER_DAYS_GOAL
-      ).toFixed(2),
-      habit: completedTracks[0]?.habit || null,
-    };
-  }
+  //   return {
+  //     totalCompletions: completedTracks.length,
+  //     dayGoal: completedTracks[0]?.USER_DAYS_GOAL || null,
+  //     currentStreak: completedTracks[0]?.STREAK_COUNT || 0,
+  //     bestStreak: Math.max(
+  //       ...completedTracks.map((track) => track.STREAK_COUNT),
+  //       0,
+  //     ),
+  //     moodDistribution: this.calculateMoodDistribution(completedTracks),
+  //     averageTimeUsed: this.calculateAverageTimeUsed(completedTracks),
+  //     completionPercentage: (
+  //       completedTracks.length / completedTracks[0].USER_DAYS_GOAL
+  //     ).toFixed(2),
+  //     habit: completedTracks[0]?.habit || null,
+  //   };
+  // }
 
-  private calculateMoodDistribution(tracks: UserHabitTrackEntity[]) {
-    const distribution = {};
-    tracks.forEach((track) => {
-      if (track.MOOD_FEEDBACK) {
-        distribution[track.MOOD_FEEDBACK] =
-          (distribution[track.MOOD_FEEDBACK] || 0) + 1;
-      }
-    });
-    return distribution;
-  }
+  // private calculateMoodDistribution(tracks: UserHabitTrackEntity[]) {
+  //   const distribution = {};
+  //   tracks.forEach((track) => {
+  //     if (track.MOOD_FEEDBACK) {
+  //       distribution[track.MOOD_FEEDBACK] =
+  //         (distribution[track.MOOD_FEEDBACK] || 0) + 1;
+  //     }
+  //   });
+  //   return distribution;
+  // }
 
-  private calculateAverageTimeUsed(tracks: UserHabitTrackEntity[]) {
-    if (tracks.length === 0) return 0;
-    const totalTime = tracks.reduce((sum, track) => sum + track.TIME_USED, 0);
-    return totalTime / tracks.length;
-  }
+  // private calculateAverageTimeUsed(tracks: UserHabitTrackEntity[]) {
+  //   if (tracks.length === 0) return 0;
+  //   const totalTime = tracks.reduce((sum, track) => sum + track.TIME_USED, 0);
+  //   return totalTime / tracks.length;
+  // }
 
   async getUserActiveHabitDetail(userId: number, habitId: number) {
     try {
