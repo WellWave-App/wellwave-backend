@@ -25,7 +25,7 @@ export class UserHabitTrackEntity {
   @Column('float')
   TIME_USED: number;
 
-  @Column('float')
+  @Column({ type: 'float', nullable: true })
   USER_TIME_GOAL: number;
 
   @Column()

@@ -79,6 +79,8 @@ export class QuestEntity {
   @Column({ type: 'time', nullable: true })
   RQ_ACTIVITY_TARGET_TIME: string;
 
+  @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
+  createAt: Date;
   // @BeforeInsert()
   // @BeforeUpdate()
   // formatTime() {

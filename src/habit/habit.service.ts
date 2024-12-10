@@ -2,9 +2,10 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, Between } from 'typeorm';
+import { Repository, MoreThanOrEqual, Between, LessThanOrEqual } from 'typeorm';
 import { QuestService } from '../quest/quest.service';
 import { HABIT_TYPE, HabitEntity } from '../.typeorm/entities/habit.entity';
 import { UserHabitTrackEntity } from '../.typeorm/entities/user-habit-track.entity';
@@ -15,6 +16,8 @@ import {
 } from './dto/habit.dto';
 import { UsersService } from 'src/users/services/users.service';
 import { UpdateUserDto } from 'src/users/dto/update-user.dto';
+import { CreateHabitDto } from './dto/create-habit.dto';
+import { UpdateHabitDto } from './dto/update-habit.dto';
 
 @Injectable()
 export class HabitService {
@@ -26,6 +29,95 @@ export class HabitService {
     private questService: QuestService,
     private userService: UsersService,
   ) {}
+
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ habits: HabitEntity[]; total: number }> {
+    try {
+      const [habits, total] = await this.habitRepository.findAndCount({
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { createAt: 'DESC' },
+      });
+
+      return {
+        habits: habits,
+        total: total,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+    }
+  }
+
+  async createHabit(createHabitDto: CreateHabitDto): Promise<HabitEntity> {
+    try {
+      const existingHabit = await this.habitRepository.findOne({
+        where: { HABIT_TITLE: createHabitDto.HABIT_TITLE },
+      });
+
+      if (existingHabit) {
+        throw new BadRequestException('Habit with this title already exists');
+      }
+
+      const habit = this.habitRepository.create(createHabitDto);
+      return await this.habitRepository.save(habit);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        `Failed to create habit: ${error.message}`,
+      );
+    }
+  }
+
+  async updateHabit(
+    habitId: number,
+    updateHabitDto: UpdateHabitDto,
+  ): Promise<HabitEntity> {
+    try {
+      const habit = await this.habitRepository.findOne({
+        where: { HID: habitId },
+      });
+
+      if (!habit) {
+        throw new NotFoundException(`Habit with HID:${habitId} not found`);
+      }
+
+      const activeUsers = await this.userHabitTrackRepository.count({
+        where: {
+          HID: habitId,
+          END_DATE: MoreThanOrEqual(new Date()),
+        },
+      });
+
+      if (activeUsers > 0) {
+        throw new BadRequestException('Cannot update habit with active users');
+      }
+
+      // If updating title, check for duplicates
+      if (
+        updateHabitDto.HABIT_TITLE &&
+        updateHabitDto.HABIT_TITLE !== habit.HABIT_TITLE
+      ) {
+        const existingHabit = await this.habitRepository.findOne({
+          where: {
+            HABIT_TITLE: updateHabitDto.HABIT_TITLE,
+          },
+        });
+
+        if (existingHabit) {
+          throw new BadRequestException('Habit with this title already exists');
+        }
+      }
+
+      Object.assign(habit, updateHabitDto);
+      return await this.habitRepository.save(habit);
+    } catch (error) {}
+  }
 
   async getAvailableHabits(
     userId: number,
@@ -108,21 +200,25 @@ export class HabitService {
         },
       });
 
-      return activeHabitTracks.map(async (track) => ({
-        ...track.habit,
-        currentStreak: track.STREAK_COUNT,
-        startDate: track.START_DATE,
-        endDate: track.END_DATE,
-        timeGoal: track.USER_TIME_GOAL,
-        daysGoal: track.USER_DAYS_GOAL,
-        reminderTime: track.REMINDER_NOTI_TIME,
-        progress: await this.calculateHabitProgress(
-          userId,
-          track.HID,
-          track.START_DATE,
-          track.END_DATE,
-        ),
-      }));
+      const habits = await Promise.all(
+        activeHabitTracks.map(async (track) => ({
+          ...track.habit,
+          currentStreak: track.STREAK_COUNT,
+          startDate: track.START_DATE,
+          endDate: track.END_DATE,
+          timeGoal: track.USER_TIME_GOAL,
+          daysGoal: track.USER_DAYS_GOAL,
+          reminderTime: track.REMINDER_NOTI_TIME,
+          progress: await this.calculateHabitProgress(
+            userId,
+            track.HID,
+            track.START_DATE,
+            track.END_DATE,
+          ),
+        })),
+      );
+
+      return { activeHabits: habits };
     } catch (error) {
       throw new Error(`Failed to get user active habits: ${error.message}`);
     }
@@ -204,14 +300,14 @@ export class HabitService {
     const { UID, HID, TIME_USED, MOOD_FEEDBACK } = completeHabitDto;
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // today.setHours(0, 0, 0, 0);
 
     const habitTrack = await this.userHabitTrackRepository.findOne({
       where: {
         UID,
         HID,
-        TRACK_DATE: today,
-        END_DATE: MoreThanOrEqual(today),
+        TRACK_DATE: LessThanOrEqual(today), // Track has started
+        END_DATE: MoreThanOrEqual(today), // Track hasn't ended
       },
       relations: ['habit'],
     });
@@ -220,11 +316,25 @@ export class HabitService {
       throw new NotFoundException('Active habit track not found');
     }
 
+    // // Check if already completed today
+    // const todayCompletion = await this.userHabitTrackRepository.findOne({
+    //   where: {
+    //     UID,
+    //     HID,
+    //     TRACK_DATE: today,
+    //     STATUS: true,
+    //   },
+    // });
+
+    // if (todayCompletion) {
+    //   throw new BadRequestException('Habit already completed for today');
+    // }
+
     // For exercise habits, check if time goal is met
     if (habitTrack.habit.HABIT_TYPE === HABIT_TYPE.EXERCISE) {
-      if (!TIME_USED || TIME_USED < habitTrack.USER_TIME_GOAL) {
-        throw new BadRequestException('Exercise time goal not met');
-      }
+      // if (!TIME_USED || TIME_USED < habitTrack.USER_TIME_GOAL) {
+      //   throw new BadRequestException('Exercise time goal not met');
+      // }
       habitTrack.TIME_USED = TIME_USED;
     }
 
@@ -319,7 +429,6 @@ export class HabitService {
 
   private async updateUserRewards(userId: number, exp: number, gems: number) {
     // Implement user reward update logic
-    // This should update the USER table's EXP and GEM columns
 
     // Get current user data
     const user = await this.userService.findOne(userId);
@@ -351,10 +460,12 @@ export class HabitService {
       order: {
         TRACK_DATE: 'DESC',
       },
+      relations: ['habit'],
     });
 
     return {
       totalCompletions: completedTracks.length,
+      dayGoal: completedTracks[0]?.USER_DAYS_GOAL || null,
       currentStreak: completedTracks[0]?.STREAK_COUNT || 0,
       bestStreak: Math.max(
         ...completedTracks.map((track) => track.STREAK_COUNT),
@@ -362,6 +473,10 @@ export class HabitService {
       ),
       moodDistribution: this.calculateMoodDistribution(completedTracks),
       averageTimeUsed: this.calculateAverageTimeUsed(completedTracks),
+      completionPercentage: (
+        completedTracks.length / completedTracks[0].USER_DAYS_GOAL
+      ).toFixed(2),
+      habit: completedTracks[0]?.habit || null,
     };
   }
 

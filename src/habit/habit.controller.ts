@@ -14,6 +14,7 @@ import {
   HabitFilterType,
 } from './dto/habit.dto';
 import { JwtAuthGuard } from '../auth//guard/jwt-auth.guard';
+import { CreateHabitDto } from './dto/create-habit.dto';
 
 @Controller('habits')
 @UseGuards(JwtAuthGuard)
@@ -54,5 +55,18 @@ export class HabitController {
     @Param('habitId') habitId: number,
   ) {
     return this.habitService.getUserHabitStats(userId, habitId);
+  }
+
+  @Post()
+  createHabit(@Body() createHabitdto: CreateHabitDto) {
+    return this.habitService.createHabit(createHabitdto);
+  }
+
+  @Get()
+  getAllHabits(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.habitService.findAll(page, limit);
   }
 }

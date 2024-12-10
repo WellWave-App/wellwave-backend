@@ -64,4 +64,7 @@ export class HabitEntity {
     enum: DIFFICULTY_LEVEL,
   })
   DIFFICULTY_LEVEL: DIFFICULTY_LEVEL;
+
+  @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
+  createAt: Date;
 }
