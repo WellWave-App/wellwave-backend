@@ -614,7 +614,7 @@ export class HabitService {
           completionTrend: this.calculateCompletionTrend(dailyStatus),
         },
         dailyStatus,
-        nextMilestone: this.calculateNextMilestone(activeHabit),
+        // nextMilestone: this.calculateNextMilestone(activeHabit),
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -640,18 +640,18 @@ export class HabitService {
     return 'AT_RISK';
   }
 
-  private calculateNextMilestone(habitTrack: UserHabitTrackEntity): any {
-    const currentStreak = habitTrack.STREAK_COUNT;
-    const milestones = [3, 5, 7, 14, 21, 30, 60, 90];
+  // private calculateNextMilestone(habitTrack: UserHabitTrackEntity): any {
+  //   const currentStreak = habitTrack.STREAK_COUNT;
+  //   const milestones = [3, 5, 7, 14, 21, 30, 60, 90];
 
-    const nextMilestone =
-      milestones.find((m) => m > currentStreak) ||
-      milestones[milestones.length - 1];
+  //   const nextMilestone =
+  //     milestones.find((m) => m > currentStreak) ||
+  //     milestones[milestones.length - 1];
 
-    return {
-      current: currentStreak,
-      next: nextMilestone,
-      remaining: nextMilestone - currentStreak,
-    };
-  }
+  //   return {
+  //     current: currentStreak,
+  //     next: nextMilestone,
+  //     remaining: nextMilestone - currentStreak,
+  //   };
+  // }
 }
