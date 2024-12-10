@@ -496,4 +496,162 @@ export class HabitService {
     const totalTime = tracks.reduce((sum, track) => sum + track.TIME_USED, 0);
     return totalTime / tracks.length;
   }
+
+  async getUserActiveHabitDetail(userId: number, habitId: number) {
+    try {
+      // Get active habit track
+      const activeHabit = await this.userHabitTrackRepository.findOne({
+        where: {
+          UID: userId,
+          HID: habitId,
+          END_DATE: MoreThanOrEqual(new Date()),
+        },
+        relations: ['habit'],
+      });
+
+      if (!activeHabit) {
+        throw new NotFoundException('Active habit not found');
+      }
+
+      // Get all completion records for this habit period
+      const completionRecords = await this.userHabitTrackRepository.find({
+        where: {
+          UID: userId,
+          HID: habitId,
+          TRACK_DATE: Between(activeHabit.START_DATE, activeHabit.END_DATE),
+        },
+        order: {
+          TRACK_DATE: 'ASC',
+        },
+      });
+
+      // Calculate days since start
+      const startDate = new Date(activeHabit.START_DATE);
+      const today = new Date();
+      const daysSinceStart = Math.floor(
+        (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      // Generate daily status array
+      const dailyStatus = [];
+      for (let i = 0; i <= daysSinceStart; i++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + i);
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        const completion = completionRecords.find(
+          (record) => record.TRACK_DATE.toISOString().split('T')[0] === dateStr,
+        );
+
+        dailyStatus.push({
+          date: dateStr,
+          isCompleted: !!completion,
+          timeUsed: completion?.TIME_USED || 0,
+          mood: completion?.MOOD_FEEDBACK || null,
+        });
+      }
+
+      // Calculate statistics
+      const completedDays = completionRecords.length;
+      const totalPossibleDays = daysSinceStart + 1;
+      const remainingDays = activeHabit.USER_DAYS_GOAL - daysSinceStart - 1;
+
+      // Calculate average time used (for exercise habits)
+      const avgTimeUsed =
+        activeHabit.habit.HABIT_TYPE === 'exercise' && completedDays > 0
+          ? completionRecords.reduce(
+              (sum, record) => sum + (record.TIME_USED || 0),
+              0,
+            ) / completedDays
+          : null;
+
+      // Calculate completion rate needed for remaining days to meet goal
+      const targetCompletionRate =
+        remainingDays > 0
+          ? Math.ceil(
+              ((activeHabit.USER_DAYS_GOAL - completedDays) / remainingDays) *
+                100,
+            )
+          : 0;
+
+      // Get mood distribution
+      const moodDistribution = completionRecords.reduce((acc, record) => {
+        if (record.MOOD_FEEDBACK) {
+          acc[record.MOOD_FEEDBACK] = (acc[record.MOOD_FEEDBACK] || 0) + 1;
+        }
+        return acc;
+      }, {});
+
+      return {
+        habitInfo: {
+          ...activeHabit.habit,
+          currentStreak: activeHabit.STREAK_COUNT,
+        },
+        trackingPeriod: {
+          startDate: activeHabit.START_DATE,
+          endDate: activeHabit.END_DATE,
+          daysGoal: activeHabit.USER_DAYS_GOAL,
+          timeGoal: activeHabit.USER_TIME_GOAL,
+          reminderTime: activeHabit.REMINDER_NOTI_TIME,
+        },
+        progress: {
+          completedDays,
+          totalPossibleDays,
+          remainingDays,
+          completionRate: Math.round((completedDays / totalPossibleDays) * 100),
+          targetCompletionRate,
+          avgTimeUsed,
+          bestStreak: Math.max(
+            ...completionRecords.map((r) => r.STREAK_COUNT),
+            0,
+          ),
+        },
+        statistics: {
+          moodDistribution,
+          consistencyRate: Math.round(
+            (completedDays / totalPossibleDays) * 100,
+          ),
+          completionTrend: this.calculateCompletionTrend(dailyStatus),
+        },
+        dailyStatus,
+        nextMilestone: this.calculateNextMilestone(activeHabit),
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        `Failed to get habit detail: ${error.message}`,
+      );
+    }
+  }
+
+  private calculateCompletionTrend(dailyStatus: any[]): string {
+    if (dailyStatus.length < 2) return 'NOT_ENOUGH_DATA';
+
+    const lastThreeDays = dailyStatus.slice(-3);
+    const completedCount = lastThreeDays.filter(
+      (day) => day.isCompleted,
+    ).length;
+
+    if (completedCount === 3) return 'STRONG';
+    if (completedCount === 2) return 'GOOD';
+    if (completedCount === 1) return 'NEEDS_IMPROVEMENT';
+    return 'AT_RISK';
+  }
+
+  private calculateNextMilestone(habitTrack: UserHabitTrackEntity): any {
+    const currentStreak = habitTrack.STREAK_COUNT;
+    const milestones = [3, 5, 7, 14, 21, 30, 60, 90];
+
+    const nextMilestone =
+      milestones.find((m) => m > currentStreak) ||
+      milestones[milestones.length - 1];
+
+    return {
+      current: currentStreak,
+      next: nextMilestone,
+      remaining: nextMilestone - currentStreak,
+    };
+  }
 }

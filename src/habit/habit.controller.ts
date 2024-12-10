@@ -6,6 +6,7 @@ import {
   Param,
   UseGuards,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { HabitService } from './habit.service';
 import {
@@ -37,6 +38,14 @@ export class HabitController {
   @Get(':userId/active')
   getUserActiveHabits(@Param('userId') userId: number) {
     return this.habitService.getUserActiveHabits(userId);
+  }
+
+  @Get(':userId/active/:habitId')
+  async getUserActiveHabitDetail(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('habitId', ParseIntPipe) habitId: number,
+  ) {
+    return this.habitService.getUserActiveHabitDetail(userId, habitId);
   }
 
   @Post('start')
