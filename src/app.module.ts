@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { LogsModule } from './user-logs/logs.module';
+import { RiskAssessmentModule } from './risk_assessment/risk_assessment.module';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 
@@ -33,6 +34,7 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     LogsModule,
     AuthModule,
+    RiskAssessmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

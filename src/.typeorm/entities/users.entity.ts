@@ -5,8 +5,11 @@ import {
   OneToMany,
   BeforeInsert,
   BeforeUpdate,
+  Unique,
+  OneToOne,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { RiskAssessmentEntity } from './assessment.entity';
 import { LogEntity } from './logs.entity';
 
 export enum USER_GOAL {
@@ -27,6 +30,14 @@ export class UserEntity {
 
   @Column({ nullable: true }) // Make PASSWORD optional
   PASSWORD?: string;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
+    if (this.PASSWORD) {
+      this.PASSWORD = await bcrypt.hash(this.PASSWORD, 10);
+    }
+  }
 
   @Column({ unique: true })
   EMAIL: string;
@@ -67,11 +78,6 @@ export class UserEntity {
   @OneToMany(() => LogEntity, (LOGS) => LOGS.USER, { cascade: true })
   LOGS: LogEntity[];
 
-  @BeforeInsert()
-  @BeforeUpdate()
-  async hashPassword() {
-    if (this.PASSWORD) {
-      this.PASSWORD = await bcrypt.hash(this.PASSWORD, 10);
-    }
-  }
+  @OneToOne(() => RiskAssessmentEntity, (RiskAssessment) => RiskAssessment.USER)
+  RiskAssessment: RiskAssessmentEntity[];  
 }
