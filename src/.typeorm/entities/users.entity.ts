@@ -79,5 +79,5 @@ export class UserEntity {
   LOGS: LogEntity[];
 
   @OneToOne(() => RiskAssessmentEntity, (RiskAssessment) => RiskAssessment.USER)
-  RiskAssessment: RiskAssessmentEntity[];
+  RiskAssessment: RiskAssessmentEntity[];  
 }
