@@ -7,20 +7,32 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
-import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+// import { RegisterUserDto } from '../dto/register.dto';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { CreateUserDto } from '../dto/create-user.dto';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post('/register')
+  create(@Body() registerUserDto: CreateUserDto) {
+    return this.usersService.create(registerUserDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/profile')
+  async getProfile(@Request() req) {
+    const user = await this.usersService.findOneByEmail(req.user.EMAIL);
+    return user;
   }
 
   @Get()
@@ -28,16 +40,26 @@ export class UsersController {
     return this.usersService.findAll(page, limit);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':uid')
   findOne(@Param('uid') UID: string) {
     return this.usersService.findOne(+UID);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':uid')
-  update(@Param('uid') UID: string, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Request() req,
+    @Param('uid') UID: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    if (req.user.UID !== +UID) {
+      throw new ForbiddenException('You can only update your own profile');
+    }
     return this.usersService.update(+UID, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':uid')
   remove(@Param('uid') UID: string) {
     return this.usersService.remove(+UID);

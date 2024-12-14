@@ -7,10 +7,14 @@ import { UsersModule } from './users/users.module';
 import { LogsModule } from './user-logs/logs.module';
 import { RiskAssessmentModule } from './risk_assessment/risk_assessment.module';
 import { join } from 'path';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -20,13 +24,16 @@ import { join } from 'path';
         username: configService.get('POSTGRES_USER'),
         password: configService.get('POSTGRES_PASSWORD'),
         database: configService.get('POSTGRES_DATABASE'),
-        entities: [join(__dirname, '.typeorm', 'entities', '*.entity{.ts,.js}')],
+        entities: [
+          join(__dirname, '.typeorm', 'entities', '*.entity{.ts,.js}'),
+        ],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
     UsersModule,
     LogsModule,
+    AuthModule,
     RiskAssessmentModule,
   ],
   controllers: [AppController],
