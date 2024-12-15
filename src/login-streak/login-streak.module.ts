@@ -9,5 +9,6 @@ import { LoginHistoryEntity } from '../.typeorm/entities/login-history.entity';
   imports: [TypeOrmModule.forFeature([LoginStreakEntity, LoginHistoryEntity])],
   controllers: [LoginStreakController],
   providers: [LoginStreakService],
+  exports: [LoginStreakService],
 })
 export class LoginStreakModule {}
