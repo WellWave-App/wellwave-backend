@@ -8,6 +8,7 @@ import { LogsModule } from './user-logs/logs.module';
 import { RiskAssessmentModule } from './risk_assessment/risk_assessment.module';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
+import { LoginStreakModule } from './login-streak/login-streak.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AuthModule } from './auth/auth.module';
     LogsModule,
     AuthModule,
     RiskAssessmentModule,
+    LoginStreakModule,
   ],
   controllers: [AppController],
   providers: [AppService],
