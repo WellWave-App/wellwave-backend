@@ -21,7 +21,9 @@ export class LoginHistoryEntity {
   @Column({ type: 'timestamp' })
   LOGIN_DATE: Date;
 
-  @ManyToOne(() => UserEntity)
+  @ManyToOne(() => UserEntity, (user) => user.UID, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'UID' })
   USER: UserEntity;
 }
