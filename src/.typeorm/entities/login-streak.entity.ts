@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { UserEntity } from './users.entity';
 
-@Entity('login_streak')
+@Entity('LOGIN_STREAK')
 // @Check(`"last_login_date" >= "streak_start_date"`)
 export class LoginStreakEntity {
   @PrimaryColumn()
