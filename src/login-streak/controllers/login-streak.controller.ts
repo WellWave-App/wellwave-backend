@@ -10,9 +10,9 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { LoginStreakService } from './login-streak.service';
-import { CreateLoginStreakDto } from './dto/create-login-streak.dto';
-import { UpdateLoginStreakDto } from './dto/update-login-streak.dto';
+import { LoginStreakService } from '../services/login-streak.service';
+import { CreateLoginStreakDto } from '../dto/create-login-streak.dto';
+import { UpdateLoginStreakDto } from '../dto/update-login-streak.dto';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 
 @Controller('login-streak')

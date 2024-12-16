@@ -9,6 +9,7 @@ import { RiskAssessmentModule } from './risk_assessment/risk_assessment.module';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { LoginStreakModule } from './login-streak/login-streak.module';
+import { NotiSettingModule } from './noti-setting/noti-setting.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { LoginStreakModule } from './login-streak/login-streak.module';
     AuthModule,
     RiskAssessmentModule,
     LoginStreakModule,
+    NotiSettingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

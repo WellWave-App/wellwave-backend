@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LoginStreakController } from './login-streak.controller';
-import { LoginStreakService } from './login-streak.service';
+import { LoginStreakService } from '../services/login-streak.service';
 
 describe('LoginStreakController', () => {
   let controller: LoginStreakController;

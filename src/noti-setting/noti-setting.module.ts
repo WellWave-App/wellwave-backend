@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
-import { NotiSettingService } from './noti-setting.service';
-import { NotiSettingController } from './noti-setting.controller';
+import { NotiSettingService } from './services/noti-setting.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {
-  BedtimeSettingsEntity,
-  NotificationSettingsEntity,
-  WaterIndividualTimesEntity,
-  WaterRangeSettingsEntity,
-} from '../.typeorm/entities/noti-setting.entity';
+import { NotificationSettingsEntity } from '../.typeorm/entities/noti-setting.entity';
+import { NotiSettingController } from './controllers/noti-setting.controller';
+import { WaterRangeSettingsEntity } from '../.typeorm/entities/noti-water-range.entity';
+import { BedtimeSettingsEntity } from '../.typeorm/entities/noti-bedtime-setting.entity';
+import { WaterPlanSettingEntity } from '../.typeorm/entities/noti-water-plan.entity';
 
 @Module({
   imports: [
@@ -15,7 +13,7 @@ import {
       NotificationSettingsEntity,
       WaterRangeSettingsEntity,
       BedtimeSettingsEntity,
-      WaterIndividualTimesEntity,
+      WaterPlanSettingEntity,
     ]),
   ],
   controllers: [NotiSettingController],

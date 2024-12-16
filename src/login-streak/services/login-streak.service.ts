@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateLoginStreakDto } from './dto/create-login-streak.dto';
-import { UpdateLoginStreakDto } from './dto/update-login-streak.dto';
+import { CreateLoginStreakDto } from '../dto/create-login-streak.dto';
+import { UpdateLoginStreakDto } from '../dto/update-login-streak.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Not, Repository } from 'typeorm';
 import { LoginStreakEntity } from '@/.typeorm/entities/login-streak.entity';
@@ -112,7 +112,7 @@ export class LoginStreakService {
 
       dailyStatus.push({
         date: dateStr,
-        hasLogin: loginCount > 0, 
+        hasLogin: loginCount > 0,
         loginCount,
       });
 
