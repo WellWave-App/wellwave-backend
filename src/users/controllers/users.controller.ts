@@ -18,11 +18,16 @@ import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { CreateUserDto } from '../dto/create-user.dto';
 
-@ApiTags('users')
+// @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get()
+  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
+    return this.usersService.findAll(page, limit);
+  }
+  
   @Post('/register')
   create(@Body() registerUserDto: CreateUserDto) {
     return this.usersService.create(registerUserDto);
@@ -34,11 +39,6 @@ export class UsersController {
     // const user = await this.usersService.findOneByEmail(req.user.EMAIL);
     // return req.user.UID;
     return this.usersService.getProfile(req.user.UID);
-  }
-
-  @Get()
-  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-    return this.usersService.findAll(page, limit);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -65,4 +65,6 @@ export class UsersController {
   remove(@Param('uid') UID: string) {
     return this.usersService.remove(+UID);
   }
+
+  
 }

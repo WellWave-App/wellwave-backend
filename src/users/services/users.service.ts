@@ -37,11 +37,19 @@ export class UsersService {
     page: number = 1,
     limit: number = 10,
   ): Promise<{ USERS: UserEntity[]; total: number }> {
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    // Validate that pageNum and limitNum are numbers and not less than 1
+    const validatedPage = isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
+    const validatedLimit = isNaN(limitNum) || limitNum < 1 ? 10 : limitNum;
+
     const [users, total] = await this.usersRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (validatedPage - 1) * validatedLimit,
+      take: validatedLimit,
       // relations: ['logs']
     });
+
     return { USERS: users, total };
   }
 
