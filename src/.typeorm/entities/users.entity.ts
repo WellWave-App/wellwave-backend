@@ -32,11 +32,22 @@ export class UserEntity {
   @Column({ nullable: true }) // Make PASSWORD optional
   PASSWORD?: string;
 
+  private tempPassword?: string;
+
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
-    if (this.PASSWORD) {
-      this.PASSWORD = await bcrypt.hash(this.PASSWORD, 10);
+    // Only hash if the password was actually changed
+    if (this.tempPassword) {
+      this.PASSWORD = await bcrypt.hash(this.tempPassword, 10);
+      this.tempPassword = undefined;
+    }
+  }
+
+  // Add a method to safely update password
+  setPassword(password: string | undefined) {
+    if (password) {
+      this.tempPassword = password;
     }
   }
 

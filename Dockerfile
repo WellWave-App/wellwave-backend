@@ -1,4 +1,4 @@
-FROM node:20.12.2
+FROM node:22.12.0
 
 WORKDIR /usr/src/app
 
@@ -8,7 +8,7 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+# RUN npm run build
 
 EXPOSE 3000
 

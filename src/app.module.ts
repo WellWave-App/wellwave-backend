@@ -10,6 +10,7 @@ import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { LoginStreakModule } from './login-streak/login-streak.module';
 import { NotiSettingModule } from './noti-setting/noti-setting.module';
+import { ImageModule } from './image/image.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { NotiSettingModule } from './noti-setting/noti-setting.module';
     RiskAssessmentModule,
     LoginStreakModule,
     NotiSettingModule,
+    ImageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
