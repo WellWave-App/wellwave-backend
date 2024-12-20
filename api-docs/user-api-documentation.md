@@ -1,249 +1,296 @@
-# User Management and Authentication API Documentation
+# User Management API Documentation
+
+Base URL: `localhost:3000`
 
 ## Authentication
 
-Most endpoints require JWT authentication. The JWT token is stored in an HTTP-only cookie named 'access_token'.
+Most endpoints are protected with JWT Authentication. Include the JWT token in the Authorization header:
 
-## Authentication Endpoints
+```
+Authorization: Bearer <your_jwt_token>
+```
 
-### 1. Login
+## Endpoints
 
-- **URL**: `/auth/login`
-- **Method**: `POST`
-- **Auth required**: No
-- **Request body**:
-  ```json
-  {
-    "EMAIL": "user@example.com",
-    "PASSWORD": "YourPassword123!"
-  }
-  ```
-- **Success Response**:
-  - **Code**: 200 OK
-  - **Content**:
-    ```json
-    {
-      "message": "Login Successfully"
-    }
-    ```
-  - **Cookie**: Sets an HTTP-only cookie named `access_token` containing the JWT
-- **Error Response**:
-  - **Code**: 401 UNAUTHORIZED
-  - **Content**: `{ "statusCode": 401, "message": "Unauthorized" }`
+### Register User
 
-### 2. Google OAuth Login (use this for Login)
+Create a new user account.
 
-- **URL**: `/auth/google`
-- **Method**: `GET`
-- **Auth required**: No
-- **Description**: Initiates Google OAuth2.0 authentication process
+```
+POST /users/register
+```
 
-### 3. Google OAuth Callback (callback of /auth/google)
-
-- **URL**: `/auth/google/callback`
-- **Method**: `GET`
-- **Auth required**: No
-- **Description**: Handles the Google OAuth2.0 callback
-- **Success Response**:
-  - **Code**: 200 OK
-  - **Content**:
-    ```json
-    {
-      "message": "Login Successfully"
-    }
-    ```
-  - **Cookie**: Sets an HTTP-only cookie named `access_token` containing the JWT
-
-### 4. Logout
-
-- **URL**: `/auth/logout`
-- **Method**: `GET`
-- **Auth required**: No
-- **Success Response**:
-  - **Code**: 200 OK
-  - **Content**:
-    ```json
-    {
-      "message": "Successfully logged out"
-    }
-    ```
-  - **Cookie**: Clears the `access_token` cookie
-
-## User Management Endpoints
-
-### 1. Register a New User With Email Password
-
-- **URL**: `/users/register`
-- **Method**: `POST`
-- **Auth required**: No
-- **Request body**:
-  ```json
-  {
-    "EMAIL": "user@example.com",
-    "PASSWORD": "StrongPassword123!"
-  }
-  ```
-- **Success Response**:
-  - **Code**: 201 CREATED
-  - **Content**: Created user object (excluding PASSWORD)
-
-### 2. Get User Profile (get current user by acces_token)
-
-- **URL**: `/users/profile`
-- **Method**: `GET`
-- **Auth required**: Yes (JWT in 'access_token' cookie)
-- **Success Response**:
-  - **Code**: 200 OK
-  - **Content**: User profile object
-
-### 3. Get All Users (Paginated)
-
-- **URL**: `/users`
-- **Method**: `GET`
-- **Auth required**: Yes (JWT in 'access_token' cookie)
-- **Query Parameters**:
-  - `page` (optional, default: 1)
-  - `limit` (optional, default: 10)
-- **Success Response**:
-  - **Code**: 200 OK
-  - **Content**:
-    ```json
-    {
-      "USERS": [
-        /* array of user objects */
-      ],
-      "total": 100 // Total number of users
-    }
-    ```
-
-### 4. Get User by ID
-
-- **URL**: `/users/:uid`
-- **Method**: `GET`
-- **Auth required**: Yes (JWT in 'access_token' cookie)
-- **URL Parameters**: `uid=[integer]`
-- **Success Response**:
-  - **Code**: 200 OK
-  - **Content**: User object
-- **Error Response**:
-  - **Code**: 404 NOT FOUND
-  - **Content**: `{ "message": "User with ID <uid> not found" }`
-
-### 5. Update User
-
-- **URL**: `/users/:uid`
-- **Method**: `PATCH`
-- **Auth required**: Yes (JWT in 'access_token' cookie)
-- **URL Parameters**: `uid=[integer]`
-- **Request body**: Any of the following fields (all optional)
-  ```json
-  {
-    "USERNAME": "string",
-    "EMAIL": "string",
-    "YEAR_OF_BIRTH": "number",
-    "GENDER": "boolean",
-    "HEIGHT": "number",
-    "WEIGHT": "number",
-    "GEM": "number",
-    "EXP": "number",
-    "USER_GOAL": "number",
-    "IMAGE_URL": "string",
-    "REMINDER_NOTI_TIME": "string"
-  }
-  ```
-- **Success Response**:
-  - **Code**: 200 OK
-  - **Content**: Updated user object
-- **Error Response**:
-  - **Code**: 403 FORBIDDEN
-  - **Content**: `{ "message": "You can only update your own profile" }`
-
-### 6. Delete User
-
-- **URL**: `/users/:uid`
-- **Method**: `DELETE`
-- **Auth required**: Yes (JWT in 'access_token' cookie)
-- **URL Parameters**: `uid=[integer]`
-- **Success Response**:
-  - **Code**: 200 OK
-  - **Content**:
-    ```json
-    {
-      "message": "User with UID {uid} successfully deleted",
-      "success": true
-    }
-    ```
-- **Error Response**:
-  - **Code**: 404 NOT FOUND
-  - **Content**: `{ "message": "User with ID <uid> not found" }`
-
-## Error Handling
-
-Common error responses:
-
-- 400 Bad Request: The request was unacceptable, often due to missing a required parameter.
-- 401 Unauthorized: No valid API key provided.
-- 403 Forbidden: The API key doesn't have permissions to perform the request.
-- 404 Not Found: The requested resource doesn't exist.
-- 500, 502, 503, 504 Server Errors: Something went wrong on the API's end.
-
-## Data Models
-
-### User Object
+#### Request Body
 
 ```typescript
 {
-  UID: number;
+  EMAIL: string;          // Required
+  PASSWORD?: string;      // Required if GOOGLE_ID not provided
+  GOOGLE_ID?: string;     // Required if PASSWORD not provided
+  USERNAME?: string;      // Optional
+  YEAR_OF_BIRTH?: number; // Optional
+  GENDER?: boolean;       // Optional, true = Male, false = Female
+  HEIGHT?: number;        // Optional
+  WEIGHT?: number;        // Optional
+  GEM?: number;          // Optional, defaults to 0
+  EXP?: number;          // Optional, defaults to 0
+  USER_GOAL?: number;    // Optional, enum: BUILD_MUSCLE = 0, LOSE_WEIGHT = 1, STAY_HEALTHY = 2
+  IMAGE_URL?: string;    // Optional
+  REMINDER_NOTI_TIME?: string; // Optional
+}
+```
+
+#### Password Requirements (When using password authentication)
+
+- Minimum length: 8 characters
+- At least 1 lowercase letter
+- At least 1 uppercase letter
+- At least 1 number
+
+#### Response
+
+```json
+{
+  "UID": number,
+  "EMAIL": string,
+  "USERNAME": string,
+  // ... other user properties
+  "createAt": string
+}
+```
+
+### Get User Profile
+
+Retrieve the authenticated user's profile information.
+
+```
+GET /users/profile
+```
+
+#### Response
+
+```json
+{
+  "userInfo": {
+    "UID": number,
+    "USERNAME": string,
+    "EMAIL": string,
+    "YEAR_OF_BIRTH": number,
+    "GENDER": boolean,
+    "HEIGHT": number,
+    "WEIGHT": number,
+    "GEM": number,
+    "EXP": number,
+    "USER_GOAL": number,
+    "IMAGE_URL": string,
+    "REMINDER_NOTI_TIME": string,
+    "createAt": string
+  },
+  "userLeague": {
+    "LB_ID": number,
+    "LEAGUE_NAME": string,
+    "MIN_EXP": number,
+    "MAX_EXP": number
+  },
+  "loginStats": {
+    "dailyStatus": [
+			{
+				"date": string,
+				"hasLogin": boolean,
+				"loginCount": number
+			}
+		],
+		"totalLogins":number,
+		"uniqueDaysLoggedIn":number,
+		"totalDaysInPeriod":number,
+		"loginPercentage":number
+  },
+  "usersAchievement": [
+    {
+      "imgPath": string,
+      "achTitle": string,
+      "dateAcheived": string
+    }
+  ]
+}
+```
+
+### Get All Users (Paginated)
+
+Retrieve a paginated list of users.
+
+```
+GET /users?page={page}&limit={limit}
+```
+
+#### Query Parameters
+
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 10)
+
+#### Response
+
+```json
+{
+  "USERS": [
+    {
+      "UID": number,
+      "USERNAME": string,
+      "EMAIL": string,
+      // ... other user properties
+    }
+  ],
+  "total": number
+}
+```
+
+### Get User by ID
+
+Retrieve a specific user by their UID.
+
+```
+GET /users/:uid
+```
+
+#### Parameters
+
+- `uid`: User ID (path parameter)
+
+#### Response
+
+```json
+{
+  "UID": number,
+  "USERNAME": string,
+  "EMAIL": string,
+  // ... other user properties
+}
+```
+
+### Update User
+
+Update user information.
+
+```
+PATCH /users/:uid
+```
+
+#### Parameters
+
+- `uid`: User ID (path parameter)
+
+#### Request Body
+
+```typescript
+{
   USERNAME?: string;
-  EMAIL: string;
-  GOOGLE_ID?: string;
   YEAR_OF_BIRTH?: number;
   GENDER?: boolean;
   HEIGHT?: number;
   WEIGHT?: number;
-  GEM: number;
-  EXP: number;
-  USER_GOAL?: USER_GOAL;
-  REMINDER_NOTI_TIME?: string;
+  USER_GOAL?: number;
   IMAGE_URL?: string;
-  createAt: Date;
+  REMINDER_NOTI_TIME?: string;
 }
 ```
 
-### USER_GOAL Enum
+#### Response
 
-```typescript
-enum USER_GOAL {
-  BUILD_MUSCLE = 0,
-  LOSE_WEIGHT = 1,
-  STAY_HEALTHY = 2,
+```json
+{
+  "UID": number,
+  "USERNAME": string,
+  // ... updated user properties
 }
 ```
 
-### GENDER
+### Delete User
 
-```typescript
-MALE = true;
-FEMALE = false;
+Delete a user account.
+
+```
+DELETE /users/:uid
 ```
 
-## Authentication Flow
+#### Parameters
 
-1. User registers via the `/users/register` endpoint.
-2. User logs in via the `/auth/login` endpoint, providing EMAIL and PASSWORD
-   a. if Google Sign in use `/auth/goole/` instead.
-3. Upon successful login, the server sets an HTTP-only cookie named 'access_token' containing a JWT.
-4. For subsequent authenticated requests, the client doesn't need to do anything special - the browser will automatically send the cookie with each request.
-5. The server extracts the JWT from the cookie, validates it, and identifies the user for protected routes.
+- `uid`: User ID (path parameter)
+
+#### Response
+
+```json
+{
+  "message": "User with UID {uid} successfully deleted",
+  "success": true
+}
+```
+
+## Error Responses
+
+The API may return the following error responses:
+
+### 401 Unauthorized
+
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+```
+
+### 403 Forbidden
+
+```json
+{
+  "statusCode": 403,
+  "message": "You can only update your own profile"
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "statusCode": 404,
+  "message": "User with ID {uid} not found"
+}
+```
+
+### 409 Conflict
+
+```json
+{
+  "statusCode": 409,
+  "message": "Email already exists"
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "statusCode": 500,
+  "message": "Internal server error"
+}
+```
 
 ## Notes
 
-- The `GENDER` field uses boolean values: `true` for MALE, `false` for FEMALE.
-- Password is not returned in any response for security reasons.
-- Users can only update their own profile.
-- The `create` method in the service is used for both registration and creation, but the controller exposes it as `/register`.
-- Google OAuth2.0 login will create a new user account if the email is not already registered.
-- JWT tokens are stored in HTTP-only cookies for enhanced security.
-- The Google OAuth2.0 callback URL is set to `http://localhost:3000/auth/google/callback`. This should be updated for production environments.
-- When using Google login, some user information (like YEAR_OF_BIRTH and GENDER) may be populated from the Google profile if available.
-- Ensure your frontend is configured to send credentials (cookies) with cross-origin requests if your API is hosted on a different domain than your frontend application.
+1. Gender is represented as a boolean:
+
+   - `true` = Male
+   - `false` = Female
+
+2. User Goals are represented as numbers:
+
+   - `0` = BUILD_MUSCLE
+   - `1` = LOSE_WEIGHT
+   - `2` = STAY_HEALTHY
+
+3. For user registration:
+
+   - Either PASSWORD or GOOGLE_ID must be provided
+   - If using PASSWORD, it must meet the password strength requirements
+   - EMAIL must be unique in the system
+
+4. All protected endpoints require a valid JWT token in the Authorization header

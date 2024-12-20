@@ -24,7 +24,7 @@ export class AuthController {
     // return msg: login successful
     res.cookie('access_token', access_token, { httpOnly: true });
     // return { accessToken: access_token, message: 'Login successfully' };
-    return { message: 'Login Successfully' };
+    return { message: 'Login Successfully', accessToken: access_token };
   }
 
   @UseGuards(GoogleAuthGuard)

@@ -9,10 +9,11 @@ import {
 
 export class CreateUserDto {
   @IsString()
+  @IsOptional()
   USERNAME?: string;
 
   @IsEmail()
-  EMAIL: string;
+  EMAIL?: string;
 
   @IsOptional()
   @IsString()
@@ -25,15 +26,19 @@ export class CreateUserDto {
   GOOGLE_ID?: string;
 
   @IsNumber()
+  @IsOptional()
   YEAR_OF_BIRTH?: number;
 
   @IsBoolean()
+  @IsOptional()
   GENDER?: boolean;
 
   @IsNumber()
+  @IsOptional()
   HEIGHT?: number;
 
   @IsNumber()
+  @IsOptional()
   WEIGHT?: number;
 
   @IsNumber()

@@ -11,6 +11,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { RiskAssessmentEntity } from './assessment.entity';
 import { LogEntity } from './logs.entity';
+import { LoginStreakEntity } from './login-streak.entity';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -31,11 +32,22 @@ export class UserEntity {
   @Column({ nullable: true }) // Make PASSWORD optional
   PASSWORD?: string;
 
+  private tempPassword?: string;
+
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
-    if (this.PASSWORD) {
-      this.PASSWORD = await bcrypt.hash(this.PASSWORD, 10);
+    // Only hash if the password was actually changed
+    if (this.tempPassword) {
+      this.PASSWORD = await bcrypt.hash(this.tempPassword, 10);
+      this.tempPassword = undefined;
+    }
+  }
+
+  // Add a method to safely update password
+  setPassword(password: string | undefined) {
+    if (password) {
+      this.tempPassword = password;
     }
   }
 
@@ -79,5 +91,8 @@ export class UserEntity {
   LOGS: LogEntity[];
 
   @OneToOne(() => RiskAssessmentEntity, (RiskAssessment) => RiskAssessment.USER)
-  RiskAssessment: RiskAssessmentEntity[];  
+  RiskAssessment: RiskAssessmentEntity[];
+
+  // @OneToOne(() => LoginStreakEntity, (LoginStreak) => LoginStreak.USER)
+  // loginStreak: LoginStreakEntity;
 }

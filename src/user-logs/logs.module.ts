@@ -9,5 +9,6 @@ import { UserEntity } from '../.typeorm/entities/users.entity';
   imports: [TypeOrmModule.forFeature([LogEntity, UserEntity])],
   controllers: [LogsController],
   providers: [LogsService],
+  exports: [LogsService],
 })
 export class LogsModule {}

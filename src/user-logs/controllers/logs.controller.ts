@@ -26,7 +26,7 @@ export class LogsController {
   @Get()
   findAll() {
     return this.logsService.findAll();
-  }
+}
 
   @Get(':uid/:logName/:date')
   findOne(
