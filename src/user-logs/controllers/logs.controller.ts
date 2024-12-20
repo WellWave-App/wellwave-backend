@@ -13,7 +13,9 @@ import { LogsService } from '../services/logs.service';
 import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
 import { LogEntity, LOG_NAME } from '../../.typeorm/entities/logs.entity';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Logs')
 @Controller('logs')
 export class LogsController {
   constructor(private readonly logsService: LogsService) {}
@@ -26,7 +28,7 @@ export class LogsController {
   @Get()
   findAll() {
     return this.logsService.findAll();
-}
+  }
 
   @Get(':uid/:logName/:date')
   findOne(
