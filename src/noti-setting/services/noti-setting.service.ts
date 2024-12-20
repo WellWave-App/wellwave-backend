@@ -4,7 +4,6 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { BedtimeDTO } from '../dto/bedtime.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   NotificationSettingsEntity,
@@ -12,11 +11,10 @@ import {
 } from '@/.typeorm/entities/noti-setting.entity';
 import { Repository } from 'typeorm';
 import { error } from 'console';
-import { WaterRangeDTO } from '../dto/water-range.dto';
 import { WaterRangeSettingsEntity } from '@/.typeorm/entities/noti-water-range.entity';
 import { BedtimeSettingsEntity } from '@/.typeorm/entities/noti-bedtime-setting.entity';
-import { WaterPlanDTO } from '../dto/water-plan.dto';
 import { WaterPlanSettingEntity } from '@/.typeorm/entities/noti-water-plan.entity';
+import { BedtimeDTO, WaterPlanDTO, WaterRangeDTO } from '../dto/setting.dto';
 
 @Injectable()
 export class NotiSettingService {

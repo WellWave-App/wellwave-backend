@@ -14,7 +14,6 @@ async function bootstrap() {
     .addServer('http://localhost:3000/', 'Local environment')
     // .addServer('https://staging.yourapi.com/', 'Staging')
     // .addServer('https://production.yourapi.com/', 'Production')
-    .addTag('Your API Tag')
     .build();
 
   const document = SwaggerModule.createDocument(app, options);

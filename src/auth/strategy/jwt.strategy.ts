@@ -2,6 +2,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,7 +17,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
     });
   }
-
+  
+  @ApiOperation({ summary: 'Validate JWT token' })
   async validate(payload: any) {
     return { UID: payload.UID, EMAIL: payload.EMAIL };
   }
