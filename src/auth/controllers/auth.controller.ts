@@ -27,6 +27,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(LocalAuthGuard)
+  @Post('login')
   async login(@Request() req, @Res({ passthrough: true }) res) {
     const { access_token } = await this.authService.login(req.user);
     // save to cookie
