@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { RiskAssessmentEntity } from './assessment.entity';
 import { LogEntity } from './logs.entity';
 import { LoginStreakEntity } from './login-streak.entity';
+import { UserReadArticle } from './user-read-article.entity';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -95,4 +96,7 @@ export class UserEntity {
 
   // @OneToOne(() => LoginStreakEntity, (LoginStreak) => LoginStreak.USER)
   // loginStreak: LoginStreakEntity;
+
+  @OneToMany(() => UserReadArticle, article => article.user) 
+  userReads: UserReadArticle[]
 }
