@@ -61,6 +61,14 @@ export class ArticleController {
   ): Promise<Article> {
     return this.articleService.update(dto.AID, dto, file);
   }
+
+  @Delete(':aid')
+  delete(
+    @Param('aid') aid: number,
+  ): Promise<{ message: string; success: boolean }> {
+    return this.articleService.delete(aid);
+  }
+
   @Get()
   getReccommend() {}
 
