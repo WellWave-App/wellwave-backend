@@ -13,7 +13,7 @@ import { NotiSettingModule } from './noti-setting/noti-setting.module';
 import { ImageModule } from './image/image.module';
 import { ArticleModule } from './article-group/article/article.module';
 import { DiseaseTypesModule } from './disease-types/disease-types.module';
-import { UserReadArticleModule } from './user-read-article/user-read-article.module';
+import { UserReadHistoryModule } from './article-group/user-read-history/user-read-history.module';
 
 @Module({
   imports: [
@@ -46,7 +46,7 @@ import { UserReadArticleModule } from './user-read-article/user-read-article.mod
     ImageModule,
     ArticleModule,
     DiseaseTypesModule,
-    UserReadArticleModule,
+    UserReadHistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

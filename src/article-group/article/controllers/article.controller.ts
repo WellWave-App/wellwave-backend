@@ -69,9 +69,9 @@ export class ArticleController {
     return this.articleService.delete(aid);
   }
 
-  @Get()
+  @Get('reccommend')
   getReccommend() {}
 
-  @Get()
-  getTypes() {}
+  // @Get('types')
+  // getTypes() {}
 }
