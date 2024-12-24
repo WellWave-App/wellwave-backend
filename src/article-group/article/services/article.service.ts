@@ -14,7 +14,7 @@ export class ArticleService {
   ) {}
 
   private calculateReadTime(body: string) {
-    return Math.floor(body.length / 200);
+    return parseInt((body.length / 200).toFixed(2));
   }
 
   async createArticle(dto: CreateArticleDto, file?: Express.Multer.File) {

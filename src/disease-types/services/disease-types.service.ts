@@ -53,19 +53,23 @@ export class DiseaseTypesService {
   }
 
   async findByIds(ids: number[]): Promise<DiseaseType[]> {
-    if (!ids || ids.length === 0) {
-      throw new NotFoundException('No valid disease type IDs provided');
-    }
+    // if (!ids || ids.length === 0) {
+    //   throw new NotFoundException('No valid disease type IDs provided');
+    // }
 
-    const diseaseTypes = await this.diseaseTypes.findBy({
-      DISEASE_ID: In([ids]),
-    });
+    // const diseaseTypes = await this.diseaseTypes.findBy({
+    //   DISEASE_ID: In([ids]),
+    // });
 
-    if (diseaseTypes.length === 0) {
-      throw new NotFoundException('No DiseaseTypes found for the provided IDs');
-    }
+    // if (diseaseTypes.length === 0) {
+    //   throw new NotFoundException('No DiseaseTypes found for the provided IDs');
+    // }
 
-    return diseaseTypes;
+    // return diseaseTypes;
+    return this.diseaseTypes
+      .createQueryBuilder('DiseaseType')
+      .where('DiseaseType.DISEASE_ID IN (:...ids)', { ids })
+      .getMany();
   }
 
   async update(id: number, dto: UpdateDiseaseTypeDto): Promise<DiseaseType> {

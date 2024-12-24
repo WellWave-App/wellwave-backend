@@ -1,18 +1,43 @@
 import { Transform, TransformFnParams } from 'class-transformer';
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateArticleDto {
   @IsString()
+  @IsNotEmpty()
   @Transform(({ value }: TransformFnParams) =>
     value === '' ? undefined : value,
   )
   TOPIC: string;
 
   @IsString()
+  @IsNotEmpty()
   @Transform(({ value }: TransformFnParams) =>
     value === '' ? undefined : value,
   )
   BODY: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Transform(({ value }: TransformFnParams) => {
+    if (typeof value === 'string') {
+      // Remove all spaces and split by comma
+      const cleanedString = value.replace(/[\s{}"\[\]]/g, '');
+      if (!cleanedString) return [];
+      return cleanedString.split(',').map((id) => Number(id));
+    }
+    if (Array.isArray(value)) {
+      return value.map((id) => Number(id));
+    }
+    return [];
+  })
+  DISEASES_TYPE_IDS: number[];
 
   @IsString()
   @IsOptional()
@@ -42,17 +67,6 @@ export class CreateArticleDto {
   )
   VIEW_COUNT?: number; // for popularity tracking
 
-  @IsOptional()
-  @IsArray() // Ensure it's an array
-  @IsNumber({}, { each: true }) // Ensure each item in the array is a number
-  @Transform(({ value }: TransformFnParams) => {
-    if (typeof value === 'string') {
-      return value.split(',').map((id) => parseInt(id, 10)); // Transform comma-separated string into array of numbers
-    }
-    return value;
-  })
-  DISEASES_TYPE_IDS?: number[]; // for categorization
-
-  @IsOptional()
+  @IsNotEmpty({ message: 'Thumbnail image must not empty' })
   imgFile?: any;
 }

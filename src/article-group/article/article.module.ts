@@ -8,12 +8,23 @@ import { DiseaseType } from '../../.typeorm/entities/disease-types.entity';
 import { ArticleRepository } from './repositories/article.repository';
 import { DiseaseTypesModule } from '@/disease-types/disease-types.module';
 import { ImageModule } from '@/image/image.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Article, UserReadHistory, DiseaseType]),
     DiseaseTypesModule,
     ImageModule,
+    MulterModule.register({
+      storage: diskStorage({
+        destination: './assets/images',
+        filename: (req, file, cb) => {
+          const filename = `article-${Date.now()}-${file.originalname}`;
+          cb(null, filename);
+        },
+      }),
+    }),
   ],
   controllers: [ArticleController],
   providers: [ArticleService, ArticleRepository],

@@ -17,31 +17,31 @@ export class Article {
   @PrimaryGeneratedColumn()
   AID: number;
 
-  @ApiProperty()
+  @ApiProperty({ name: 'TOPIC' })
   @Column({ type: 'varchar' })
   TOPIC: string;
 
-  @ApiProperty()
+  @ApiProperty({ name: 'BODY' })
   @Column({ type: 'text' })
   BODY: string;
 
-  @ApiProperty()
+  @ApiProperty({ name: 'ESTIMATED_READ_TIME' })
   @Column({ type: 'float' })
   ESTIMATED_READ_TIME: number; // in minutes
 
-  @ApiProperty()
+  @ApiProperty({ name: 'AUTHOR' })
   @Column({ type: 'varchar', length: 100, nullable: true })
   AUTHOR: string; // if applicable
 
-  @ApiProperty()
+  @ApiProperty({ name: 'THUMBNAIL_URL' })
   @Column({ type: 'varchar', length: 2048, nullable: true })
   THUMBNAIL_URL: string; // for article preview
 
-  @ApiProperty()
+  @ApiProperty({ name: 'VIEW_COUNT' })
   @Column({ type: 'int', default: 0 })
   VIEW_COUNT: number; // for popularity tracking
 
-  @ApiProperty()
+  @ApiProperty({ name: 'PUBLISH_DATE' })
   @CreateDateColumn({ type: 'date' })
   PUBLISH_DATE: Date; // for sorting/filtering
 

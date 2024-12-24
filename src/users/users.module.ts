@@ -19,7 +19,7 @@ import { ImageModule } from '@/image/image.module';
       storage: diskStorage({
         destination: './assets/images',
         filename: (req, file, cb) => {
-          const filename = `${Date.now()}-${file.originalname}`;
+          const filename = `user-${Date.now()}-${file.originalname}`;
           cb(null, filename);
         },
       }),

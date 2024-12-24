@@ -30,10 +30,16 @@ export class ArticleRepository {
 
       const article = this.repository.create(articleData);
 
-      if (DISEASES_TYPE_IDS && DISEASES_TYPE_IDS.length) {
-        const diseasesTypes = await this.diseaseTypesService.findByIds(
-          dto.DISEASES_TYPE_IDS,
-        );
+      if (
+        DISEASES_TYPE_IDS &&
+        Array.isArray(DISEASES_TYPE_IDS) &&
+        DISEASES_TYPE_IDS.length > 0
+      ) {
+        // Ensure we're working with numbers
+        const diseaseIds = DISEASES_TYPE_IDS.map((id) => Number(id));
+
+        const diseasesTypes =
+          await this.diseaseTypesService.findByIds(diseaseIds);
 
         if (diseasesTypes.length) {
           article.diseases = diseasesTypes;
@@ -70,7 +76,7 @@ export class ArticleRepository {
     });
 
     if (!article) {
-      throw new ConflictException('Article not found');
+      throw new NotFoundException('Article not found');
     }
 
     return article;
@@ -87,25 +93,27 @@ export class ArticleRepository {
 
     if (diseaseId) {
       queryBuilder
-        .leftJoinAndSelect('article.diseaseTypes', 'disease')
-        .andWhere('disease.DISEASE_ID = :diseaseId', { diseaseId });
+        .leftJoinAndSelect('article.diseases', 'disease')
+        .andWhere('disease."DISEASE_ID" = :diseaseId', { diseaseId });
     }
 
     if (search) {
-      queryBuilder.andWhere('article.TOPIC ILIKE :search', {
+      queryBuilder.andWhere('article."TOPIC" ILIKE :search', {
         search: `%${search}%`,
       });
     }
 
     const total = await queryBuilder.getCount();
 
+    // Include all order by fields in the select clause
     queryBuilder
       .select([
-        'AID',
-        'TOPIC',
-        'ESTIMATED_READ_TIME',
-        'THUMBNAIL_URL',
-        'PUBLISH_DATE',
+        'article.AID', // Specify the AID column from the article table
+        'article.TOPIC',
+        'article.ESTIMATED_READ_TIME',
+        'article.THUMBNAIL_URL',
+        'article.PUBLISH_DATE',
+        'article.VIEW_COUNT', // Include the field you are ordering by
       ])
       .skip((page - 1) * limit)
       .take(limit)
