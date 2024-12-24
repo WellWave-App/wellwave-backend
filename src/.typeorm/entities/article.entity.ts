@@ -1,36 +1,59 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { UserReadArticle } from './user-read-article.entity';
-import { ArticleDiseasesEntity } from './article-diseases.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { UserReadHistory } from './user-read-history.entity';
+import { ArticleDiseasesRelated } from './article-diseases-related.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import { DiseaseType } from './disease-types.entity';
 
 @Entity('ARTICLE')
 export class Article {
+  @ApiProperty()
   @PrimaryGeneratedColumn()
-  AID: string;
+  AID: number;
 
+  @ApiProperty()
   @Column({ type: 'varchar' })
   TOPIC: string;
 
+  @ApiProperty()
   @Column({ type: 'text' })
   BODY: string;
 
+  @ApiProperty()
   @Column({ type: 'float' })
   ESTIMATED_READ_TIME: number; // in minutes
 
-  @Column({ type: 'varchar', length: 100 })
+  @ApiProperty()
+  @Column({ type: 'varchar', length: 100, nullable: true })
   AUTHOR: string; // if applicable
 
-  @Column({ type: 'varchar', length: 2048 })
+  @ApiProperty()
+  @Column({ type: 'varchar', length: 2048, nullable: true })
   THUMBNAIL_URL: string; // for article preview
 
-  @Column({ type: 'int' })
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
   VIEW_COUNT: number; // for popularity tracking
 
-  @Column({ type: 'date' })
+  @ApiProperty()
+  @CreateDateColumn({ type: 'date' })
   PUBLISH_DATE: Date; // for sorting/filtering
 
-  @OneToMany(() => ArticleDiseasesEntity, (artDs) => artDs.article)
-  artDiseases: ArticleDiseasesEntity[];
+  // Relationships
 
-  @OneToMany(() => UserReadArticle, (userRead) => userRead.article)
-  userReads: UserReadArticle[];
+  // Relationship with UserReadArticle
+  @ApiProperty({ type: () => [UserReadHistory] })
+  @OneToMany(() => UserReadHistory, (userRead) => userRead.article)
+  userReadHistory: UserReadHistory[];
+
+  @ApiProperty({ type: () => [ArticleDiseasesRelated] })
+  @OneToMany(() => ArticleDiseasesRelated, articleDisease => articleDisease.article)
+    articleDiseases: ArticleDiseasesRelated[];
 }

@@ -7,18 +7,18 @@ import {
 import { CreateDiseaseTypeDto } from '../dto/create-disease-type.dto';
 import { UpdateDiseaseTypeDto } from '../dto/update-disease-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DiseaseTypes } from '@/.typeorm/entities/disease-types.entity';
+import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
 import { Repository } from 'typeorm';
 import { PaginatedResponse } from '@/response/response.interface';
 
 @Injectable()
 export class DiseaseTypesService {
   constructor(
-    @InjectRepository(DiseaseTypes)
-    private diseaseTypes: Repository<DiseaseTypes>,
+    @InjectRepository(DiseaseType)
+    private diseaseTypes: Repository<DiseaseType>,
   ) {}
 
-  async create(dto: CreateDiseaseTypeDto): Promise<DiseaseTypes> {
+  async create(dto: CreateDiseaseTypeDto): Promise<DiseaseType> {
     try {
       const newType = this.diseaseTypes.create(dto);
       return await this.diseaseTypes.save(newType);
@@ -31,7 +31,7 @@ export class DiseaseTypesService {
     }
   }
 
-  async findAll(): Promise<PaginatedResponse<DiseaseTypes>> {
+  async findAll(): Promise<PaginatedResponse<DiseaseType>> {
     const allTypes = await this.diseaseTypes.find({
       order: { DISEASE_ID: 'ASC' },
       select: ['DISEASE_ID', 'TH_NAME', 'ENG_NAME', 'DESCRIPTION'],
@@ -39,7 +39,7 @@ export class DiseaseTypesService {
     return { data: allTypes, meta: { total: allTypes.length } };
   }
 
-  async findById(id: number): Promise<DiseaseTypes> {
+  async findById(id: number): Promise<DiseaseType> {
     const type = await this.diseaseTypes.findOne({
       where: { DISEASE_ID: id },
       select: ['DISEASE_ID', 'TH_NAME', 'ENG_NAME', 'DESCRIPTION'],
@@ -52,7 +52,7 @@ export class DiseaseTypesService {
     return type;
   }
 
-  async update(id: number, dto: UpdateDiseaseTypeDto): Promise<DiseaseTypes> {
+  async update(id: number, dto: UpdateDiseaseTypeDto): Promise<DiseaseType> {
     const type = this.findById(id);
 
     try {

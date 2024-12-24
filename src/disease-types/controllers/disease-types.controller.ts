@@ -10,7 +10,9 @@ import {
 import { DiseaseTypesService } from '../services/disease-types.service';
 import { CreateDiseaseTypeDto } from '../dto/create-disease-type.dto';
 import { UpdateDiseaseTypeDto } from '../dto/update-disease-type.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Disease Types')
 @Controller('disease-types')
 export class DiseaseTypesController {
   constructor(private readonly diseaseTypesService: DiseaseTypesService) {}

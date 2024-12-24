@@ -2,14 +2,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DiseaseTypes } from '../entities/disease-types.entity';
+import { DiseaseType } from '../entities/disease-types.entity';
 import { diseaseTypesSeedData } from '../seeds/disease-types.seed';
 
 @Injectable()
 export class DiseaseTypesSeeder {
   constructor(
-    @InjectRepository(DiseaseTypes)
-    private readonly diseaseTypesRepository: Repository<DiseaseTypes>,
+    @InjectRepository(DiseaseType)
+    private readonly diseaseTypesRepository: Repository<DiseaseType>,
   ) {}
 
   async seed() {
