@@ -9,7 +9,6 @@ import {
   Timestamp,
   UpdateDateColumn,
 } from 'typeorm';
-import { ArticleDiseasesRelated } from './article-diseases-related.entity';
 import { Article } from './article.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -43,11 +42,4 @@ export class DiseaseType {
   })
   @CreateDateColumn()
   CREATED_AT: Date;
-
-  @ApiProperty({ type: () => [ArticleDiseasesRelated] })
-  @OneToMany(
-    () => ArticleDiseasesRelated,
-    (articleDisease) => articleDisease.disease,
-  )
-  articleDiseases: ArticleDiseasesRelated[];
 }

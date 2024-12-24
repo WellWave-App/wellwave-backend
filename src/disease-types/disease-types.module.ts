@@ -9,7 +9,7 @@ import { DiseaseTypesSeeder } from '@/.typeorm/seeders/disease-types.seeder';
   imports: [TypeOrmModule.forFeature([DiseaseType])],
   controllers: [DiseaseTypesController],
   providers: [DiseaseTypesService, DiseaseTypesSeeder],
-  exports: [DiseaseTypesSeeder],
+  exports: [DiseaseTypesSeeder, DiseaseTypesService],
 })
 export class DiseaseTypesModule {
   constructor(private seeder: DiseaseTypesSeeder) {}

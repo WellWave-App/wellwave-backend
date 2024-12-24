@@ -8,7 +8,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { UserReadHistory } from './user-read-history.entity';
-import { ArticleDiseasesRelated } from './article-diseases-related.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { DiseaseType } from './disease-types.entity';
 
@@ -47,13 +46,22 @@ export class Article {
   PUBLISH_DATE: Date; // for sorting/filtering
 
   // Relationships
-
-  // Relationship with UserReadArticle
   @ApiProperty({ type: () => [UserReadHistory] })
   @OneToMany(() => UserReadHistory, (userRead) => userRead.article)
   userReadHistory: UserReadHistory[];
 
-  @ApiProperty({ type: () => [ArticleDiseasesRelated] })
-  @OneToMany(() => ArticleDiseasesRelated, articleDisease => articleDisease.article)
-    articleDiseases: ArticleDiseasesRelated[];
+  @ApiProperty({ type: () => [DiseaseType] })
+  @ManyToMany(() => DiseaseType)
+  @JoinTable({
+    name: 'ARTICLE_DISEASES_RELATED',
+    joinColumn: {
+      name: 'AID',
+      referencedColumnName: 'AID',
+    },
+    inverseJoinColumn: {
+      name: 'DISEASE_ID',
+      referencedColumnName: 'DISEASE_ID',
+    },
+  })
+  diseases: DiseaseType[];
 }

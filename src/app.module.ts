@@ -11,7 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { LoginStreakModule } from './login-streak/login-streak.module';
 import { NotiSettingModule } from './noti-setting/noti-setting.module';
 import { ImageModule } from './image/image.module';
-import { ArticleModule } from './article/article.module';
+import { ArticleModule } from './article-group/article/article.module';
 import { DiseaseTypesModule } from './disease-types/disease-types.module';
 import { UserReadArticleModule } from './user-read-article/user-read-article.module';
 

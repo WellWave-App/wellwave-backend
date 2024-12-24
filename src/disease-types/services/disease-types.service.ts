@@ -8,7 +8,7 @@ import { CreateDiseaseTypeDto } from '../dto/create-disease-type.dto';
 import { UpdateDiseaseTypeDto } from '../dto/update-disease-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PaginatedResponse } from '@/response/response.interface';
 
 @Injectable()
@@ -52,6 +52,22 @@ export class DiseaseTypesService {
     return type;
   }
 
+  async findByIds(ids: number[]): Promise<DiseaseType[]> {
+    if (!ids || ids.length === 0) {
+      throw new NotFoundException('No valid disease type IDs provided');
+    }
+
+    const diseaseTypes = await this.diseaseTypes.findBy({
+      DISEASE_ID: In([ids]),
+    });
+
+    if (diseaseTypes.length === 0) {
+      throw new NotFoundException('No DiseaseTypes found for the provided IDs');
+    }
+
+    return diseaseTypes;
+  }
+
   async update(id: number, dto: UpdateDiseaseTypeDto): Promise<DiseaseType> {
     const type = this.findById(id);
 
@@ -66,9 +82,17 @@ export class DiseaseTypesService {
     }
   }
 
-  async remove(id: number): Promise<{ message: string }> {
-    const type = await this.findById(id);
-    await this.diseaseTypes.remove(type);
-    return { message: 'Delete Successful' };
+  async remove(id: number): Promise<{ message: string; success: boolean }> {
+    // const type = await this.findById(id);
+    // await this.diseaseTypes.remove(type);
+    // return { message: 'Delete Successful' };
+    const result = await this.diseaseTypes.delete({ DISEASE_ID: id });
+    if (result.affected === 0) {
+      throw new NotFoundException(
+        `DiseaseTypes with DISEASE_ID: ${id} not found`,
+      );
+    }
+
+    return { message: 'Delete Successful', success: true };
   }
 }
