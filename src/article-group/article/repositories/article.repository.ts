@@ -14,6 +14,13 @@ import { DiseaseTypesService } from '@/disease-types/services/disease-types.serv
 import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
 import { PaginatedResponse } from '@/response/response.interface';
 
+export interface articlQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  diseaseIds?: number[];
+}
+
 @Injectable()
 export class ArticleRepository {
   constructor(
@@ -55,10 +62,10 @@ export class ArticleRepository {
     }
   }
 
-  async bulkCreate(dto: CreateArticleDto[]): Promise<Article[]> {
+  async bulkCreate(dtos: CreateArticleDto[]): Promise<Article[]> {
     try {
       let articles = [];
-      dto.forEach(async (data) => {
+      dtos.forEach(async (dto) => {
         const article = this.repository.create(dto);
         articles.push(article);
       });
@@ -82,23 +89,20 @@ export class ArticleRepository {
     return article;
   }
 
-  async findAll(query: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    diseaseId?: number;
-  }): Promise<PaginatedResponse<Article>> {
-    const { page = 1, limit = 10, search, diseaseId } = query;
-    const queryBuilder = this.repository.createQueryBuilder('article');
+  async findAll(query: articlQuery): Promise<PaginatedResponse<Article>> {
+    const { page = 1, limit = 10, search, diseaseIds } = query;
+    const queryBuilder = this.repository
+      .createQueryBuilder('article')
+      .leftJoinAndSelect('article.diseases', 'disease');
 
-    if (diseaseId) {
-      queryBuilder
-        .leftJoinAndSelect('article.diseases', 'disease')
-        .andWhere('disease."DISEASE_ID" = :diseaseId', { diseaseId });
+    if (diseaseIds) {
+      queryBuilder.andWhere('disease.DISEASE_ID IN (:...diseaseIds)', {
+        diseaseIds,
+      });
     }
 
     if (search) {
-      queryBuilder.andWhere('article."TOPIC" ILIKE :search', {
+      queryBuilder.andWhere('article.TOPIC ILIKE :search', {
         search: `%${search}%`,
       });
     }
@@ -114,6 +118,9 @@ export class ArticleRepository {
         'article.THUMBNAIL_URL',
         'article.PUBLISH_DATE',
         'article.VIEW_COUNT', // Include the field you are ordering by
+        'disease.DISEASE_ID',
+        'disease.TH_NAME',
+        'disease.ENG_NAME',
       ])
       .skip((page - 1) * limit)
       .take(limit)

@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CreateArticleDto } from '../dto/create-article.dto';
 import { UpdateArticleDto } from '../dto/update-article.dto';
-import { ArticleRepository } from '../repositories/article.repository';
+import {
+  ArticleRepository,
+  articlQuery,
+} from '../repositories/article.repository';
 import { ImageService } from '@/image/image.service';
 import { Article } from '@/.typeorm/entities/article.entity';
 import { PaginatedResponse } from '@/response/response.interface';
@@ -27,12 +30,7 @@ export class ArticleService {
     return await this.articleRepository.create(dto);
   }
 
-  async search(query?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    diseaseId?: number;
-  }): Promise<PaginatedResponse<Article>> {
+  async search(query?: articlQuery): Promise<PaginatedResponse<Article>> {
     return await this.articleRepository.findAll(query);
   }
 
