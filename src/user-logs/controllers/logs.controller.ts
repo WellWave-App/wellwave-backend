@@ -13,13 +13,13 @@ import { LogsService } from '../services/logs.service';
 import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
 import { LogEntity, LOG_NAME } from '../../.typeorm/entities/logs.entity';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
   ApiQuery,
-  ApiBody 
+  ApiBody,
 } from '@nestjs/swagger';
 
 @ApiTags('Logs')
@@ -29,10 +29,10 @@ export class LogsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new log entry' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Log entry successfully created',
-    type: LogEntity 
+    type: LogEntity,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 409, description: 'Log entry already exists' })
@@ -43,21 +43,39 @@ export class LogsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all log entries' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'Page number, default: 1',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description: 'Items per page, default: 10',
+  })
+  @ApiResponse({
+    status: 200,
     description: 'Returns all log entries',
     schema: {
       type: 'object',
       properties: {
         LOGS: {
           type: 'array',
-          items: { $ref: '#/components/schemas/LogEntity' }
-        }
-      }
-    }
+          items: { $ref: '#/components/schemas/LogEntity' },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+      },
+    },
   })
-  findAll() {
-    return this.logsService.findAll();
+  findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 10,
+  ) {
+    return this.logsService.findAll(page, limit);
   }
 
   @Get(':uid/:logName/:date')
@@ -81,17 +99,17 @@ export class LogsController {
   @ApiQuery({ name: 'logName', enum: LOG_NAME, required: false })
   @ApiQuery({ name: 'startDate', type: 'string', required: false })
   @ApiQuery({ name: 'endDate', type: 'string', required: false })
-  @ApiResponse({ 
+  @ApiResponse({
     status: 200,
     schema: {
       type: 'object',
       properties: {
         LOGS: {
           type: 'array',
-          items: { $ref: '#/components/schemas/LogEntity' }
-        }
-      }
-    }
+          items: { $ref: '#/components/schemas/LogEntity' },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getLogsByUser(
@@ -110,25 +128,25 @@ export class LogsController {
   @ApiParam({ name: 'uid', description: 'User ID', type: 'number' })
   @ApiQuery({ name: 'date', type: 'string', required: false })
   @ApiQuery({ name: 'logName', enum: LOG_NAME, required: false })
-  @ApiResponse({ 
+  @ApiResponse({
     status: 200,
     schema: {
       type: 'object',
       properties: {
         LOGS: {
           type: 'array',
-          items: { $ref: '#/components/schemas/LogEntity' }
+          items: { $ref: '#/components/schemas/LogEntity' },
         },
         WeekDateInformation: {
           type: 'object',
           properties: {
             dateSelected: { type: 'string' },
             startOfWeek: { type: 'string' },
-            endOfWeek: { type: 'string' }
-          }
-        }
-      }
-    }
+            endOfWeek: { type: 'string' },
+          },
+        },
+      },
+    },
   })
   getWeeklyLogs(
     @Param('uid', ParseIntPipe) uid: number,
@@ -142,17 +160,17 @@ export class LogsController {
   @ApiOperation({ summary: "Get user's logs for today" })
   @ApiParam({ name: 'uid', description: 'User ID', type: 'number' })
   @ApiQuery({ name: 'logName', enum: LOG_NAME, required: false })
-  @ApiResponse({ 
+  @ApiResponse({
     status: 200,
     schema: {
       type: 'object',
       properties: {
         LOGS: {
           type: 'array',
-          items: { $ref: '#/components/schemas/LogEntity' }
-        }
-      }
-    }
+          items: { $ref: '#/components/schemas/LogEntity' },
+        },
+      },
+    },
   })
   getTodayLogs(
     @Param('uid', ParseIntPipe) uid: number,
@@ -183,15 +201,15 @@ export class LogsController {
   @ApiParam({ name: 'uid', description: 'User ID', type: 'number' })
   @ApiParam({ name: 'logName', description: 'Type of log', enum: LOG_NAME })
   @ApiParam({ name: 'date', description: 'Date of log entry', type: 'string' })
-  @ApiResponse({ 
+  @ApiResponse({
     status: 200,
     schema: {
       type: 'object',
       properties: {
         message: { type: 'string' },
-        success: { type: 'boolean' }
-      }
-    }
+        success: { type: 'boolean' },
+      },
+    },
   })
   @ApiResponse({ status: 404, description: 'Log entry not found' })
   remove(
