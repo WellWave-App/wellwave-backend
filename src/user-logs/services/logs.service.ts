@@ -89,9 +89,26 @@ export class LogsService {
     };
   }
 
-  async findAll(): Promise<{ LOGS: LogEntity[] }> {
-    const LOGS = await this.logsRepository.find();
-    return { LOGS };
+  async findAll(
+    page = 1,
+    limit = 10,
+  ): Promise<{
+    LOGS: LogEntity[];
+    metadata: { total: number; page: number; limit: number };
+  }> {
+    const [LOGS, total] = await this.logsRepository.findAndCount({
+      order: { DATE: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      LOGS,
+      metadata: {
+        total,
+        page,
+        limit,
+      },
+    };
   }
 
   async findOne(
@@ -137,7 +154,7 @@ export class LogsService {
 
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC' },
+      order: { DATE: 'ASC' },
     });
 
     return { LOGS };
@@ -168,7 +185,7 @@ export class LogsService {
 
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC' },
+      order: { DATE: 'ASC' },
     });
 
     return { LOGS };
@@ -224,7 +241,7 @@ export class LogsService {
     // Fetch logs from the repository based on the conditions
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC' },
+      order: { DATE: 'ASC' },
     });
 
     const WeekDateInformation = {
