@@ -154,7 +154,7 @@ export class LogsService {
 
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC' },
+      order: { DATE: 'ASC' },
     });
 
     return { LOGS };
@@ -185,7 +185,7 @@ export class LogsService {
 
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC' },
+      order: { DATE: 'ASC' },
     });
 
     return { LOGS };
@@ -241,7 +241,7 @@ export class LogsService {
     // Fetch logs from the repository based on the conditions
     const LOGS = await this.logsRepository.find({
       where: whereCondition,
-      order: { DATE: 'DESC' },
+      order: { DATE: 'ASC' },
     });
 
     const WeekDateInformation = {
