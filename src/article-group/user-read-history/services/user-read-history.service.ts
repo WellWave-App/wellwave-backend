@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserReadHistoryDto } from './dto/create-user-read-history.dto';
-import { UpdateUserReadHistoryDto } from './dto/update-user-read-history.dto';
+import { CreateUserReadHistoryDto } from '../dto/create-user-read-history.dto';
+import { UpdateUserReadHistoryDto } from '../dto/update-user-read-history.dto';
 
 @Injectable()
 export class UserReadHistoryService {

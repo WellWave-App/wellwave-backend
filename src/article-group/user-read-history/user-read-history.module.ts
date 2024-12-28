@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { UserReadHistoryService } from './user-read-history.service';
-import { UserReadHistoryController } from './user-read-history.controller';
+import { UserReadHistoryService } from './services/user-read-history.service';
+import { UserReadHistoryController } from './controllers/user-read-history.controller';
 
 @Module({
   controllers: [UserReadHistoryController],

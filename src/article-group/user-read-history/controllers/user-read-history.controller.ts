@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { UserReadHistoryService } from './user-read-history.service';
-import { CreateUserReadHistoryDto } from './dto/create-user-read-history.dto';
-import { UpdateUserReadHistoryDto } from './dto/update-user-read-history.dto';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
+import { UserReadHistoryService } from '../services/user-read-history.service';
+import { CreateUserReadHistoryDto } from '../dto/create-user-read-history.dto';
+import { UpdateUserReadHistoryDto } from '../dto/update-user-read-history.dto';
 
 @Controller('user-read-history')
 export class UserReadHistoryController {
-  constructor(private readonly userReadHistoryService: UserReadHistoryService) {}
+  constructor(
+    private readonly userReadHistoryService: UserReadHistoryService,
+  ) {}
 
   @Post()
   create(@Body() createUserReadHistoryDto: CreateUserReadHistoryDto) {
@@ -23,7 +33,10 @@ export class UserReadHistoryController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserReadHistoryDto: UpdateUserReadHistoryDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateUserReadHistoryDto: UpdateUserReadHistoryDto,
+  ) {
     return this.userReadHistoryService.update(+id, updateUserReadHistoryDto);
   }
 
