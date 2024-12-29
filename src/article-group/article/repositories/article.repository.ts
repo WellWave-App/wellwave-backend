@@ -14,7 +14,7 @@ import { DiseaseTypesService } from '@/disease-types/services/disease-types.serv
 import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
 import { PaginatedResponse } from '@/response/response.interface';
 
-export interface articlQuery {
+export interface articleQuery {
   page?: number;
   limit?: number;
   search?: string;
@@ -89,7 +89,7 @@ export class ArticleRepository {
     return article;
   }
 
-  async findAll(query: articlQuery): Promise<PaginatedResponse<Article>> {
+  async findAll(query: articleQuery): Promise<PaginatedResponse<Article>> {
     const { page = 1, limit = 10, search, diseaseIds } = query;
     const queryBuilder = this.repository
       .createQueryBuilder('article')

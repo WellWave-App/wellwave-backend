@@ -80,7 +80,7 @@ export class DiseaseTypesService {
       return await this.diseaseTypes.save(updated);
     } catch (error) {
       if (error.code === '23505') {
-        throw new ConflictException('Product with this name already exists');
+        throw new ConflictException();
       }
       throw new InternalServerErrorException('Failed to update product');
     }

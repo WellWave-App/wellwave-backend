@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -13,11 +14,11 @@ import { ApiProperty } from '@nestjs/swagger';
 @Entity('USER_READ_HISTORY')
 export class UserReadHistory {
   @ApiProperty()
-  @PrimaryColumn({ type: 'int' })
+  @PrimaryColumn({ type: 'int', unique: true })
   UID: number; // PK [ref: > USERS.UID]
 
   @ApiProperty()
-  @PrimaryColumn({ type: 'varchar' })
+  @PrimaryColumn({ type: 'varchar', unique: true })
   AID: number; // PK [ref: > ARTICLE.AID]
 
   @ApiProperty()
@@ -29,7 +30,7 @@ export class UserReadHistory {
   IS_BOOKMARK: boolean;
 
   @ApiProperty()
-  @Column({ type: 'float' })
+  @Column({ type: 'float', nullable: true })
   READING_PROGRESS: number; // percentage of article read
 
   @ApiProperty()
@@ -37,8 +38,12 @@ export class UserReadHistory {
   RATING: number; // optional: user rating
 
   @ApiProperty()
-  @Column({ type: 'timestamp' })
-  READ_DATE: Date; // track when they read it
+  @CreateDateColumn({ type: 'date' })
+  FIRST_READ_DATE: Date; // track when they read it
+
+  @ApiProperty()
+  @Column({ type: 'date' })
+  LASTED_READ_DATE: Date; // track when they read it
 
   // Relations
   @ApiProperty({ type: () => UserEntity })
