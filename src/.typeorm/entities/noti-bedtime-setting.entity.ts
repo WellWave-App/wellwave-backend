@@ -9,11 +9,14 @@ import {
   PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { NotificationSettingsEntity, NotificationType } from './noti-setting.entity';
+import {
+  NotificationSettingsEntity,
+  NotificationType,
+} from './noti-setting.entity';
 
 @Entity('BEDTIME_SETTINGS')
 export class BedtimeSettingsEntity {
-  @PrimaryColumn()
+  @PrimaryColumn({ name: 'UID', type: 'int' })
   UID: number;
 
   @PrimaryColumn({
@@ -22,10 +25,10 @@ export class BedtimeSettingsEntity {
   })
   NOTIFICATION_TYPE: NotificationType;
 
-  @Column('time')
+  @Column({ type: 'time', nullable: true })
   BEDTIME: Date;
 
-  @Column('time')
+  @Column({ type: 'time', nullable: true })
   WAKE_TIME: Date;
 
   @OneToOne(
