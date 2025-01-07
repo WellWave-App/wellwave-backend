@@ -10,12 +10,14 @@ import { DiseaseTypesModule } from '@/disease-types/disease-types.module';
 import { ImageModule } from '@/image/image.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { RecommendationModule } from '@/recommendation/recommendation.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Article, UserReadHistory, DiseaseType]),
     DiseaseTypesModule,
     ImageModule,
+    // RecommendationModule,
     MulterModule.register({
       storage: diskStorage({
         destination: './assets/images',

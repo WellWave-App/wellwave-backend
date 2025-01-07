@@ -8,12 +8,14 @@ import {
 import { ImageService } from '@/image/image.service';
 import { Article } from '@/.typeorm/entities/article.entity';
 import { PaginatedResponse } from '@/response/response.interface';
+import { ArticleRecommendationService } from '@/recommendation/services/article-recommendation.service';
 
 @Injectable()
 export class ArticleService {
   constructor(
     private readonly articleRepository: ArticleRepository,
     private readonly imageService: ImageService,
+    // private readonly articleRecommendationService: ArticleRecommendationService,
   ) {}
 
   private calculateReadTime(body: string) {
@@ -57,4 +59,12 @@ export class ArticleService {
   async delete(id: number): Promise<{ message: string; success: boolean }> {
     return await this.articleRepository.remove(id);
   }
+
+  // async getRec(userId: number, limit?: number, includeRead?: boolean) {
+  //   return this.articleRecommendationService.getReccomendedArticle(
+  //     userId,
+  //     limit,
+  //     includeRead,
+  //   );
+  // }
 }

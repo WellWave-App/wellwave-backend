@@ -1,4 +1,4 @@
-import { UserEntity } from '@/.typeorm/entities/users.entity';
+import { User } from '@/.typeorm/entities/users.entity';
 import {
   Column,
   Entity,
@@ -9,7 +9,10 @@ import {
   PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { NotificationSettingsEntity, NotificationType } from './noti-setting.entity';
+import {
+  NotificationSettingsEntity,
+  NotificationType,
+} from './noti-setting.entity';
 
 @Entity('BEDTIME_SETTINGS')
 export class BedtimeSettingsEntity {

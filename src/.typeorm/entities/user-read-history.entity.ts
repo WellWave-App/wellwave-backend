@@ -8,7 +8,7 @@ import {
   Timestamp,
 } from 'typeorm';
 import { Article } from './article.entity';
-import { UserEntity } from './users.entity';
+import { User } from './users.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('USER_READ_HISTORY')
@@ -31,11 +31,11 @@ export class UserReadHistory {
 
   @ApiProperty()
   @Column({ type: 'float', nullable: true })
-  READING_PROGRESS: number; // percentage of article read
+  READING_PROGRESS: number; // percentage of article read (not used)
 
   @ApiProperty()
   @Column({ type: 'float', nullable: true })
-  RATING: number; // optional: user rating
+  RATING: number; // optional: user rating (not used)
 
   @ApiProperty()
   @CreateDateColumn({ type: 'date' })
@@ -46,10 +46,10 @@ export class UserReadHistory {
   LASTED_READ_DATE: Date; // track when they read it
 
   // Relations
-  @ApiProperty({ type: () => UserEntity })
-  @ManyToOne(() => UserEntity, (user) => user.articleReadHistory)
+  @ApiProperty({ type: () => User })
+  @ManyToOne(() => User, (user) => user.articleReadHistory)
   @JoinColumn({ name: 'UID' })
-  user: UserEntity;
+  user: User;
 
   @ApiProperty({ type: () => Article })
   @ManyToOne(() => Article, (article) => article.userReadHistory)

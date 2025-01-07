@@ -60,7 +60,7 @@ export class UserReadHistoryService {
 
   async getBookmarkedArticles(uid: number) {
     try {
-      const user = await this.usersService.findOne(uid);
+      const user = await this.usersService.getById(uid);
       if (!user) {
         throw new NotFoundException(`User not with UID${uid} found`);
       }

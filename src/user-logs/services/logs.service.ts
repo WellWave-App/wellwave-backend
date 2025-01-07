@@ -17,15 +17,15 @@ import {
 import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
 import { LogEntity, LOG_NAME } from '../../.typeorm/entities/logs.entity';
-import { UserEntity } from '../../.typeorm/entities/users.entity';
+import { User } from '../../.typeorm/entities/users.entity';
 
 @Injectable()
 export class LogsService {
   constructor(
     @InjectRepository(LogEntity)
     private logsRepository: Repository<LogEntity>,
-    @InjectRepository(UserEntity)
-    private usersRepository: Repository<UserEntity>,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
   ) {}
 
   async create(createLogDto: CreateLogDto): Promise<LogEntity> {

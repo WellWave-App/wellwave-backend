@@ -1,5 +1,5 @@
 import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
-import { UserEntity } from '@/.typeorm/entities/users.entity';
+import { User } from '@/.typeorm/entities/users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserReadHistoryDto } from '../dto/create-user-read-history.dto';
@@ -28,7 +28,6 @@ export class UserReadHistoryReposity {
         ...dto,
         FIRST_READ_DATE: new Date(),
         LASTED_READ_DATE: new Date(),
-        IS_READ: true,
       });
 
       return this.repository.save(newHistory);
