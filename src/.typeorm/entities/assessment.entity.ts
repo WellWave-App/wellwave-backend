@@ -6,12 +6,10 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { UserEntity } from './users.entity';
+import { User } from './users.entity';
 
-
-@Entity('RISK_ASSESSMENT') 
-export class RiskAssessmentEntity { 
-  
+@Entity('RISK_ASSESSMENT')
+export class RiskAssessmentEntity {
   @PrimaryGeneratedColumn()
   RA_ID: number;
 
@@ -47,14 +45,10 @@ export class RiskAssessmentEntity {
   @Column('int4')
   OBESITY: number;
 
-  @OneToOne(() => UserEntity, (USER) => USER.RiskAssessment)
+  @OneToOne(() => User, (USER) => USER.RiskAssessment)
   @JoinColumn({ name: 'UID' })
-  USER: UserEntity;
+  USER: User;
 
   @Column({ name: 'UID' })
   UID: number;
-
 }
-
-
-  

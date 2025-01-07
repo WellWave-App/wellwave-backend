@@ -1,4 +1,4 @@
-import { UserEntity } from '@/.typeorm/entities/users.entity';
+import { User } from '@/.typeorm/entities/users.entity';
 import {
   Column,
   Entity,
@@ -36,9 +36,9 @@ export class NotificationSettingsEntity {
   @Column('timestamp')
   CREATE_AT: Date;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'UID' })
-  user: UserEntity;
+  user: User;
 
   @OneToOne(
     (type) => BedtimeSettingsEntity,

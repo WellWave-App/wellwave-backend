@@ -11,6 +11,10 @@ import { AuthModule } from './auth/auth.module';
 import { LoginStreakModule } from './login-streak/login-streak.module';
 import { NotiSettingModule } from './noti-setting/noti-setting.module';
 import { ImageModule } from './image/image.module';
+import { ArticleModule } from './article-group/article/article.module';
+import { DiseaseTypesModule } from './disease-types/disease-types.module';
+import { UserReadHistoryModule } from './article-group/user-read-history/user-read-history.module';
+import { RecommendationModule } from './recommendation/recommendation.module';
 
 @Module({
   imports: [
@@ -41,6 +45,10 @@ import { ImageModule } from './image/image.module';
     LoginStreakModule,
     NotiSettingModule,
     ImageModule,
+    ArticleModule,
+    DiseaseTypesModule,
+    UserReadHistoryModule,
+    RecommendationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

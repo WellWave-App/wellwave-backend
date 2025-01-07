@@ -1,4 +1,4 @@
-import { UserEntity } from '@/.typeorm/entities/users.entity';
+import { User } from '@/.typeorm/entities/users.entity';
 import {
   Column,
   Entity,

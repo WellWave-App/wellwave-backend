@@ -7,7 +7,7 @@ import {
   PrimaryColumn,
   Check,
 } from 'typeorm';
-import { UserEntity } from './users.entity';
+import { User } from './users.entity';
 
 @Entity('LOGIN_STREAK')
 // @Check(`"last_login_date" >= "streak_start_date"`)
@@ -34,9 +34,9 @@ export class LoginStreakEntity {
   })
   LAST_UPDATED: Date;
 
-  @OneToOne(() => UserEntity, (user) => user.UID, {
+  @OneToOne(() => User, (user) => user.UID, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'UID' })
-  USER: UserEntity;
+  USER: User;
 }

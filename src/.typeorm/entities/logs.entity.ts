@@ -1,11 +1,5 @@
-import {
-  Entity,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  PrimaryColumn,
-} from 'typeorm';
-import { UserEntity } from './users.entity';
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
+import { User } from './users.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum LOG_NAME {
@@ -17,14 +11,14 @@ export enum LOG_NAME {
   CAL_BURN_LOG = 'CAL_BURN_LOG',
   DRINK_LOG = 'DRINK_LOG',
   STEP_LOG = 'STEP_LOG',
-  WAIST_LINE_LOG = 'WAIST_LINE_LOG'
+  WAIST_LINE_LOG = 'WAIST_LINE_LOG',
 }
 
 @Entity('LOGS')
 export class LogEntity {
   @ApiProperty({
     description: 'User ID',
-    example: 1
+    example: 1,
   })
   @PrimaryColumn()
   UID: number;
@@ -32,7 +26,7 @@ export class LogEntity {
   @ApiProperty({
     description: 'Type of log entry',
     enum: LOG_NAME,
-    example: LOG_NAME.WEIGHT_LOG
+    example: LOG_NAME.WEIGHT_LOG,
   })
   @PrimaryColumn({
     type: 'enum',
@@ -42,23 +36,23 @@ export class LogEntity {
 
   @ApiProperty({
     description: 'Date of the log entry',
-    example: '2024-12-22'
+    example: '2024-12-22',
   })
   @PrimaryColumn({ type: 'date' })
   DATE: Date;
 
   @ApiProperty({
     description: 'Numerical value for the log entry',
-    example: 75.5
+    example: 75.5,
   })
   @Column({ type: 'float' })
   VALUE: number;
 
   @ApiProperty({
     description: 'Associated user entity',
-    type: () => UserEntity
+    type: () => User,
   })
-  @ManyToOne(() => UserEntity, (USER) => USER.LOGS, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (USER) => USER.LOGS, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'UID' })
-  USER: UserEntity;
+  USER: User;
 }

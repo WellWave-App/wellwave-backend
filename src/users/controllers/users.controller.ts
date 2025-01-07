@@ -82,7 +82,7 @@ export class UsersController {
   })
   @Get()
   findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-    return this.usersService.findAll(page, limit);
+    return this.usersService.getAll(page, limit);
   }
 
   @ApiOperation({ summary: 'Register new user' })
@@ -151,7 +151,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Get(':uid')
   findOne(@Param('uid') UID: string) {
-    return this.usersService.findOne(+UID);
+    return this.usersService.getById(+UID);
   }
 
   @ApiOperation({ summary: 'Update user profile' })

@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
 } from 'typeorm';
-import { UserEntity } from './users.entity';
+import { User } from './users.entity';
 
 @Entity('LOGIN_HISTORY')
 export class LoginHistoryEntity {
@@ -21,9 +21,9 @@ export class LoginHistoryEntity {
   @Column({ type: 'timestamp' })
   LOGIN_DATE: Date;
 
-  @ManyToOne(() => UserEntity, (user) => user.UID, {
+  @ManyToOne(() => User, (user) => user.UID, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'UID' })
-  USER: UserEntity;
+  USER: User;
 }

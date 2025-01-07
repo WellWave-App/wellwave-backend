@@ -12,6 +12,8 @@ import * as bcrypt from 'bcrypt';
 import { RiskAssessmentEntity } from './assessment.entity';
 import { LogEntity } from './logs.entity';
 import { LoginStreakEntity } from './login-streak.entity';
+import { UserReadHistory } from './user-read-history.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -22,7 +24,7 @@ export enum USER_GOAL {
 // GENDER: true = MALE, false = FEMALE
 
 @Entity({ name: 'USERS' })
-export class UserEntity {
+export class User {
   @PrimaryGeneratedColumn()
   UID: number;
 
@@ -84,15 +86,37 @@ export class UserEntity {
   @Column({ nullable: true })
   IMAGE_URL?: string;
 
+  @Column({ nullable: true, type: 'int' })
+  HYPERTENSION_RISK: number;
+
+  @Column({ nullable: true, type: 'int' })
+  DIABETE_RISK: number;
+
+  @Column({ nullable: true, type: 'int' })
+  DYSLIPIDEMIA_RISK: number;
+
+  @Column({ nullable: true, type: 'int' })
+  OBESITY_RISK: number;
+
   @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
   createAt: Date;
 
   @OneToMany(() => LogEntity, (LOGS) => LOGS.USER, { cascade: true })
   LOGS: LogEntity[];
 
-  @OneToOne(() => RiskAssessmentEntity, (RiskAssessment) => RiskAssessment.USER)
+  @OneToOne(
+    () => RiskAssessmentEntity,
+    (RiskAssessment) => RiskAssessment.USER,
+    { cascade: true },
+  )
   RiskAssessment: RiskAssessmentEntity[];
 
   // @OneToOne(() => LoginStreakEntity, (LoginStreak) => LoginStreak.USER)
   // loginStreak: LoginStreakEntity;
+
+  @ApiProperty({ type: () => [UserReadHistory] })
+  @OneToMany(() => UserReadHistory, (userRead) => userRead.user, {
+    cascade: true,
+  })
+  articleReadHistory: UserReadHistory[];
 }
