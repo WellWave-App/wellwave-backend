@@ -9,7 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ArticleRecommendationService } from '../services/article-recommendation.service';
-import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PaginatedResponse } from '@/response/response.interface';
 import { Article } from '@/.typeorm/entities/article.entity';
 
@@ -20,27 +20,47 @@ export default class RecommendationController {
     private readonly recommendationsService: ArticleRecommendationService,
   ) {}
 
+  @ApiOperation({ summary: 'Get recommended articles for a user' })
+  @ApiQuery({
+    name: 'uid',
+    type: Number,
+    description: 'User ID',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: Number,
+    description: 'Limit results (default: 9)',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'includeRead',
+    type: Boolean,
+    description:
+      'Include already read articles in recommendations (default: false -> not return article that user already read)',
+    required: false,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of recommended articles',
+    schema: {
+      example: {
+        data: [
+          {
+            AID: 1,
+            title: 'Article Title',
+            content: 'Article content...',
+            score: 0.95,
+          },
+        ],
+        meta: {
+          total: 1,
+          limit: 9,
+        },
+      },
+    },
+  })
   @Get('/articles')
-  // @ApiQuery({ name: 'uid', type: Number, description: 'User ID' })
-  // @ApiQuery({
-  //   name: 'limit',
-  //   type: Number,
-  //   required: false,
-  //   description: 'Maximum number of articles to return (default: 9)',
-  // })
-  // @ApiQuery({
-  //   name: 'includeRead',
-  //   type: Boolean,
-  //   required: false,
-  //   description:
-  //     'Include user already read articles in the recommendations? (default: false)',
-  // })
-  // // @ApiResponse({
-  // //   status: 200,
-  // //   description: 'List of recommended articles',
-  // //   // type: PaginatedResponse<Article>, // Ensure PaginatedResponse<Article> is defined
-  // // })
-  // // @ApiResponse({ status: 404, description: 'User not found' })
   async getRecommendations(
     @Query('uid') userId: number,
     @Query('limit') limit?: number,
@@ -53,7 +73,7 @@ export default class RecommendationController {
     if (includeRead !== null) {
       includeRead = false;
     }
-    
+
     return this.recommendationsService.getReccomendedArticle(
       userId,
       limit,
