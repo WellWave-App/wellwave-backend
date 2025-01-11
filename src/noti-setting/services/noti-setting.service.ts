@@ -472,7 +472,7 @@ export class NotiSettingService {
       : null;
 
     Object.assign(existWaterPlanSetting, {
-      START_TIME: notiTime || existWaterPlanSetting.NOTI_TIME,
+      NOTI_TIME: notiTime || existWaterPlanSetting.NOTI_TIME,
     });
 
     return await this.waterPlanRepo.save(existWaterPlanSetting);
@@ -529,6 +529,7 @@ export class NotiSettingService {
           waterPlanDTO.UID,
           NotificationType.WATER_PLAN,
         );
+
         if (notiSettingWaterPlan) {
           notiSettingWaterPlan.IS_ACTIVE =
             waterPlanDTO.IS_ACTIVE ?? notiSettingWaterPlan.IS_ACTIVE;
@@ -547,9 +548,9 @@ export class NotiSettingService {
         }
       }
 
+      let existsWaterPlanSetting: WaterPlanSettingEntity | null = null;
       if (waterPlanDTO.GLASS_NUMBER != null) {
         // Try to get existing water plan setting
-        let existsWaterPlanSetting: WaterPlanSettingEntity | null = null;
         try {
           existsWaterPlanSetting = await this.getWaterPlanSetting(
             waterPlanDTO.UID,
@@ -561,20 +562,25 @@ export class NotiSettingService {
           }
           // If NotFoundException, continue to create new setting
         }
-
-        const updatedWaterplanSetting = existsWaterPlanSetting
-          ? await this.updateWaterPlanSetting(waterPlanDTO)
-          : await this.createWaterPlanSetting(waterPlanDTO);
       }
 
-      const waterPlans = await this.waterPlanRepo.find({
-        where: { UID: waterPlanDTO.UID },
-      });
+      const updatedWaterplanSetting = existsWaterPlanSetting
+        ? await this.updateWaterPlanSetting(waterPlanDTO)
+        : await this.createWaterPlanSetting(waterPlanDTO);
 
+      // const waterPlans = await this.waterPlanRepo.find({
+      //   where: { UID: waterPlanDTO.UID },
+      // });
       return {
         settingType: NotificationType.WATER_PLAN,
         isActive: notiSettingWaterPlan?.IS_ACTIVE ?? false,
-        setting: waterPlans,
+        setting: {
+          ...updatedWaterplanSetting,
+          NOTI_TIME:
+            updatedWaterplanSetting.NOTI_TIME instanceof Date
+              ? this.convertDateToTimeString(updatedWaterplanSetting.NOTI_TIME)
+              : updatedWaterplanSetting.NOTI_TIME,
+        },
       };
     } catch (error) {
       if (

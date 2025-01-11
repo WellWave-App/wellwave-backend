@@ -10,16 +10,16 @@ import {
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { NotiSettingService } from '../services/noti-setting.service';
 import { NotificationType } from '@/.typeorm/entities/noti-setting.entity';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
   ApiParam,
   ApiBody,
   ApiBearerAuth,
   ApiUnauthorizedResponse,
   ApiNotFoundResponse,
-  ApiConflictResponse
+  ApiConflictResponse,
 } from '@nestjs/swagger';
 import { BedtimeDTO, WaterPlanDTO, WaterRangeDTO } from '../dto/setting.dto';
 
@@ -31,12 +31,13 @@ export class NotiSettingController {
 
   @ApiOperation({
     summary: 'Get notification settings by type',
-    description: 'Retrieves notification settings for the authenticated user based on notification type'
+    description:
+      'Retrieves notification settings for the authenticated user based on notification type',
   })
   @ApiParam({
     name: 'notificationType',
     enum: NotificationType,
-    description: 'Type of notification setting to retrieve'
+    description: 'Type of notification setting to retrieve',
   })
   @ApiResponse({
     status: 200,
@@ -49,10 +50,10 @@ export class NotiSettingController {
         CREATE_AT: '2024-01-01T00:00:00.000Z',
         bedtimeSettings: {
           BEDTIME: '22:00:00',
-          WAKE_TIME: '06:00:00'
-        }
-      }
-    }
+          WAKE_TIME: '06:00:00',
+        },
+      },
+    },
   })
   @ApiUnauthorizedResponse({ description: 'User is not authenticated' })
   @ApiNotFoundResponse({ description: 'Notification settings not found' })
@@ -70,7 +71,8 @@ export class NotiSettingController {
 
   @ApiOperation({
     summary: 'Set bedtime notification settings',
-    description: 'Create or update bedtime notification settings for the authenticated user'
+    description:
+      'Create or update bedtime notification settings for the authenticated user',
   })
   @ApiBody({
     type: BedtimeDTO,
@@ -81,10 +83,10 @@ export class NotiSettingController {
           UID: 1,
           IS_ACTIVE: true,
           BEDTIME: '22:00',
-          WAKE_TIME: '06:00'
-        }
-      }
-    }
+          WAKE_TIME: '06:00',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 201,
@@ -97,10 +99,10 @@ export class NotiSettingController {
           UID: 1,
           NOTIFICATION_TYPE: 'BEDTIME',
           BEDTIME: '22:00:00',
-          WAKE_TIME: '06:00:00'
-        }
-      }
-    }
+          WAKE_TIME: '06:00:00',
+        },
+      },
+    },
   })
   @ApiUnauthorizedResponse({ description: 'User is not authenticated' })
   @ApiConflictResponse({ description: 'Bedtime settings already exist' })
@@ -112,7 +114,8 @@ export class NotiSettingController {
 
   @ApiOperation({
     summary: 'Set water range notification settings',
-    description: 'Create or update water range notification settings for the authenticated user'
+    description:
+      'Create or update water range notification settings for the authenticated user',
   })
   @ApiBody({
     type: WaterRangeDTO,
@@ -125,10 +128,10 @@ export class NotiSettingController {
           START_TIME: '08:00',
           END_TIME: '20:00',
           GLASSES_PER_DAY: 8,
-          INTERVAL_MINUTES: 60
-        }
-      }
-    }
+          INTERVAL_MINUTES: 60,
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 201,
@@ -143,10 +146,10 @@ export class NotiSettingController {
           START_TIME: '08:00:00',
           END_TIME: '20:00:00',
           GLASSES_PER_DAY: 8,
-          INTERVAL_MINUTES: 60
-        }
-      }
-    }
+          INTERVAL_MINUTES: 60,
+        },
+      },
+    },
   })
   @ApiUnauthorizedResponse({ description: 'User is not authenticated' })
   @ApiConflictResponse({ description: 'Water range settings already exist' })
@@ -158,7 +161,8 @@ export class NotiSettingController {
 
   @ApiOperation({
     summary: 'Set water plan notification settings',
-    description: 'Create or update water plan notification settings for the authenticated user'
+    description:
+      'Create or update water plan notification settings for the authenticated user',
   })
   @ApiBody({
     type: WaterPlanDTO,
@@ -169,10 +173,10 @@ export class NotiSettingController {
           UID: 1,
           GLASS_NUMBER: 1,
           NOTI_TIME: '09:00',
-          IS_ACTIVE: true
-        }
-      }
-    }
+          IS_ACTIVE: true,
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 201,
@@ -181,19 +185,23 @@ export class NotiSettingController {
       example: {
         settingType: 'WATER_PLAN',
         isActive: true,
-        setting: [{
-          GLASS_NUMBER: 1,
-          UID: 1,
-          NOTIFICATION_TYPE: 'WATER_PLAN',
-          NOTI_TIME: '09:00:00'
-        }]
-      }
-    }
+        setting: [
+          {
+            GLASS_NUMBER: 1,
+            UID: 1,
+            NOTIFICATION_TYPE: 'WATER_PLAN',
+            NOTI_TIME: '09:00:00',
+          },
+        ],
+      },
+    },
   })
   @ApiUnauthorizedResponse({ description: 'User is not authenticated' })
-  @ApiConflictResponse({ description: 'Water plan settings already exist for this glass number' })
+  @ApiConflictResponse({
+    description: 'Water plan settings already exist for this glass number',
+  })
   @Post('set-water-plan')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   setWaterPlan(@Body() waterPlanDTO: WaterPlanDTO) {
     return this.notiSettingService.setWaterPlan(waterPlanDTO);
   }
