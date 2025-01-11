@@ -201,7 +201,7 @@ export class NotiSettingController {
     description: 'Water plan settings already exist for this glass number',
   })
   @Post('set-water-plan')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   setWaterPlan(@Body() waterPlanDTO: WaterPlanDTO) {
     return this.notiSettingService.setWaterPlan(waterPlanDTO);
   }
