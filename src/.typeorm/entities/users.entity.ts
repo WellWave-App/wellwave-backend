@@ -77,26 +77,29 @@ export class User {
   @Column({ default: 0 })
   EXP: number;
 
+  @Column({ nullable: true })
+  REMINDER_NOTI_TIME?: string;
+  
+  @Column({ nullable: true })
+  IMAGE_URL?: string;
+  
+  @Column({ nullable: true, type: 'int' })
+  HYPERTENSION_RISK: number;
+  
+  @Column({ nullable: true, type: 'int' })
+  DIABETE_RISK: number;
+  
+  @Column({ nullable: true, type: 'int' })
+  DYSLIPIDEMIA_RISK: number;
+  
+  @Column({ nullable: true, type: 'int' })
+  OBESITY_RISK: number;
+
   @Column({ type: 'enum', enum: USER_GOAL, nullable: true })
   USER_GOAL: USER_GOAL;
 
-  @Column({ nullable: true })
-  REMINDER_NOTI_TIME?: string;
-
-  @Column({ nullable: true })
-  IMAGE_URL?: string;
-
-  // @Column({ nullable: true, type: 'int' })
-  // HYPERTENSION_RISK: number;
-
-  // @Column({ nullable: true, type: 'int' })
-  // DIABETE_RISK: number;
-
-  // @Column({ nullable: true, type: 'int' })
-  // DYSLIPIDEMIA_RISK: number;
-
-  // @Column({ nullable: true, type: 'int' })
-  // OBESITY_RISK: number;
+  @Column({ nullable: true, type: 'int' })
+  USER_GOAL_STEP_WEEK: number;
 
   @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
   createAt: Date;
