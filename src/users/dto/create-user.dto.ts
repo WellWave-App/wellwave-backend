@@ -1,5 +1,12 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsEmail, IsNumber, IsOptional, IsString, ValidateIf } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsEmail,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({ required: false, description: 'Username' })
@@ -11,19 +18,19 @@ export class CreateUserDto {
   @IsEmail()
   EMAIL?: string;
 
-  @ApiProperty({ 
-    required: false, 
+  @ApiProperty({
+    required: false,
     description: 'Password (required if GOOGLE_ID not provided)',
-    minLength: 8
+    minLength: 8,
   })
   @IsOptional()
   @IsString()
   @ValidateIf((o) => !o.GOOGLE_ID)
   PASSWORD?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    description: 'Google ID (required if PASSWORD not provided)' 
+  @ApiProperty({
+    required: false,
+    description: 'Google ID (required if PASSWORD not provided)',
   })
   @IsOptional()
   @IsString()
@@ -35,7 +42,10 @@ export class CreateUserDto {
   @IsOptional()
   YEAR_OF_BIRTH?: number;
 
-  @ApiProperty({ required: false, description: 'Gender (true = male, false = female)' })
+  @ApiProperty({
+    required: false,
+    description: 'Gender (true = male, false = female)',
+  })
   @IsBoolean()
   @IsOptional()
   GENDER?: boolean;
@@ -55,14 +65,18 @@ export class CreateUserDto {
   @IsOptional()
   GEM?: number;
 
-  @ApiProperty({ required: false, description: 'Experience points', default: 0 })
+  @ApiProperty({
+    required: false,
+    description: 'Experience points',
+    default: 0,
+  })
   @IsNumber()
   @IsOptional()
   EXP?: number;
 
-  @ApiProperty({ 
-    required: false, 
-    description: 'User goal (0: BUILD_MUSCLE, 1: LOSE_WEIGHT, 2: STAY_HEALTHY)' 
+  @ApiProperty({
+    required: false,
+    description: 'User goal (0: BUILD_MUSCLE, 1: LOSE_WEIGHT, 2: STAY_HEALTHY)',
   })
   @IsNumber()
   @IsOptional()
@@ -77,4 +91,17 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   REMINDER_NOTI_TIME?: string;
+
+  @ApiProperty({ required: false, description: 'user step target weekly ' })
+  @IsNumber()
+  @IsOptional()
+  USER_GOAL_STEP_WEEK: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'user exercise time target weekly',
+  })
+  @IsNumber()
+  @IsOptional()
+  USER_GOAL_EX_TIME_WEEK: number;
 }
