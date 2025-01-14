@@ -10,13 +10,14 @@ import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
 import { User } from '@/.typeorm/entities/users.entity';
 import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
 import { RiskCalculator } from './utils/risk-calculator.util';
+import { RiskAssessmentEntity } from '@/.typeorm/entities/assessment.entity';
 
 @Module({
   imports: [
     UsersModule,
     ArticleModule,
     UserReadHistoryModule,
-    TypeOrmModule.forFeature([Article, UserReadHistory, User, DiseaseType]),
+    TypeOrmModule.forFeature([Article, UserReadHistory, User, DiseaseType, RiskAssessmentEntity]),
   ],
   controllers: [RecommendationController],
   providers: [ArticleRecommendationService, RiskCalculator],

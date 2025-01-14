@@ -66,18 +66,10 @@ export default class RecommendationController {
     @Query('limit') limit?: number,
     @Query('includeRead') includeRead?: boolean,
   ) {
-    if (limit !== null) {
-      limit = 9;
-    }
-
-    if (includeRead !== null) {
-      includeRead = false;
-    }
-
     return this.recommendationsService.getReccomendedArticle(
       userId,
-      limit,
-      includeRead,
+      limit || 9,
+      includeRead || false,
     );
   }
 }
