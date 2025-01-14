@@ -95,7 +95,7 @@ export class CreateUserDto {
   @ApiProperty({ required: false, description: 'user step target weekly ' })
   @IsNumber()
   @IsOptional()
-  USER_GOAL_STEP_WEEK: number;
+  USER_GOAL_STEP_WEEK?: number;
 
   @ApiProperty({
     required: false,
@@ -103,5 +103,5 @@ export class CreateUserDto {
   })
   @IsNumber()
   @IsOptional()
-  USER_GOAL_EX_TIME_WEEK: number;
+  USER_GOAL_EX_TIME_WEEK?: number;
 }
