@@ -34,15 +34,24 @@ export class NotiSettingService {
     notificationType: NotificationType,
   ): Promise<NotificationSettingsEntity> {
     let relationSetting: string;
+    let orderSetting: any = {};
+
     switch (notificationType) {
       case NotificationType.BEDTIME:
         relationSetting = 'bedtimeSettings';
+        orderSetting = {};
         break;
       case NotificationType.WATER_PLAN:
         relationSetting = 'waterPlanSetting';
+        orderSetting = {
+          waterPlanSetting: {
+            GLASS_NUMBER: 'ASC',
+          },
+        };
         break;
       default:
         relationSetting = 'waterRangeSettings';
+        orderSetting = {};
     }
 
     const notificationSetting = await this.notificationRepo.findOne({
@@ -51,6 +60,7 @@ export class NotiSettingService {
         NOTIFICATION_TYPE: notificationType,
       },
       relations: [relationSetting, 'user'],
+      order: orderSetting,
     });
 
     if (!notificationSetting) {
