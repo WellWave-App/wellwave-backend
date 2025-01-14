@@ -27,13 +27,17 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @ValidateIf((o) => !o.GOOGLE_ID) // Only validate PASSWORD if GOOGLE_ID is not provided
-  @Transform(({ value }: TransformFnParams) => (value === '' ? undefined : value))
+  @Transform(({ value }: TransformFnParams) =>
+    value === '' ? undefined : value,
+  )
   PASSWORD?: string;
 
   @IsOptional()
   @IsString()
   @ValidateIf((o) => !o.PASSWORD) // Only validate GOOGLE_ID if PASSWORD is not provided
-  @Transform(({ value }: TransformFnParams) => (value === '' ? undefined : value))
+  @Transform(({ value }: TransformFnParams) =>
+    value === '' ? undefined : value,
+  )
   GOOGLE_ID?: string;
 
   @IsNumber()
@@ -85,6 +89,20 @@ export class UpdateUserDto {
     value === '' ? undefined : Number(value),
   )
   USER_GOAL?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }: TransformFnParams) =>
+    value === '' ? undefined : Number(value),
+  )
+  USER_GOAL_STEP_WEEK?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }: TransformFnParams) =>
+    value === '' ? undefined : Number(value),
+  )
+  USER_GOAL_EX_TIME_WEEK?: number;
 
   @IsString()
   @IsOptional()
