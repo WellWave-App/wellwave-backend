@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -27,6 +28,7 @@ export class RiskAssessmentEntity {
 
   @Column('float')
   WAIST_LINE: number;
+
   @Column('boolean')
   HAS_SMOKE: boolean;
 
@@ -44,6 +46,9 @@ export class RiskAssessmentEntity {
 
   @Column('int4')
   OBESITY: number;
+
+  @CreateDateColumn()
+  createAt: Date;
 
   @OneToOne(() => User, (USER) => USER.RiskAssessment)
   @JoinColumn({ name: 'UID' })

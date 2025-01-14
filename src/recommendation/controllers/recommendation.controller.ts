@@ -24,8 +24,8 @@ export default class RecommendationController {
   ) {
     return this.recommendationsService.getReccomendedArticle(
       userId,
-      limit,
-      includeRead,
+      limit || 9,
+      includeRead || false,
     );
   }
 }

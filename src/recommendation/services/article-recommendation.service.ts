@@ -8,6 +8,7 @@ import { In, Repository } from 'typeorm';
 import { RiskCalculator, RiskLevel } from '../utils/risk-calculator.util';
 import { ArticleScore } from '../interfaces/article-score.interface';
 import { PaginatedResponse } from '../../response/response.interface';
+import { RiskAssessmentEntity } from '@/.typeorm/entities/assessment.entity';
 
 @Injectable()
 export class ArticleRecommendationService {
@@ -20,6 +21,8 @@ export class ArticleRecommendationService {
     private userReadHistoryRepository: Repository<UserReadHistory>,
     @InjectRepository(DiseaseType)
     private diseaseTypeRepository: Repository<DiseaseType>,
+    @InjectRepository(RiskAssessmentEntity)
+    private userRisk: Repository<RiskAssessmentEntity>,
   ) {}
 
   private INTERACTION_WEIGHTS = {
@@ -28,27 +31,26 @@ export class ArticleRecommendationService {
     RECENT_READ: 1.2, // 20% boost for recent reads (e.g., last 7 days)
   };
 
-  private calculateUserRiskProfile(user: User) {
-    // weight is 0-1 (.25, .5, .75, 1)
+  private calculateUserRiskProfile(userRisk: RiskAssessmentEntity) {
     const diabetesWeight = RiskCalculator.calculateDiabetesWeight(
-      user.DIABETE_RISK,
+      userRisk.DIABETES,
     );
     const hypertensionWeight = RiskCalculator.calculateHypertensionWeight(
-      user.HYPERTENSION_RISK,
+      userRisk.HYPERTENSION,
     );
     const dyslipidemiaWeight = RiskCalculator.calculateDyslipidemiaWeight(
-      user.DYSLIPIDEMIA_RISK,
+      userRisk.DYSLIPIDEMIA,
     );
     const obesityWeight = RiskCalculator.calculateObesityWeight(
-      user.OBESITY_RISK,
+      userRisk.OBESITY,
     );
 
     // Calculate overall risk level
     const overallRiskLevel = RiskCalculator.calculateOverallRiskLevel({
-      diabetes: user.DIABETE_RISK,
-      hypertension: user.HYPERTENSION_RISK,
-      dyslipidemia: user.DYSLIPIDEMIA_RISK,
-      obesity: user.OBESITY_RISK,
+      diabetes: userRisk.DIABETES,
+      hypertension: userRisk.HYPERTENSION,
+      dyslipidemia: userRisk.DYSLIPIDEMIA,
+      obesity: userRisk.OBESITY,
     });
 
     return {
@@ -170,62 +172,24 @@ export class ArticleRecommendationService {
     }));
   }
 
-  // async calculateBookmarkBasedScores(userId: number) {
-  //   const userBookmarks = await this.userReadHistoryRepository.find({
-  //     where: {
-  //       user: { UID: userId },
-  //       IS_BOOKMARK: true,
-  //     },
-  //     relations: ['article'],
-  //   });
-
-  //   // Find users who bookmarked similar articles
-  //   const similarUsersBookmarks = await this.userReadHistoryRepository
-  //     .createQueryBuilder('history')
-  //     .innerJoinAndSelect('history.user', 'user')
-  //     .innerJoinAndSelect('history.article', 'article')
-  //     .where('history.is_bookmark = :isBookmark', { isBookmark: true })
-  //     .andWhere((qb) => {
-  //       const subQuery = qb
-  //         .subQuery()
-  //         .select('DISTINCT ur.UID')
-  //         .from(UserReadHistory, 'ur')
-  //         .where('ur.AID IN (:...articleIds)', {
-  //           articleIds: userBookmarks.map((h) => h.AID),
-  //         })
-  //         .andWhere('ur.is_bookmark = :isBookmark', { isBookmark: true })
-  //         .getQuery();
-  //       return 'history.UID IN ' + subQuery;
-  //     })
-  //     .getMany();
-
-  //   // Calculate scores based on bookmark patterns
-  //   const articleScores = new Map<number, number>();
-  //   similarUsersBookmarks.forEach((history) => {
-  //     const currentScore = articleScores.get(history.AID) || 0;
-  //     articleScores.set(history.AID, currentScore + 1.5); // Higher weight for bookmarks
-  //   });
-
-  //   // Normalize scores
-  //   const maxScore = Math.max(...articleScores.values());
-  //   return Array.from(articleScores.entries()).map(([articleId, score]) => ({
-  //     articleId,
-  //     score: score / maxScore,
-  //   }));
-  // }
-
   async getReccomendedArticle(
     userId: number,
     limit: number = 9,
     includeRead: boolean = false,
   ): Promise<PaginatedResponse<Article>> {
-    const user = await this.usersRepository.findOne({ where: { UID: userId } });
+    // const user = await this.usersRepository.findOne({ where: { UID: userId } });
+    const [userRisk] = await this.userRisk.find({
+      where: { UID: userId },
+      order: { createAt: 'DESC' },
+      take: 1,
+    });
 
-    if (!user) {
-      throw new NotFoundException(`user with UID: ${userId} not found`);
+    if (!userRisk) {
+      throw new NotFoundException(`userRisk of UID: ${userId} not found`);
     }
 
-    const riskProfile = this.calculateUserRiskProfile(user);
+    // const riskProfile = this.calculateUserRiskProfile(user);
+    const riskProfile = this.calculateUserRiskProfile(userRisk);
 
     const [contentScores, collaborativeScores] = await Promise.all([
       this.calculateContentBasedScores(userId, riskProfile),
