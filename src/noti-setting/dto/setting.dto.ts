@@ -2,8 +2,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsJSON,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -12,7 +14,7 @@ import {
 export class BedtimeDTO {
   @ApiProperty({
     description: 'User ID',
-    example: 1
+    example: 1,
   })
   @IsNumber()
   @IsNotEmpty()
@@ -20,7 +22,7 @@ export class BedtimeDTO {
 
   @ApiPropertyOptional({
     description: 'Whether bedtime notifications are active',
-    example: true
+    example: true,
   })
   @IsBoolean()
   @IsOptional()
@@ -28,7 +30,7 @@ export class BedtimeDTO {
 
   @ApiPropertyOptional({
     description: 'Bedtime in HH:mm format',
-    example: '22:00'
+    example: '22:00',
   })
   @IsString()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
@@ -39,7 +41,7 @@ export class BedtimeDTO {
 
   @ApiPropertyOptional({
     description: 'Wake time in HH:mm format',
-    example: '06:00'
+    example: '06:00',
   })
   @IsString()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
@@ -47,13 +49,37 @@ export class BedtimeDTO {
   })
   @IsOptional()
   WAKE_TIME?: string;
+
+  @ApiPropertyOptional({
+    description: 'Days of the week with boolean values',
+    example: {
+      Sunday: false,
+      Monday: true,
+      Tuesday: true,
+      Wednesday: false,
+      Thursday: false,
+      Friday: true,
+      Saturday: false,
+    },
+  })
+  @IsObject()
+  @IsOptional()
+  WEEKDAYS?: {
+    Sunday?: boolean;
+    Monday?: boolean;
+    Tuesday?: boolean;
+    Wednesday?: boolean;
+    Thursday?: boolean;
+    Friday?: boolean;
+    Saturday?: boolean;
+  };
 }
 
 // water-range.dto.ts
 export class WaterRangeDTO {
   @ApiProperty({
     description: 'User ID',
-    example: 1
+    example: 1,
   })
   @IsNumber()
   @IsNotEmpty()
@@ -61,7 +87,7 @@ export class WaterRangeDTO {
 
   @ApiPropertyOptional({
     description: 'Whether water range notifications are active',
-    example: true
+    example: true,
   })
   @IsBoolean()
   @IsOptional()
@@ -69,7 +95,7 @@ export class WaterRangeDTO {
 
   @ApiPropertyOptional({
     description: 'Start time for water notifications in HH:mm format',
-    example: '08:00'
+    example: '08:00',
   })
   @IsString()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
@@ -80,7 +106,7 @@ export class WaterRangeDTO {
 
   @ApiPropertyOptional({
     description: 'End time for water notifications in HH:mm format',
-    example: '20:00'
+    example: '20:00',
   })
   @IsString()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
@@ -92,7 +118,7 @@ export class WaterRangeDTO {
   @ApiPropertyOptional({
     description: 'Number of glasses of water per day',
     example: 8,
-    minimum: 1
+    minimum: 1,
   })
   @IsNumber()
   @IsOptional()
@@ -101,7 +127,7 @@ export class WaterRangeDTO {
   @ApiPropertyOptional({
     description: 'Interval between notifications in minutes',
     example: 60,
-    minimum: 1
+    minimum: 1,
   })
   @IsNumber()
   @IsOptional()
@@ -112,7 +138,7 @@ export class WaterRangeDTO {
 export class WaterPlanDTO {
   @ApiProperty({
     description: 'User ID',
-    example: 1
+    example: 1,
   })
   @IsNumber()
   @IsNotEmpty()
@@ -121,7 +147,7 @@ export class WaterPlanDTO {
   @ApiPropertyOptional({
     description: 'Glass number for this notification',
     example: 1,
-    minimum: 1
+    minimum: 1,
   })
   @IsNumber()
   @IsOptional()
@@ -129,7 +155,7 @@ export class WaterPlanDTO {
 
   @ApiPropertyOptional({
     description: 'Notification time in HH:mm format',
-    example: '09:00'
+    example: '09:00',
   })
   @IsString()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
@@ -140,7 +166,7 @@ export class WaterPlanDTO {
 
   @ApiPropertyOptional({
     description: 'Whether water plan notifications are active',
-    example: true
+    example: true,
   })
   @IsBoolean()
   @IsOptional()

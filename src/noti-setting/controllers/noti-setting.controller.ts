@@ -22,6 +22,7 @@ import {
   ApiConflictResponse,
 } from '@nestjs/swagger';
 import { BedtimeDTO, WaterPlanDTO, WaterRangeDTO } from '../dto/setting.dto';
+import { User } from '@/.typeorm/entities/users.entity';
 
 @ApiTags('Notification Settings')
 @ApiBearerAuth()
@@ -80,10 +81,23 @@ export class NotiSettingController {
     examples: {
       example1: {
         value: {
-          UID: 1,
-          IS_ACTIVE: true,
-          BEDTIME: '22:00',
-          WAKE_TIME: '06:00',
+          settingType: 'BEDTIME',
+          isActive: true,
+          setting: {
+            UID: 28,
+            NOTIFICATION_TYPE: 'BEDTIME',
+            BEDTIME: '20:30:00',
+            WAKE_TIME: '04:30:00',
+            WEEKDAYS: {
+              Friday: true,
+              Monday: true,
+              Sunday: false,
+              Tuesday: true,
+              Saturday: false,
+              Thursday: false,
+              Wednesday: false,
+            },
+          },
         },
       },
     },
@@ -93,14 +107,26 @@ export class NotiSettingController {
     description: 'Bedtime settings updated successfully',
     schema: {
       example: {
-        settingType: 'BEDTIME',
-        isActive: true,
-        setting: {
-          UID: 1,
+        UID: 28,
+        NOTIFICATION_TYPE: 'BEDTIME',
+        IS_ACTIVE: true,
+        CREATE_AT: '2025-01-15T11:09:18.767Z',
+        bedtimeSettings: {
+          UID: 28,
           NOTIFICATION_TYPE: 'BEDTIME',
-          BEDTIME: '22:00:00',
-          WAKE_TIME: '06:00:00',
+          BEDTIME: '20:30:00',
+          WAKE_TIME: '04:30:00',
+          WEEKDAYS: {
+            Friday: true,
+            Monday: true,
+            Sunday: false,
+            Tuesday: true,
+            Saturday: false,
+            Thursday: false,
+            Wednesday: false,
+          },
         },
+        user: User,
       },
     },
   })

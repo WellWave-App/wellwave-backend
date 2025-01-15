@@ -10,9 +10,11 @@ import {
   NotificationType,
 } from '@/.typeorm/entities/noti-setting.entity';
 import { Repository } from 'typeorm';
-import { error } from 'console';
 import { WaterRangeSettingsEntity } from '@/.typeorm/entities/noti-water-range.entity';
-import { BedtimeSettingsEntity } from '@/.typeorm/entities/noti-bedtime-setting.entity';
+import {
+  BedtimeSettingsEntity,
+  Weekdays,
+} from '@/.typeorm/entities/noti-bedtime-setting.entity';
 import { WaterPlanSettingEntity } from '@/.typeorm/entities/noti-water-plan.entity';
 import { BedtimeDTO, WaterPlanDTO, WaterRangeDTO } from '../dto/setting.dto';
 
@@ -67,6 +69,16 @@ export class NotiSettingService {
       throw new NotFoundException(
         `Not found notification ${notificationType} setting`,
       );
+    }
+
+    if (
+      notificationSetting.bedtimeSettings !== null &&
+      notificationType === NotificationType.BEDTIME
+    ) {
+      const sortedWeekdays = this.sortWeekdays(
+        notificationSetting.bedtimeSettings.WEEKDAYS,
+      );
+      notificationSetting.bedtimeSettings.WEEKDAYS = sortedWeekdays;
     }
 
     return notificationSetting;
@@ -130,12 +142,6 @@ export class NotiSettingService {
         NotificationType.BEDTIME,
         createBedtimeDto.IS_ACTIVE,
       );
-      // await this.notificationSetting.save({
-      //   UID: createBedtimeDto.UID,
-      //   NOTIFICATION_TYPE: NotificationType.BEDTIME,
-      //   IS_ACTIVE: true,
-      //   CREATE_AT: new Date()
-      // });
     }
 
     const exist = await this.bedtimeRepo.findOne({
@@ -161,6 +167,7 @@ export class NotiSettingService {
       NOTIFICATION_TYPE: NotificationType.BEDTIME,
       BEDTIME: bedtimeDate,
       WAKE_TIME: wakeTimeDate,
+      WEEKDAYS: createBedtimeDto.WEEKDAYS,
       // notificationSetting:
     });
 
@@ -182,6 +189,8 @@ export class NotiSettingService {
     Object.assign(currentBedtimeSetting, {
       BEDTIME: bedtimeDate || currentBedtimeSetting.BEDTIME,
       WAKE_TIME: wakeTimeDate || currentBedtimeSetting.WAKE_TIME,
+      WEEKDAYS: updateBedtimeDto.WEEKDAYS || currentBedtimeSetting.WEEKDAYS,
+      ...BedtimeDTO,
     });
 
     return await this.bedtimeRepo.save(currentBedtimeSetting);
@@ -195,6 +204,7 @@ export class NotiSettingService {
       NOTIFICATION_TYPE: NotificationType;
       BEDTIME: string;
       WAKE_TIME: string;
+      WEEKDAYS: Weekdays;
     };
   }> {
     try {
@@ -240,6 +250,12 @@ export class NotiSettingService {
       const updatedBedtimeSetting = existingBedtimeSetting
         ? await this.updateBedtimeSetting(bedTimeDto)
         : await this.createBedtimeSetting(bedTimeDto);
+
+      if (updatedBedtimeSetting.WEEKDAYS) {
+        updatedBedtimeSetting.WEEKDAYS = this.sortWeekdays(
+          updatedBedtimeSetting.WEEKDAYS,
+        );
+      }
 
       return {
         settingType: NotificationType.BEDTIME,
@@ -622,5 +638,35 @@ export class NotiSettingService {
     const minutes = dateTime.getMinutes().toString().padStart(2, '0');
     const seconds = dateTime.getSeconds().toString().padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
+  }
+
+  weekdayOrder = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+
+  sortWeekdays(weekdays: Weekdays): Weekdays {
+    const sortedWeekdays: Weekdays = {
+      Sunday: false,
+      Monday: false,
+      Tuesday: false,
+      Wednesday: false,
+      Thursday: false,
+      Friday: false,
+      Saturday: false,
+    };
+
+    this.weekdayOrder.forEach((day) => {
+      if (day in weekdays) {
+        sortedWeekdays[day] = weekdays[day];
+      }
+    });
+
+    return sortedWeekdays;
   }
 }
