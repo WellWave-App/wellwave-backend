@@ -79,19 +79,19 @@ export class User {
 
   @Column({ nullable: true })
   REMINDER_NOTI_TIME?: string;
-  
+
   @Column({ nullable: true })
   IMAGE_URL?: string;
-  
+
   @Column({ nullable: true, type: 'int' })
   HYPERTENSION_RISK: number;
-  
+
   @Column({ nullable: true, type: 'int' })
   DIABETE_RISK: number;
-  
+
   @Column({ nullable: true, type: 'int' })
   DYSLIPIDEMIA_RISK: number;
-  
+
   @Column({ nullable: true, type: 'int' })
   OBESITY_RISK: number;
 

@@ -15,6 +15,8 @@ import { ArticleModule } from './article-group/article/article.module';
 import { DiseaseTypesModule } from './disease-types/disease-types.module';
 import { UserReadHistoryModule } from './article-group/user-read-history/user-read-history.module';
 import { RecommendationModule } from './recommendation/recommendation.module';
+import { QuestModule } from './mission/quest/quest.module';
+import { HabitModule } from './mission/habit/habit.module';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { RecommendationModule } from './recommendation/recommendation.module';
     DiseaseTypesModule,
     UserReadHistoryModule,
     RecommendationModule,
+    QuestModule,
+    HabitModule,
   ],
   controllers: [AppController],
   providers: [AppService],
