@@ -101,6 +101,9 @@ export class User {
   @Column({ nullable: true, type: 'int' })
   USER_GOAL_STEP_WEEK: number;
 
+  @Column({ nullable: true, type: 'int' })
+  USER_GOAL_EX_TIME_WEEK: number;
+
   @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
   createAt: Date;
 
