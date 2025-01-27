@@ -14,7 +14,7 @@ import { DiseaseTypesService } from '@/disease-types/services/disease-types.serv
 import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
 import { PaginatedResponse } from '@/response/response.interface';
 
-export interface articleQuery {
+export interface ArticleParams {
   page?: number;
   limit?: number;
   search?: string;
@@ -89,8 +89,8 @@ export class ArticleRepository {
     return article;
   }
 
-  async findAll(query: articleQuery): Promise<PaginatedResponse<Article>> {
-    const { page = 1, limit = 10, search, diseaseIds } = query;
+  async findAll(params: ArticleParams): Promise<PaginatedResponse<Article>> {
+    const { page = 1, limit = 10, search, diseaseIds } = params;
     const queryBuilder = this.repository
       .createQueryBuilder('article')
       .leftJoinAndSelect('article.diseases', 'disease');
@@ -107,7 +107,7 @@ export class ArticleRepository {
       });
     }
 
-    const total = await queryBuilder.getCount();
+  const total = await queryBuilder.getCount();
 
     // Include all order by fields in the select clause
     queryBuilder

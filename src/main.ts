@@ -5,6 +5,7 @@ import * as cookieParser from 'cookie-parser';
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { DiseaseTypesSeeder } from './.typeorm/seeders/disease-types.seeder';
+// import { HabitTypesSeeder } from './.typeorm/seeders/habit-types.seeder';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,8 +31,13 @@ async function bootstrap() {
   );
 
   // Run seeders
-  const seeder = app.get(DiseaseTypesSeeder);
-  await seeder.seed()
+  const diseaseTypesSeeder = app.get(DiseaseTypesSeeder);
+  // const habitTypesSeeder = app.get(HabitTypesSeeder);
+
+  await Promise.all([
+    diseaseTypesSeeder.seed(),
+    // habitTypesSeeder.seed()
+  ]);
 
   // run app  on port
   await app.listen(3000);

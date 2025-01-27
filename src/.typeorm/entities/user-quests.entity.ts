@@ -53,9 +53,9 @@ export class UserQuests {
   // relations
   @ManyToOne(() => Quest, { eager: true })
   @JoinColumn({ name: 'QID' }) // Relation with QUEST
-  QUEST: Quest;
+  quest: Quest;
 
   @ManyToOne(() => User, { eager: true })
   @JoinColumn({ name: 'UID' }) // Relation with USERS
-  USER: User;
+  user: User;
 }

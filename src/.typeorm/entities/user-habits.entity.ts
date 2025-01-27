@@ -48,7 +48,7 @@ export class UserHabits {
   @Column({ name: 'DAYS_GOAL', type: 'int', nullable: true })
   DAYS_GOAL: number; // Total days goal
 
-  @Column({ name: 'STREAK_COUNT', type: 'int', nullable: true })
+  @Column({ name: 'STREAK_COUNT', type: 'int', nullable: true, default: 0 })
   STREAK_COUNT: number; // Current streak
 
   @Column({ name: 'IS_NOTIFICATION_ENABLED', type: 'bool', default: false })
@@ -72,16 +72,16 @@ export class UserHabits {
   // relations
   @ManyToOne(() => Habits, { eager: true })
   @JoinColumn({ name: 'HID' }) // Relation with QUEST
-  Habits: Habits;
+  habits: Habits;
 
   @ManyToOne(() => User, { eager: true })
   @JoinColumn({ name: 'UID' }) // Relation with USERS
-  USER: User;
+  user: User;
 
   @OneToMany(
     () => DailyHabitTrack,
     (DailyHabitTrack) => DailyHabitTrack.UserHabits,
     { eager: true, onDelete: 'CASCADE' },
   )
-  DailyTrack: DailyHabitTrack[];
+  dailyTracks: DailyHabitTrack[];
 }

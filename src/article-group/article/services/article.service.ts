@@ -3,7 +3,7 @@ import { CreateArticleDto } from '../dto/create-article.dto';
 import { UpdateArticleDto } from '../dto/update-article.dto';
 import {
   ArticleRepository,
-  articleQuery,
+  ArticleParams,
 } from '../repositories/article.repository';
 import { ImageService } from '@/image/image.service';
 import { Article } from '@/.typeorm/entities/article.entity';
@@ -32,7 +32,7 @@ export class ArticleService {
     return await this.articleRepository.create(dto);
   }
 
-  async search(query?: articleQuery): Promise<PaginatedResponse<Article>> {
+  async search(query?: ArticleParams): Promise<PaginatedResponse<Article>> {
     return await this.articleRepository.findAll(query);
   }
 

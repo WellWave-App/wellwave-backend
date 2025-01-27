@@ -4,7 +4,7 @@ import { UserReadHistoryController } from './controllers/user-read-history.contr
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
 import { UsersModule } from '@/users/users.module';
-import { UserReadHistoryReposity } from './repositories/user-read-histort.repository';
+import { UserReadHistoryReposity } from './repositories/user-read-history.repository';
 import { ArticleModule } from '../article/article.module';
 
 @Module({
