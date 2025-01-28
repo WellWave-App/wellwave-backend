@@ -36,7 +36,7 @@ export class Quest {
   DESCRIPTION: string;
 
   @Column({
-    name: 'CATEGORY',
+    name: 'RELATED_HABIT_CATEGORY',
     type: 'enum',
     enum: HabitCategories,
   })
@@ -63,7 +63,7 @@ export class Quest {
   @Column({ type: 'int', name: 'GEM_REWARDS', nullable: true, default: 0 })
   GEM_REWARDS: number;
 
-  @Column({ type: 'float', name: 'TARGET_VALUE', default: 0 })
+  @Column({ type: 'float', name: 'RQ_TARGET_VALUE', default: 0 })
   RQ_TARGET_VALUE: number; // Generic target field (minutes/distance/count)
 
   @Column({
@@ -105,9 +105,9 @@ export class Quest {
   // })
   // RQ_TARGET_COUNT: number; // for count-based categories
 
-  @CreateDateColumn({ name: 'createAt', type: 'date' })
-  createAt: Date;
+  @CreateDateColumn({ name: 'CREATED_AT', type: 'date' })
+  CREATED_AT: Date;
 
-  @UpdateDateColumn({ name: 'updateAt', type: 'date' })
-  updateAt: Date;
+  @UpdateDateColumn({ name: 'UPDATED_AT', type: 'date' })
+  UPDATED_AT: Date;
 }

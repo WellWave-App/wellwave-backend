@@ -63,10 +63,10 @@ export class HabitService {
     userId: number,
     filter: HabitListFilter = HabitListFilter.ALL,
     category?: HabitCategories,
-    page?: number,
-    limit?: number,
+    page: number = 1,
+    limit: number = 10,
     pagination: boolean = false,
-  ): Promise<any[]> {
+  ): Promise<PaginatedResponse<any>> {
     // Start with habits query
     const habitsQuery = this.habitsRepository.createQueryBuilder('habit');
 
@@ -104,8 +104,19 @@ export class HabitService {
       // For ALL, we keep all habits but will add the status
     }
 
+    // Calculate pagination values
+    const total = filteredHabits.length;
+    const totalPages = pagination ? Math.ceil(total / limit) : undefined;
+
+    // Apply pagination if enabled
+    if (pagination) {
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      filteredHabits = filteredHabits.slice(startIndex, endIndex);
+    }
+
     // Map habits to include active status and challenge info if exists
-    return await Promise.all(
+    const mappedHabits = await Promise.all(
       filteredHabits.map(async (habit) => {
         const isActive = activeHabitIds.has(habit.HID);
 
@@ -146,6 +157,20 @@ export class HabitService {
         };
       }),
     );
+
+    // Return paginated response
+    return {
+      data: mappedHabits,
+      meta: {
+        total,
+        ...(pagination && {
+          page,
+          limit,
+          totalPages,
+          pagination,
+        }),
+      },
+    };
   }
 
   async startChallenge(
@@ -214,7 +239,7 @@ export class HabitService {
       },
       relations: ['habits'],
     });
-    const trackDate = new Date();
+    const trackDate = new Date(trackDto.TRACK_DATE) || new Date();
 
     if (!userHabit) {
       throw new NotFoundException('Challenge not found');
@@ -310,7 +335,8 @@ export class HabitService {
     });
 
     const sortedTracks = userHabit.dailyTracks.sort(
-      (a, b) => b.TRACK_DATE.getTime() - a.TRACK_DATE.getTime(),
+      (a, b) =>
+        new Date(b.TRACK_DATE).getTime() - new Date(a.TRACK_DATE).getTime(),
     );
 
     let currentStreak = 0;
@@ -359,7 +385,7 @@ export class HabitService {
           trackingType: TrackingType.Count,
           value: 1, // One completion
           date: new Date(),
-          progressType: 'completion'
+          progressType: 'completion',
         });
         // TODO: Implement reward system
         // await this.rewardService.awardHabitCompletion(userHabit);
@@ -374,7 +400,10 @@ export class HabitService {
   async getUserHabits(
     userId: number,
     status?: HabitStatus,
-  ): Promise<UserHabits[]> {
+    pagination: boolean = false,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedResponse<UserHabits>> {
     const queryBuilder = this.userHabitsRepository
       .createQueryBuilder('userHabit')
       .leftJoinAndSelect('userHabit.habits', 'habit')
@@ -385,7 +414,24 @@ export class HabitService {
       queryBuilder.andWhere('userHabit.STATUS = :status', { status });
     }
 
-    return await queryBuilder.getMany();
+    if (pagination) {
+      queryBuilder.skip((page - 1) * limit).take(limit);
+    }
+
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      data,
+      meta: {
+        total,
+        ...(pagination && {
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          pagination,
+        }),
+      },
+    };
   }
 
   async getHabitStats(userId: number, challengeId: number): Promise<any> {
@@ -427,6 +473,12 @@ export class HabitService {
           0,
         );
         break;
+      // case TrackingType.Boolean:
+      //   totalValue = userHabit.dailyTracks.reduce(
+      //     (sum, track) => sum + (track.COMPLETED ? 1 : 0),
+      //     0,
+      //   );
+      //   break;
     }
 
     return {
@@ -434,10 +486,54 @@ export class HabitService {
       completedDays,
       currentStreak,
       totalValue,
-      progressPercentage: (completedDays / totalDays) * 100,
+      progressPercentage: Number(
+        ((completedDays / totalDays) * 100).toFixed(2),
+      ),
       status: userHabit.STATUS,
+      dailyTracks: userHabit.dailyTracks,
     };
   }
+
+  // Batch update for daily completed habits
+  // @Cron('0 0 * * *') // Run daily at midnight
+  // async processDailyHabitCompletion() {
+  //   const yesterday = new Date();
+  //   yesterday.setDate(yesterday.getDate() - 1);
+
+  //   const completedTracks = await this.dailyTrackRepository.find({
+  //     where: {
+  //       TRACK_DATE: yesterday,
+  //       COMPLETED: true,
+  //     },
+  //     relations: ['UserHabits', 'UserHabits.habits'],
+  //   });
+
+  //   // Group completed tracks by user
+  //   const userCompletions = new Map<number, Set<HabitCategories>>();
+
+  //   for (const track of completedTracks) {
+  //     const userId = track.UserHabits.UID;
+  //     const category = track.UserHabits.habits.CATEGORY;
+
+  //     if (!userCompletions.has(userId)) {
+  //       userCompletions.set(userId, new Set());
+  //     }
+  //     userCompletions.get(userId).add(category);
+  //   }
+
+  //   // Update daily completion quests for each user
+  //   for (const [userId, categories] of userCompletions) {
+  //     for (const category of categories) {
+  //       await this.questService.updateQuestProgress(userId, {
+  //         category,
+  //         trackingType: TrackingType.Count,
+  //         value: 1,
+  //         date: yesterday,
+  //         progressType: 'daily_completion',
+  //       });
+  //     }
+  //   }
+  // }
 }
 
 // @Injectable()

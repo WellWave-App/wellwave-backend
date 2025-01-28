@@ -13,6 +13,7 @@ import {
   ValidateNested,
   IsNumber,
   Min,
+  IsObject,
 } from 'class-validator';
 
 export class CreateHabitDto {
@@ -76,7 +77,8 @@ export class CreateHabitDto {
   )
   DEFAULT_DAYS_GOAL?: number;
 
-  @ValidateNested()
+  // @ValidateNested()
+  @IsObject()
   @Transform(({ value }: TransformFnParams) =>
     value === '' ? undefined : value,
   )

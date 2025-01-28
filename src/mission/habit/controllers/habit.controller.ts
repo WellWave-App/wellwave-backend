@@ -105,8 +105,18 @@ export class HabitController {
     @Request() req,
     @Query('filter') filter?: HabitListFilter,
     @Query('category') category?: HabitCategories,
-  ): Promise<Habits[]> {
-    return this.habitService.getHabits(req.user.UID, filter, category);
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('pagination') pagination?: boolean,
+  ) {
+    return this.habitService.getHabits(
+      req.user.UID,
+      filter,
+      category,
+      page,
+      limit,
+      pagination,
+    );
   }
 
   @Post('/challenge')
@@ -132,8 +142,17 @@ export class HabitController {
   getUserHabits(
     @Request() req,
     @Query('status') status?: HabitStatus,
-  ): Promise<UserHabits[]> {
-    return this.habitService.getUserHabits(req.user.id, status);
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('pagination') pagination?: boolean,
+  ) {
+    return this.habitService.getUserHabits(
+      req.user.UID,
+      status,
+      pagination,
+      page,
+      limit,
+    );
   }
 
   @Get('/stats/:challengeId')
@@ -142,6 +161,6 @@ export class HabitController {
     @Request() req,
     @Param('challengeId') challengeId: number,
   ): Promise<any> {
-    return this.habitService.getHabitStats(req.user.id, challengeId);
+    return this.habitService.getHabitStats(req.user.UID, challengeId);
   }
 }
