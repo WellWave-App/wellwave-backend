@@ -70,15 +70,16 @@ export class QuestService {
       .createQueryBuilder('userQuest')
       .where('userQuest.UID = :userId', { userId })
       .andWhere('userQuest.STATUS = :status', { status: QuestStatus.Active })
+      .leftJoinAndSelect('userQuest.quest', 'quest')
       .getMany();
 
     // Create a set of active quest IDs for quick lookup
     const activeQuestIds = new Set(activeQuests.map((q) => q.QID));
 
-    // // For each active quest, sync progress with habit tracks
-    // for (const userQuest of activeQuests) {
-    //   await this.syncQuestProgress(userId, userQuest);
-    // }
+    // For each active quest, sync progress with habit tracks
+    for (const userQuest of activeQuests) {
+      await this.syncQuestProgress(userId, userQuest);
+    }
 
     // Filter quests based on selected filter
     let filteredQuests = allQuests;
@@ -114,37 +115,6 @@ export class QuestService {
 
           if (userQuest) {
             progressInfo = await this.getQuestProgressInfo(userQuest);
-            //   // Get all progress entries
-            // const progressEntries = await this.questProgressRepository.find({
-            //   where: {
-            //     QID: quest.QID,
-            //     UID: userId,
-            //   },
-            // });
-
-            // const totalProgress = progressEntries.reduce(
-            //   (sum, entry) => sum + entry.VALUE_COMPLETED,
-            //   0,
-            // );
-
-            // progressInfo = {
-            //   startDate: userQuest.START_DATE,
-            //   endDate: userQuest.END_DATE,
-            //   currentValue: totalProgress,
-            //   targetValue: quest.RQ_TARGET_VALUE,
-            //   progressPercentage: Math.min(
-            //     (totalProgress / quest.RQ_TARGET_VALUE) * 100,
-            //     100,
-            //   ),
-            //   daysLeft: Math.max(
-            //     0,
-            //     Math.ceil(
-            //       (new Date(userQuest.END_DATE).getTime() -
-            //         new Date().getTime()) /
-            //         (1000 * 60 * 60 * 24),
-            //     ),
-            //   ),
-            // };
           }
         }
 
@@ -404,7 +374,7 @@ export class QuestService {
     // Group tracks by date for processing
     const tracksByDate = new Map<string, DailyHabitTrack[]>();
     for (const track of habitTracks) {
-      const dateKey = track.TRACK_DATE.toISOString().split('T')[0];
+      const dateKey = new Date(track.TRACK_DATE).toISOString().split('T')[0];
       if (!tracksByDate.has(dateKey)) {
         tracksByDate.set(dateKey, []);
       }
@@ -423,10 +393,10 @@ export class QuestService {
         await this.syncDailyCompletionProgress(userId, userQuest, tracksByDate);
         break;
       case QuestType.COMPLETION_BASED:
-        // TODO: Implement completion-based quest progress sync
+        // TODO: Implement completion-based quest progress sync.
         break;
       case QuestType.START_BASED:
-        // TODO: Implement start-based quest progress sync
+        // TODO: Implement start-based quest progress sync.
         break;
       // Other quest types...
     }

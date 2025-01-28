@@ -239,7 +239,9 @@ export class HabitService {
       },
       relations: ['habits'],
     });
-    const trackDate = new Date(trackDto.TRACK_DATE) || new Date();
+    const trackDate = trackDto.TRACK_DATE
+      ? new Date(trackDto.TRACK_DATE)
+      : new Date();
 
     if (!userHabit) {
       throw new NotFoundException('Challenge not found');
