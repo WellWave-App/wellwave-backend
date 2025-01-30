@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import RecommendationController from './controllers/recommendation.controller';
 import { ArticleRecommendationService } from './services/article-recommendation.service';
 import { UsersModule } from '@/users/users.module';
@@ -14,13 +14,12 @@ import { RiskAssessmentEntity } from '@/.typeorm/entities/assessment.entity';
 
 @Module({
   imports: [
-    UsersModule,
-    ArticleModule,
-    UserReadHistoryModule,
-    TypeOrmModule.forFeature([Article, UserReadHistory, User, DiseaseType, RiskAssessmentEntity]),
+    forwardRef(() => ArticleModule),
+    forwardRef(() => UserReadHistoryModule),
+    TypeOrmModule.forFeature([Article, UserReadHistory, RiskAssessmentEntity]),
   ],
   controllers: [RecommendationController],
   providers: [ArticleRecommendationService, RiskCalculator],
-  exports: [ArticleRecommendationService]
+  exports: [ArticleRecommendationService, RiskCalculator],
 })
 export class RecommendationModule {}

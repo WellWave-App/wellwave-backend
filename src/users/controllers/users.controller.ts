@@ -33,6 +33,7 @@ import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RegisterUserDto } from '../dto/register.dto';
+import { order, userSortList } from '../interfaces/user-list.interface';
 
 const imageFileValidator = new ParseFilePipe({
   validators: [
@@ -50,6 +51,23 @@ const imageFileValidator = new ParseFilePipe({
 @ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('/lists')
+  async getUserLists(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: userSortList,
+    @Query('order') order?: order,
+  ) {
+    return this.usersService.getUserLists(
+      page || 1,
+      limit || 10,
+      search,
+      sortBy,
+      order,
+    );
+  }
 
   @ApiOperation({ summary: 'Get all users with pagination' })
   @ApiQuery({
@@ -149,7 +167,7 @@ export class UsersController {
   @ApiResponse({ status: 200, type: CreateUserDto })
   @ApiResponse({ status: 404, description: 'User not found' })
   @UseGuards(JwtAuthGuard)
-  @Get(':uid')
+  @Get('/:uid')
   findOne(@Param('uid') UID: string) {
     return this.usersService.getById(+UID);
   }
@@ -183,7 +201,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('imgFile'))
-  @Patch(':uid')
+  @Patch('/:uid')
   update(
     @Request() req,
     @Param('uid') UID: string,
@@ -210,7 +228,7 @@ export class UsersController {
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   @UseGuards(JwtAuthGuard)
-  @Delete(':uid')
+  @Delete('/:uid')
   remove(@Param('uid') UID: string) {
     return this.usersService.remove(+UID);
   }

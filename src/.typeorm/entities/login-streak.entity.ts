@@ -15,19 +15,20 @@ export class LoginStreakEntity {
   @PrimaryColumn()
   UID: number;
 
-  @Column({ type: 'timestamp' })
+  @Column({ name: 'STREAK_START_DATE', type: 'timestamp' })
   STREAK_START_DATE: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ name: 'LAST_LOGIN_DATE', type: 'timestamp' })
   LAST_LOGIN_DATE: Date;
 
-  @Column({ type: 'int', default: 1 })
+  @Column({ name: 'CURRENT_STREAK', type: 'int', default: 1 })
   CURRENT_STREAK: number;
 
-  @Column({ type: 'int', default: 1 })
+  @Column({ name: 'LONGEST_STREAK', type: 'int', default: 1 })
   LONGEST_STREAK: number;
 
   @Column({
+    name: 'LAST_UPDATED',
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',

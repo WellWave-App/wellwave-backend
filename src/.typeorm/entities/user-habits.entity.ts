@@ -15,6 +15,7 @@ export enum HabitStatus {
   Active = 'active',
   Completed = 'completed',
   Failed = 'failed',
+  Cancled = 'cancled',
 }
 
 @Entity('USER_HABIT')

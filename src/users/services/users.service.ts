@@ -1,11 +1,13 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { FindOptionsWhere, Like, Not, Repository } from 'typeorm';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../../.typeorm/entities/users.entity';
 import { RegisterUserDto } from '../dto/register.dto';
@@ -16,6 +18,14 @@ import { ImageService } from '@/image/image.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UserReadHistoryService } from '@/article-group/user-read-history/services/user-read-history.service';
 import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
+import { query } from 'express';
+import { RiskCalculator } from '../../recommendation/utils/risk-calculator.util';
+import {
+  HabitStatus,
+  UserHabits,
+} from '@/.typeorm/entities/user-habits.entity';
+import { RecommendationModule } from '@/recommendation/recommendation.module';
+import { order, userSortList } from '../interfaces/user-list.interface';
 
 @Injectable()
 export class UsersService {
@@ -24,10 +34,12 @@ export class UsersService {
     private usersRepository: Repository<User>,
     private readonly loginStreakService: LoginStreakService,
     private readonly imageService: ImageService,
-    @InjectRepository(UserReadHistory)
-    private userReadHistoryRepository: Repository<UserReadHistory>,
-
+    // @InjectRepository(UserReadHistory)
+    // private userReadHistoryRepository: Repository<UserReadHistory>,
+    @InjectRepository(UserHabits)
+    private userHabit: Repository<UserHabits>,
     // private logsService: LogsService,
+    private riskCalculator: RiskCalculator,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -198,5 +210,164 @@ export class UsersService {
       loginStats: loginStats,
       usersAchievement: mockAcheivements,
     };
+  }
+
+  async getUserLists(
+    page: number = 1,
+    limit: number = 10,
+    searchUID?: string,
+    sortBy: userSortList = 'uid',
+    order: order = 'ASC',
+  ) {
+    const queryBuilder = this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.RiskAssessment', 'risks')
+      .leftJoinAndSelect('user.loginStreak', 'login')
+      .leftJoinAndSelect('user.habits', 'habit')
+      .leftJoinAndSelect('habit.dailyTracks', 'dailyTracks')
+      .select([
+        'user.UID',
+        'user.USERNAME',
+        'user.EMAIL',
+        'risks.HYPERTENSION',
+        'risks.DIABETES',
+        'risks.DYSLIPIDEMIA',
+        'risks.OBESITY',
+        'habit.CHALLENGE_ID',
+        'habit.STATUS',
+        'habit.DAYS_GOAL',
+        'dailyTracks.TRACK_ID',
+        'dailyTracks.COMPLETED',
+        'login.STREAK_START_DATE',
+        'login.LAST_LOGIN_DATE',
+        'login.CURRENT_STREAK',
+      ])
+      .skip((page - 1) * limit)
+      .take(limit);
+    // .orderBy(`user.${sortBy}`, order);
+
+    if (searchUID) {
+      queryBuilder.andWhere('user.USERNAME LIKE :search', {
+        search: `%${searchUID}%`,
+      });
+    }
+
+    const sortConfig = {
+      uid: 'user.UID',
+      hypertension: 'risks.HYPERTENSION',
+      diabetes: 'risks.DIABETES',
+      obesity: 'risks.OBESITY',
+      dyslipidemia: 'risks.DYSLIPIDEMIA',
+      last_login: 'login.LAST_LOGIN_DATE',
+    };
+    if (sortBy in sortConfig) {
+      queryBuilder.orderBy(sortConfig[sortBy], order);
+    }
+
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    const processedData = data.map((user) => {
+      if (user.RiskAssessment) {
+        user.RiskAssessment.DIABETES = RiskCalculator.calculateDiabetesWeight(
+          user.RiskAssessment.DIABETES,
+        );
+        user.RiskAssessment.HYPERTENSION =
+          RiskCalculator.calculateHypertensionWeight(
+            user.RiskAssessment.DIABETES,
+          );
+        user.RiskAssessment.DYSLIPIDEMIA =
+          RiskCalculator.calculateDyslipidemiaWeight(
+            user.RiskAssessment.DYSLIPIDEMIA,
+          );
+        user.RiskAssessment.OBESITY = RiskCalculator.calculateObesityWeight(
+          user.RiskAssessment.OBESITY,
+        );
+      }
+
+      // * loggin streak
+      let loginStreak = 0;
+      if (user.loginStreak) {
+        const now = new Date();
+        const lastLogin = new Date(user.loginStreak.LAST_LOGIN_DATE);
+        const daysSinceLastLogin = Math.floor(
+          (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        // If last login was today or yesterday, show positive streak
+        if (daysSinceLastLogin <= 1) {
+          loginStreak = user.loginStreak.CURRENT_STREAK;
+        } else {
+          // If more than 1 day has passed, show negative days since last login
+          loginStreak = -daysSinceLastLogin;
+        }
+      }
+
+      const completeRate = this.getCompleteRate(user.habits);
+
+      return {
+        UID: user.UID,
+        USERNAME: user.USERNAME,
+        EMAIL: user.EMAIL,
+        RISK_ASSESSMENT: user.RiskAssessment
+          ? {
+              HYPERTENSION: user.RiskAssessment.HYPERTENSION,
+              DIABETES: user.RiskAssessment.DIABETES,
+              DYSLIPIDEMIA: user.RiskAssessment.DYSLIPIDEMIA,
+              OBESITY: user.RiskAssessment.OBESITY,
+            }
+          : null,
+        COMPLETE_RATE: completeRate || 0,
+        LOGIN_STATS: {
+          LOGIN_STREAK: loginStreak,
+          LASTED_LOGIN: user.loginStreak?.LAST_LOGIN_DATE || null,
+          STREAK_START: user.loginStreak?.STREAK_START_DATE || null,
+        },
+      };
+    });
+
+    if (sortBy === 'complete_rate') {
+      processedData.sort((a, b) => {
+        return order === 'ASC'
+          ? a.COMPLETE_RATE - b.COMPLETE_RATE
+          : b.COMPLETE_RATE - a.COMPLETE_RATE;
+      });
+    } else if (sortBy === 'streak') {
+      processedData.sort((a, b) => {
+        return order === 'ASC'
+          ? a.LOGIN_STATS.LOGIN_STREAK - b.LOGIN_STATS.LOGIN_STREAK
+          : b.LOGIN_STATS.LOGIN_STREAK - a.LOGIN_STATS.LOGIN_STREAK;
+      });
+    }
+
+    return {
+      data: processedData,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  private getCompleteRate(habits: UserHabits[]): number {
+    if (!habits || habits.length === 0) return 0;
+
+    let totalDaysGoal = 0;
+    let completedTracks = 0;
+
+    habits.forEach((habit) => {
+      if (habit.STATUS !== HabitStatus.Cancled) {
+        totalDaysGoal += habit.DAYS_GOAL;
+        if (habit.dailyTracks && habit.dailyTracks.length > 0) {
+          completedTracks += habit.dailyTracks.filter(
+            (track) => track.COMPLETED,
+          ).length;
+        }
+      }
+    });
+
+    const completeRate =
+      totalDaysGoal > 0 ? (completedTracks / totalDaysGoal) * 100 : 0;
+    return Number(completeRate.toFixed(2));
+  }
+
+  async getDeepProfile(uid: number) {
+    
   }
 }
