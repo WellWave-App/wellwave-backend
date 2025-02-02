@@ -219,4 +219,6 @@ export class LogsController {
   ) {
     return this.logsService.remove(uid, logName, new Date(date));
   }
+
+  
 }

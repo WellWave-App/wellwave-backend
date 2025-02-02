@@ -15,6 +15,7 @@ import { LoginStreakEntity } from './login-streak.entity';
 import { UserReadHistory } from './user-read-history.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserHabits } from './user-habits.entity';
+import { UserQuests } from './user-quests.entity';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -23,6 +24,10 @@ export enum USER_GOAL {
 }
 
 // GENDER: true = MALE, false = FEMALE
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
 
 @Entity({ name: 'USERS' })
 export class User {
@@ -84,18 +89,6 @@ export class User {
   @Column({ nullable: true, name: 'IMAGE_URL' })
   IMAGE_URL?: string;
 
-  // @Column({ nullable: true, type: 'int' })
-  // HYPERTENSION_RISK: number;
-
-  // @Column({ nullable: true, type: 'int' })
-  // DIABETE_RISK: number;
-
-  // @Column({ nullable: true, type: 'int' })
-  // DYSLIPIDEMIA_RISK: number;
-
-  // @Column({ nullable: true, type: 'int' })
-  // OBESITY_RISK: number;
-
   @Column({ type: 'enum', enum: USER_GOAL, nullable: true, name: 'USER_GOAL' })
   USER_GOAL: USER_GOAL;
 
@@ -122,9 +115,6 @@ export class User {
   )
   RiskAssessment: RiskAssessmentEntity;
 
-  // @OneToOne(() => LoginStreakEntity, (LoginStreak) => LoginStreak.USER)
-  // loginStreak: LoginStreakEntity;
-
   @ApiProperty({ type: () => [UserReadHistory] })
   @OneToMany(() => UserReadHistory, (userRead) => userRead.user, {
     cascade: true,
@@ -136,4 +126,7 @@ export class User {
 
   @OneToOne(() => LoginStreakEntity, (LoginStreak) => LoginStreak.USER)
   loginStreak: LoginStreakEntity;
+
+  @OneToMany(() => UserQuests, (quest) => quest.user)
+  quests: UserQuests[];
 }

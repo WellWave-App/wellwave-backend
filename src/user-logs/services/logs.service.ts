@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Between,
+  FindManyOptions,
   In,
   LessThanOrEqual,
   MoreThanOrEqual,
@@ -18,6 +19,26 @@ import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
 import { LogEntity, LOG_NAME } from '../../.typeorm/entities/logs.entity';
 import { User } from '../../.typeorm/entities/users.entity';
+
+interface LogStandardRange {
+  min: number;
+  max: number;
+  unit: string;
+}
+
+export const LOG_STANDARDS: Record<LOG_NAME, LogStandardRange> = {
+  [LOG_NAME.HDL_LOG]: { min: 40, max: 60, unit: 'mg/dL' },
+  [LOG_NAME.LDL_LOG]: { min: 0, max: 100, unit: 'mg/dL' },
+  [LOG_NAME.WEIGHT_LOG]: { min: 18.5, max: 24.9, unit: 'kg/m²' }, // BMI range
+  [LOG_NAME.SLEEP_LOG]: { min: 7, max: 9, unit: 'hours' },
+  [LOG_NAME.HEART_RATE_LOG]: { min: 60, max: 100, unit: 'bpm' },
+  [LOG_NAME.CAL_BURN_LOG]: { min: 150, max: 400, unit: 'kcal' },
+  [LOG_NAME.DRINK_LOG]: { min: 8, max: 10, unit: 'glasses' },
+  [LOG_NAME.STEP_LOG]: { min: 7000, max: 10000, unit: 'steps' },
+  [LOG_NAME.WAIST_LINE_LOG]: { min: 0, max: 90, unit: 'cm' },
+  [LOG_NAME.DIASTOLIC_BLOOD_PRESSURE_LOG]: { min: 60, max: 80, unit: 'mm Hg' },
+  [LOG_NAME.SYSTOLIC_BLOOD_PRESSURE_LOG]: { min: 90, max: 120, unit: 'mm Hg' },
+};
 
 @Injectable()
 export class LogsService {
@@ -260,5 +281,196 @@ export class LogsService {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  async getAllLogs(fromDate: Date, toDate: Date, uid?: number) {
+    // Create an object to store logs for each type
+    const result: Record<string, any[]> = {
+      hdl: [],
+      ldl: [],
+      weight: [],
+      sleep: [],
+      heartRate: [],
+      calBurn: [],
+      drink: [],
+      step: [],
+      waistLine: [],
+      dbp: [],
+      sbp: [],
+    };
+
+    const whereCondition = uid
+      ? { UID: uid, DATE: Between(fromDate, toDate) }
+      : { DATE: Between(fromDate, toDate) };
+
+    // Get all logs within the date range
+    const logs = await this.logsRepository.find({
+      where: whereCondition,
+      order: {
+        DATE: 'ASC',
+      },
+    });
+
+    // Group logs by type
+    logs.forEach((log) => {
+      switch (log.LOG_NAME) {
+        case LOG_NAME.HDL_LOG:
+          result.hdl.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.LDL_LOG:
+          result.ldl.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.WEIGHT_LOG:
+          result.weight.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.SLEEP_LOG:
+          result.sleep.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.HEART_RATE_LOG:
+          result.heartRate.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.CAL_BURN_LOG:
+          result.calBurn.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.DRINK_LOG:
+          result.drink.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.STEP_LOG:
+          result.step.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.WAIST_LINE_LOG:
+          result.waistLine.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.DIASTOLIC_BLOOD_PRESSURE_LOG:
+          result.dbp.push(this.formatLogEntry(log));
+          break;
+        case LOG_NAME.SYSTOLIC_BLOOD_PRESSURE_LOG:
+          result.sbp.push(this.formatLogEntry(log));
+          break;
+      }
+    });
+
+    return result;
+  }
+
+  async getLogsWithStatus(
+    fromDate: Date,
+    toDate: Date,
+    page: number = 1,
+    limit: number = 10,
+    uid: number,
+    sortBy: 'date' | 'log_name' | 'log_status' = 'date',
+    order: 'ASC' | 'DESC' = 'ASC',
+  ) {
+    const skip = (page - 1) * limit;
+    const sortConfig = {
+      date: 'DATE',
+      log_name: 'LOG_NAME',
+    };
+
+    // Define base query conditions
+    const queryOptions: FindManyOptions<LogEntity> = {
+      where: {
+        DATE: Between(fromDate, toDate),
+        UID: uid,
+      },
+      skip,
+      take: limit,
+    };
+
+    // Handle sorting
+    if (sortBy === 'log_status') {
+      // For log_status, we'll first get the data and sort it after computing the status
+      queryOptions.order = {
+        DATE: 'ASC', // Default ordering for consistent results
+      };
+
+      const [logs, total] =
+        await this.logsRepository.findAndCount(queryOptions);
+      let formattedLogs = logs.map((log) => this.formatLogWithStatus(log));
+
+      // Sort by status
+      formattedLogs = this.sortByStatus(formattedLogs, order);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: formattedLogs,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      };
+    } else {
+      // For other fields, we can sort directly in the query
+      const sortField = sortConfig[sortBy];
+      queryOptions.order = { [sortField]: order };
+
+      const [logs, total] =
+        await this.logsRepository.findAndCount(queryOptions);
+      const formattedLogs = logs.map((log) => this.formatLogWithStatus(log));
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: formattedLogs,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      };
+    }
+  }
+
+  private sortByStatus(logs: any[], order: 'ASC' | 'DESC'): any[] {
+    return logs.sort((a, b) => {
+      // Extract numerical values from status for comparison
+      const getStatusValue = (status: string): number => {
+        if (status === 'ผ่านเกณฑ์มาตรฐาน') return 0;
+        const match = status.match(/(\d+\.?\d*)/);
+        const value = match ? parseFloat(match[0]) : 0;
+        return status.includes('ต่ำกว่า') ? -value : value;
+      };
+
+      const valueA = getStatusValue(a.status);
+      const valueB = getStatusValue(b.status);
+
+      return order === 'ASC' ? valueA - valueB : valueB - valueA;
+    });
+  }
+
+  private formatLogEntry(log: LogEntity) {
+    return {
+      date: log.DATE,
+      value: log.VALUE,
+      uid: log.UID,
+    };
+  }
+
+  private formatLogWithStatus(log: LogEntity) {
+    const standard = LOG_STANDARDS[log.LOG_NAME];
+    const value = log.VALUE;
+    let status: string;
+    let deviation: number | null = null;
+
+    if (value < standard.min) {
+      deviation = ((standard.min - value) / standard.min) * 100;
+      status = `ต่ำกว่าเกณฑ์ ${deviation.toFixed(1)}%`;
+    } else if (value > standard.max) {
+      deviation = ((value - standard.max) / standard.max) * 100;
+      status = `เกินเกณฑ์ ${deviation.toFixed(1)}%`;
+    } else {
+      status = 'ผ่านเกณฑ์';
+    }
+
+    return {
+      date: log.DATE,
+      log_name: log.LOG_NAME,
+      detail: `${value} ${standard.unit}`,
+      status,
+    };
   }
 }

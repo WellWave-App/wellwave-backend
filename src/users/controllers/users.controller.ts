@@ -232,4 +232,43 @@ export class UsersController {
   remove(@Param('uid') UID: string) {
     return this.usersService.remove(+UID);
   }
+
+  @Get('/profile-deep/:uid')
+  getDeepProfiler(
+    @Param('uid') uid: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.usersService.getDeepProfile(uid, page, limit);
+  }
+
+  @Get('/health-history/:uid')
+  getHealthHistory(
+    @Param('uid') uid: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 5,
+    @Query('type') type: 'graph_log' | 'mission' | 'health_log',
+    @Query('toDate') toDate?: Date,
+    @Query('fromDate') fromDate?: Date,
+    @Query('sortLogBy') sortLogBy?: 'date' | 'log_name' | 'log_status',
+    @Query('sortMissionBy')
+    sortMissionBy?: 'date' | 'mission_type' | 'activity_type',
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+  ) {
+    const defaultToDate = new Date();
+    const oneMonthAgo = new Date(defaultToDate);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    return this.usersService.getHealthHistory(
+      uid,
+      page,
+      limit,
+      type,
+      new Date(fromDate) || defaultToDate,
+      new Date(toDate) || oneMonthAgo,
+      sortLogBy,
+      sortMissionBy,
+      order,
+    );
+  }
 }
