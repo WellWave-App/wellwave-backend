@@ -16,6 +16,7 @@ import { UserReadHistory } from './user-read-history.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserHabits } from './user-habits.entity';
 import { UserQuests } from './user-quests.entity';
+import { Role } from '@/auth/roles/roles.enum';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -24,10 +25,10 @@ export enum USER_GOAL {
 }
 
 // GENDER: true = MALE, false = FEMALE
-export enum UserRole {
-  USER = 'user',
-  ADMIN = 'admin',
-}
+// export enum UserRole {
+//   USER = 'user',
+//   ADMIN = 'admin',
+// }
 
 @Entity({ name: 'USERS' })
 export class User {
@@ -82,6 +83,13 @@ export class User {
 
   @Column({ default: 0, name: 'EXP' })
   EXP: number;
+
+  @Column({
+    enum: Role,
+    default: Role.USER,
+    type: 'enum',
+  })
+  ROLE: Role;
 
   @Column({ nullable: true, name: 'REMINDER_NOTI_TIME' })
   REMINDER_NOTI_TIME?: string;

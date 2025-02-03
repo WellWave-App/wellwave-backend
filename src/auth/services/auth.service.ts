@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 // import { RegisterUserDto } from 'src/users/dto/register.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { Role } from '../roles/roles.enum';
 
 @Injectable()
 export class AuthService {
@@ -15,19 +16,26 @@ export class AuthService {
     private userService: UsersService,
     private jwtService: JwtService,
   ) {}
-
+  
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userService.getByEmail(email);
     if (user && (await bcrypt.compare(password, user.PASSWORD))) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { PASSWORD, ...result } = user;
-      return result;
+      return {
+        ...result,
+        ROLE: user.ROLE || Role.USER
+      };
     }
     return null;
   }
 
   async login(user: any): Promise<any> {
-    const payload = { EMAIL: user.EMAIL, UID: user.UID };
+    const payload = {
+      EMAIL: user.EMAIL,
+      UID: user.UID,
+      ROLE: user.ROLE || [Role.USER],
+    };
     return {
       access_token: this.jwtService.sign(payload),
     };
@@ -54,6 +62,7 @@ export class AuthService {
           IMAGE_URL,
           YEAR_OF_BIRTH,
           GENDER,
+          ROLE: Role.USER,
           // Add any other required fields with default values
         };
 
@@ -77,7 +86,11 @@ export class AuthService {
       //   }
       // }
 
-      const payload = { EMAIL: user.EMAIL, UID: user.UID };
+      const payload = {
+        EMAIL: user.EMAIL,
+        UID: user.UID,
+        ROLE: user.ROLE || Role.USER,
+      };
       return {
         access_token: this.jwtService.sign(payload),
       };

@@ -34,6 +34,9 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RegisterUserDto } from '../dto/register.dto';
 import { order, userSortList } from '../interfaces/user-list.interface';
+import { RoleGuard } from '@/auth/guard/role.guard';
+import { Roles } from '@/auth/roles/roles.decorator';
+import { Role } from '@/auth/roles/roles.enum';
 
 const imageFileValidator = new ParseFilePipe({
   validators: [
@@ -49,9 +52,96 @@ const imageFileValidator = new ParseFilePipe({
 @ApiTags('Users')
 @Controller('users')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RoleGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ApiOperation({ summary: 'Get users list with search and sorting options' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by UID',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: [
+      'uid',
+      'hypertension',
+      'diabetes',
+      'obesity',
+      'dyslipidemia',
+      'last_login',
+      'complete_rate',
+      'streak',
+    ],
+    description: 'Field to sort by',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort order',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of users with additional information',
+    schema: {
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            properties: {
+              UID: { type: 'number' },
+              USERNAME: { type: 'string' },
+              EMAIL: { type: 'string' },
+              RISK_ASSESSMENT: {
+                type: 'object',
+                properties: {
+                  DIABETES: { type: 'number' },
+                  HYPERTENSION: { type: 'number' },
+                  DYSLIPIDEMIA: { type: 'number' },
+                  OBESITY: { type: 'number' },
+                },
+              },
+              COMPLETE_RATE: { type: 'number' },
+              LOGIN_STATS: {
+                type: 'object',
+                properties: {
+                  LOGIN_STREAK: { type: 'number' },
+                  LASTED_LOGIN: { type: 'string', format: 'date-time' },
+                  STREAK_START: { type: 'string', format: 'date-time' },
+                },
+              },
+            },
+          },
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number' },
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            totalPages: { type: 'number' },
+          },
+        },
+      },
+    },
+  })
+  @Roles(Role.MODERATOR, Role.ADMIN)
   @Get('/lists')
   async getUserLists(
     @Query('page') page?: number,
@@ -99,31 +189,32 @@ export class UsersController {
     },
   })
   @Get()
+  @Roles(Role.MODERATOR, Role.ADMIN)
   findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
     return this.usersService.getAll(page, limit);
   }
 
-  @ApiOperation({ summary: 'Register new user' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        EMAIL: { type: 'string' },
-        PASSWORD: { type: 'string' },
-      },
-      required: ['EMAIL', 'PASSWORD'],
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'User successfully created',
-    type: CreateUserDto,
-  })
-  @ApiResponse({ status: 409, description: 'Email already exists' })
-  @Post('/register')
-  create(@Body() registerUserDto: RegisterUserDto) {
-    return this.usersService.create(registerUserDto);
-  }
+  // @ApiOperation({ summary: 'Register new user' })
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       EMAIL: { type: 'string' },
+  //       PASSWORD: { type: 'string' },
+  //     },
+  //     required: ['EMAIL', 'PASSWORD'],
+  //   },
+  // })
+  // @ApiResponse({
+  //   status: 201,
+  //   description: 'User successfully created',
+  //   type: CreateUserDto,
+  // })
+  // @ApiResponse({ status: 409, description: 'Email already exists' })
+  // @Post('/register')
+  // create(@Body() registerUserDto: RegisterUserDto) {
+  //   return this.usersService.create(registerUserDto);
+  // }
 
   @ApiOperation({ summary: 'Get user profile' })
   @ApiResponse({
@@ -156,7 +247,7 @@ export class UsersController {
       },
     },
   })
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.MODERATOR, Role.ADMIN, Role.USER)
   @Get('/profile')
   async getProfile(@Request() req) {
     return this.usersService.getProfile(req.user.UID);
@@ -166,7 +257,7 @@ export class UsersController {
   @ApiParam({ name: 'uid', type: 'number', description: 'User ID' })
   @ApiResponse({ status: 200, type: CreateUserDto })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.MODERATOR, Role.ADMIN, Role.USER)
   @Get('/:uid')
   findOne(@Param('uid') UID: string) {
     return this.usersService.getById(+UID);
@@ -199,8 +290,8 @@ export class UsersController {
     description: 'Forbidden: Can only update own profile',
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('imgFile'))
+  @Roles(Role.MODERATOR, Role.ADMIN, Role.USER)
   @Patch('/:uid')
   update(
     @Request() req,
@@ -227,12 +318,84 @@ export class UsersController {
     },
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.MODERATOR, Role.ADMIN, Role.USER)
   @Delete('/:uid')
   remove(@Param('uid') UID: string) {
     return this.usersService.remove(+UID);
   }
 
+  @ApiOperation({ summary: 'Get detailed user profile' })
+  @ApiParam({ name: 'uid', type: 'number', description: 'User ID' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns detailed user profile information',
+    schema: {
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            UID: { type: 'number' },
+            USERNAME: { type: 'string' },
+            EMAIL: { type: 'string' },
+            AGE: { type: 'number' },
+            RISK_ASSESSMENT: {
+              type: 'object',
+              properties: {
+                DIABETES: { type: 'number' },
+                HYPERTENSION: { type: 'number' },
+                DYSLIPIDEMIA: { type: 'number' },
+                OBESITY: { type: 'number' },
+              },
+            },
+            LOGIN_STATS: {
+              type: 'object',
+              properties: {
+                LOGIN_STREAK: { type: 'number' },
+                LASTED_LOGIN: { type: 'string', format: 'date-time' },
+                STREAK_START: { type: 'string', format: 'date-time' },
+              },
+            },
+            COMPLETE_RATE: {
+              type: 'object',
+              properties: {
+                OVERALL_PERCENTAGE: { type: 'number' },
+                MISSTION_TYPES: {
+                  type: 'object',
+                  properties: {
+                    DAILY_HABIT: { type: 'number' },
+                    HABIT: { type: 'number' },
+                    QUEST: { type: 'number' },
+                  },
+                },
+                ACTIVITY_TYPES: {
+                  type: 'object',
+                  properties: {
+                    EXERCISE: { type: 'number' },
+                    SLEEP: { type: 'number' },
+                    DIET: { type: 'number' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @Roles(Role.MODERATOR, Role.ADMIN)
   @Get('/profile-deep/:uid')
   getDeepProfiler(
     @Param('uid') uid: number,
@@ -242,11 +405,105 @@ export class UsersController {
     return this.usersService.getDeepProfile(uid, page, limit);
   }
 
+  @ApiOperation({ summary: 'Get user health history' })
+  @ApiParam({ name: 'uid', type: 'number', description: 'User ID' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: true,
+    enum: ['graph_log', 'mission', 'health_log'],
+    description: 'Type of health history to retrieve',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: false,
+    type: Date,
+    description: 'End date for history (default: current date)',
+  })
+  @ApiQuery({
+    name: 'fromDate',
+    required: false,
+    type: Date,
+    description: 'Start date for history (default: one month ago)',
+  })
+  @ApiQuery({
+    name: 'sortLogBy',
+    required: false,
+    enum: ['date', 'log_name', 'log_status'],
+    description: 'Sort field for health logs',
+  })
+  @ApiQuery({
+    name: 'sortMissionBy',
+    required: false,
+    enum: ['date', 'mission_type', 'activity_type'],
+    description: 'Sort field for missions',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort order',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns user health history based on specified type',
+    schema: {
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            graph_log: { type: 'object', nullable: true },
+            mission: {
+              type: 'array',
+              items: {
+                properties: {
+                  date: { type: 'string' },
+                  missionType: { type: 'string' },
+                  activityType: { type: 'string' },
+                  detail: { type: 'string' },
+                  status: { type: 'string' },
+                },
+              },
+              nullable: true,
+            },
+            health_log: {
+              type: 'array',
+              items: { type: 'object' },
+              nullable: true,
+            },
+          },
+        },
+        meta: {
+          type: 'object',
+          nullable: true,
+          properties: {
+            total: { type: 'number' },
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            totalPages: { type: 'number' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @Roles(Role.MODERATOR, Role.ADMIN)
   @Get('/health-history/:uid')
   getHealthHistory(
     @Param('uid') uid: number,
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 5,
+    @Query('limit') limit: number = 10,
     @Query('type') type: 'graph_log' | 'mission' | 'health_log',
     @Query('toDate') toDate?: Date,
     @Query('fromDate') fromDate?: Date,
@@ -255,20 +512,20 @@ export class UsersController {
     sortMissionBy?: 'date' | 'mission_type' | 'activity_type',
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
   ) {
-    const defaultToDate = new Date();
-    const oneMonthAgo = new Date(defaultToDate);
+    const today = new Date();
+    const oneMonthAgo = new Date(today);
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     return this.usersService.getHealthHistory(
       uid,
-      page,
-      limit,
+      page || 1,
+      limit || 10,
       type,
-      new Date(fromDate) || defaultToDate,
+      new Date(fromDate) || today,
       new Date(toDate) || oneMonthAgo,
-      sortLogBy,
-      sortMissionBy,
-      order,
+      sortLogBy || 'date',
+      sortMissionBy || 'date',
+      order || 'ASC',
     );
   }
 }

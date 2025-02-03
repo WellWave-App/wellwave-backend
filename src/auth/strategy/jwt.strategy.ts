@@ -23,6 +23,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   @ApiOperation({ summary: 'Validate JWT token' })
   async validate(payload: any) {
-    return { UID: payload.UID, EMAIL: payload.EMAIL };
+    return { UID: payload.UID, EMAIL: payload.EMAIL, ROLE: payload.ROLE };
   }
 }

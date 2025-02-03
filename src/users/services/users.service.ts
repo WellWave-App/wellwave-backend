@@ -34,7 +34,7 @@ import {
 import { HabitCategories } from '@/.typeorm/entities/habit.entity';
 import { LogsService } from '@/user-logs/services/logs.service';
 import { LogEntity } from '@/.typeorm/entities/logs.entity';
-import { THAI_MONTHS } from '../date.formatter';
+import { THAI_MONTHS } from '../interfaces/date.formatter';
 import { CategoriesFilters } from '../../mission/habit/interfaces/habits.interfaces';
 
 interface MissionHistoryRecord {
@@ -243,31 +243,14 @@ export class UsersService {
       .leftJoinAndSelect('user.habits', 'habit')
       .leftJoinAndSelect('user.quests', 'quest')
       .leftJoinAndSelect('habit.dailyTracks', 'dailyTracks')
-      .select([
-        'user.UID',
-        'user.USERNAME',
-        'user.EMAIL',
-        'risks.HYPERTENSION',
-        'risks.DIABETES',
-        'risks.DYSLIPIDEMIA',
-        'risks.OBESITY',
-        'habit.CHALLENGE_ID',
-        'habit.STATUS',
-        'habit.DAYS_GOAL',
-        'quest.QID',
-        'quest.STATUS',
-        'dailyTracks.TRACK_ID',
-        'dailyTracks.COMPLETED',
-        'login.STREAK_START_DATE',
-        'login.LAST_LOGIN_DATE',
-        'login.CURRENT_STREAK',
-      ])
+      .leftJoinAndSelect('habit.habits', 'habitDetail')
+      .leftJoinAndSelect('quest.quest', 'questDetail')
       .skip((page - 1) * limit)
       .take(limit);
     // .orderBy(`user.${sortBy}`, order);
 
     if (searchUID) {
-      queryBuilder.andWhere('user.UID LIKE :search', {
+      queryBuilder.andWhere('CAST(user.UID AS TEXT) ILIKE :search', {
         search: `%${searchUID}%`,
       });
     }
@@ -285,7 +268,6 @@ export class UsersService {
     }
 
     const [data, total] = await queryBuilder.getManyAndCount();
-
     const processedData = data.map((user) => {
       const riskAssessment = this.calculateRiskWeights(user.RiskAssessment);
       const loginStats = this.calculateLoginStats(user.loginStreak);

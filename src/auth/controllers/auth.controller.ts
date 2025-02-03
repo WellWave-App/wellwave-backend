@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpException,
@@ -11,13 +12,26 @@ import {
 import { AuthService } from '../services/auth.service';
 import { LocalAuthGuard } from '../guard/local-auth.guard';
 import { GoogleAuthGuard } from '../guard/google-auth.guard';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { LoginResponseDto } from '../dto/login-response.dto';
+import { CreateUserDto } from '@/users/dto/create-user.dto';
+import { RegisterUserDto } from '@/users/dto/register.dto';
+import { UsersService } from '@/users/services/users.service';
+import { Role } from '../roles/roles.enum';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @ApiOperation({ summary: 'Login with email/password' })
   @ApiResponse({
@@ -27,20 +41,55 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(LocalAuthGuard)
-  @Post('login')
+  @Post('/login')
   async login(@Request() req, @Res({ passthrough: true }) res) {
     const { access_token } = await this.authService.login(req.user);
     // save to cookie
     // return msg: login successful
     res.cookie('access_token', access_token, { httpOnly: true });
     // return { accessToken: access_token, message: 'Login successfully' };
-    return { message: 'Login Successfully', accessToken: access_token };
+    return {
+      message: 'Login Successfully',
+      accessToken: access_token,
+      user: {
+        UID: req.user.UID,
+        EMAIL: req.user.EMAIL,
+        ROLE: req.user.ROLE,
+      },
+    };
+  }
+
+  @ApiOperation({ summary: 'Register new user' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        EMAIL: { type: 'string' },
+        PASSWORD: { type: 'string' },
+        ROLE: {
+          type: 'enum',
+          enum: Object.values(Role),
+          description: "ROLE: 'user', 'admin', 'moderator'",
+        },
+      },
+      required: ['EMAIL', 'PASSWORD'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'User successfully created',
+    type: CreateUserDto,
+  })
+  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @Post('/register')
+  create(@Body() registerUserDto: RegisterUserDto) {
+    return this.usersService.create(registerUserDto);
   }
 
   @ApiOperation({ summary: 'Initiate Google OAuth login' })
   @ApiResponse({ status: 302, description: 'Redirects to Google login page' })
   @UseGuards(GoogleAuthGuard)
-  @Get('google')
+  @Get('/google')
   async googleAuth() {
     // init google auth process
   }
@@ -53,7 +102,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 500, description: 'Google login failed' })
   @UseGuards(GoogleAuthGuard)
-  @Get('google/callback')
+  @Get('/google/callback')
   async googleAuthRedirect(@Request() req, @Res({ passthrough: true }) res) {
     try {
       const { access_token } = await this.authService.googleLogin(req);
@@ -82,7 +131,7 @@ export class AuthController {
       },
     },
   })
-  @Get('logout')
+  @Get('/logout')
   async logout(@Request() req, @Res() res) {
     res.clearCookie('access_token', {
       httpOnly: true,

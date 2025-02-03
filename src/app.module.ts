@@ -17,6 +17,8 @@ import { UserReadHistoryModule } from './article-group/user-read-history/user-re
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { QuestModule } from './mission/quest/quest.module';
 import { HabitModule } from './mission/habit/habit.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
 
 @Module({
   imports: [
@@ -55,6 +57,9 @@ import { HabitModule } from './mission/habit/habit.module';
     HabitModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_INTERCEPTOR, useClass: FilterAdminInterceptor },
+  ],
 })
 export class AppModule {}

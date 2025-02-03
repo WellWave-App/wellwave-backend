@@ -1,7 +1,9 @@
+import { Role } from '@/auth/roles/roles.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEmail,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -104,4 +106,15 @@ export class CreateUserDto {
   @IsNumber()
   @IsOptional()
   USER_GOAL_EX_TIME_WEEK?: number;
+
+  @ApiProperty({
+    required: false,
+    enum: Role,
+    isArray: true,
+    description: 'User role (defaults to Role.USER if not provided)',
+    example: Role.USER,
+  })
+  @IsOptional()
+  @IsEnum(Role)
+  ROLE?: Role;
 }
