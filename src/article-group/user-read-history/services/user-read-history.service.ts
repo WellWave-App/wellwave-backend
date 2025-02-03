@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateUserReadHistoryDto } from '../dto/create-user-read-history.dto';
 import { UpdateUserReadHistoryDto } from '../dto/update-user-read-history.dto';
-import { UserReadHistoryReposity } from '../repositories/user-read-histort.repository';
+import { UserReadHistoryReposity } from '../repositories/user-read-history.repository';
 import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
 import { PaginatedResponse } from '@/response/response.interface';
 import { UsersService } from '@/users/services/users.service';

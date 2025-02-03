@@ -15,12 +15,8 @@ export class ArticleRecommendationService {
   constructor(
     @InjectRepository(Article)
     private articleRepository: Repository<Article>,
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
     @InjectRepository(UserReadHistory)
     private userReadHistoryRepository: Repository<UserReadHistory>,
-    @InjectRepository(DiseaseType)
-    private diseaseTypeRepository: Repository<DiseaseType>,
     @InjectRepository(RiskAssessmentEntity)
     private userRisk: Repository<RiskAssessmentEntity>,
   ) {}

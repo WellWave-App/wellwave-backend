@@ -67,6 +67,6 @@ export class CreateArticleDto {
   )
   VIEW_COUNT?: number; // for popularity tracking
 
-  @IsNotEmpty({ message: 'Thumbnail image must not empty' })
+  @IsOptional({ message: 'Thumbnail image must not empty' })
   imgFile?: any;
 }

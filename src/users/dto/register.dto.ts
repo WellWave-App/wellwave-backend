@@ -1,3 +1,4 @@
+import { Role } from '@/auth/roles/roles.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
@@ -5,6 +6,7 @@ import {
   IsStrongPassword,
   IsOptional,
   ValidateIf,
+  IsEnum,
 } from 'class-validator';
 
 export class RegisterUserDto {
@@ -12,10 +14,10 @@ export class RegisterUserDto {
   @IsEmail()
   EMAIL: string;
 
-  @ApiProperty({ 
-    required: false, 
+  @ApiProperty({
+    required: false,
     description: 'Password (required if GOOGLE_ID not provided)',
-    minLength: 8
+    minLength: 8,
   })
   @IsOptional()
   @IsString()
@@ -29,12 +31,16 @@ export class RegisterUserDto {
   @ValidateIf((o) => !o.GOOGLE_ID) // Only validate PASSWORD if GOOGLE_ID is not provided
   PASSWORD?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    description: 'Google ID (required if PASSWORD not provided)' 
+  @ApiProperty({
+    required: false,
+    description: 'Google ID (required if PASSWORD not provided)',
   })
   @IsOptional()
   @IsString()
   @ValidateIf((o) => !o.PASSWORD) // Only validate GOOGLE_ID if PASSWORD is not provided
   GOOGLE_ID?: string;
+
+  @IsOptional()
+  @IsEnum(Role)
+  ROLE?: Role;
 }

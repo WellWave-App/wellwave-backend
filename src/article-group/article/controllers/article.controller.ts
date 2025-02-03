@@ -24,7 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Article } from '@/.typeorm/entities/article.entity';
 import { PaginatedResponse } from '@/response/response.interface';
 import { ArticleService } from '../services/article.service';
-import { articleQuery } from '../repositories/article.repository';
+import { ArticleParams } from '../repositories/article.repository';
 
 const imageFileValidator = new ParseFilePipe({
   validators: [
@@ -87,7 +87,7 @@ export class ArticleController {
   @Get('/search')
   search(
     @Query()
-    query?: articleQuery,
+    query?: ArticleParams,
   ): Promise<PaginatedResponse<Article>> {
     if (query.diseaseIds && !Array.isArray(query.diseaseIds)) {
       query.diseaseIds = [query.diseaseIds];
