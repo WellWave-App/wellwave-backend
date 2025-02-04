@@ -1,13 +1,47 @@
+import { IsBoolean, IsNumber, IsOptional } from 'class-validator';
+
 export class CreateRiskAssessmentDto {
-    DIASTOLIC_BLOOD_PRESSURE: number;
-    SYSTOLIC_BLOOD_PRESSURE: number;
-    HDL: number;
-    LDL: number;
-    WAIST_LINE: number;
-    HAS_SMOKE: boolean;
-    HAS_DRINK: boolean;
-    HYPERTENSION: number;
-    DIABETES: number;
-    DYSLIPIDEMIA: number;
-    OBESITY: number;
-  }
+  @IsOptional()
+  @IsNumber()
+  DIASTOLIC_BLOOD_PRESSURE?: number;
+
+  @IsOptional()
+  @IsNumber()
+  SYSTOLIC_BLOOD_PRESSURE?: number;
+
+  @IsOptional()
+  @IsNumber()
+  HDL?: number;
+
+  @IsOptional()
+  @IsNumber()
+  LDL?: number;
+
+  @IsOptional()
+  @IsNumber()
+  WAIST_LINE?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  HAS_SMOKE?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  HAS_DRINK?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  HYPERTENSION?: number;
+
+  @IsOptional()
+  @IsNumber()
+  DIABETES?: number;
+
+  @IsOptional()
+  @IsNumber()
+  DYSLIPIDEMIA?: number;
+
+  @IsOptional()
+  @IsNumber()
+  OBESITY?: number;
+}

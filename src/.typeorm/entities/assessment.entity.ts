@@ -35,16 +35,16 @@ export class RiskAssessmentEntity {
   @Column({ name: 'HAS_DRINK', type: 'boolean' })
   HAS_DRINK: boolean;
 
-  @Column({ name: 'HYPERTENSION', type: 'int4' })
+  @Column({ name: 'HYPERTENSION', type: 'int4', nullable: true })
   HYPERTENSION: number;
 
-  @Column({ name: 'DIABETES', type: 'int4' })
+  @Column({ name: 'DIABETES', type: 'int4', nullable: true })
   DIABETES: number;
 
-  @Column({ name: 'DYSLIPIDEMIA', type: 'int4' })
+  @Column({ name: 'DYSLIPIDEMIA', type: 'int4', nullable: true })
   DYSLIPIDEMIA: number;
 
-  @Column({ name: 'OBESITY', type: 'int4' })
+  @Column({ name: 'OBESITY', type: 'int4', nullable: true })
   OBESITY: number;
 
   @CreateDateColumn({ name: 'createAt' })

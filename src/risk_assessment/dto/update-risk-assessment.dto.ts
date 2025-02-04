@@ -1,13 +1,4 @@
-export class UpdateRiskAssessmentDto {
-  DIASTOLIC_BLOOD_PRESSURE: number;
-  SYSTOLIC_BLOOD_PRESSURE: number;
-  HDL: number;
-  LDL: number;
-  WAIST_LINE: number;
-  HAS_SMOKE: boolean;
-  HAS_DRINK: boolean;
-  HYPERTENSION: number;
-  DIABETES: number;
-  DYSLIPIDEMIA: number;
-  OBESITY: number;
-  }
+import { CreateRiskAssessmentDto } from './create-risk-assessment.dto';
+
+export class UpdateRiskAssessmentDto extends CreateRiskAssessmentDto {
+}
