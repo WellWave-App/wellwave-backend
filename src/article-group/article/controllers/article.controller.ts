@@ -19,7 +19,15 @@ import {
 import { CreateArticleDto } from '../dto/create-article.dto';
 import { UpdateArticleDto } from '../dto/update-article.dto';
 import { query } from 'express';
-import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Article } from '@/.typeorm/entities/article.entity';
 import { PaginatedResponse } from '@/response/response.interface';
@@ -42,40 +50,19 @@ const imageFileValidator = new ParseFilePipe({
 export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
 
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Create a new article' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-          description: 'Profile image file (JPEG/PNG/GIF, max 10MB)',
-        },
-        TOPIC: { type: 'string', description: 'Article topic' },
-        BODY: { type: 'string', description: 'Article body' },
-        DISEASES_TYPE_IDS: {
-          type: 'array',
-          items: { type: 'number' },
-          description: 'Array of disease type IDs',
-        },
-        ESTIMATED_READ_TIME: {
-          type: 'number',
-          description:
-            'Estimated read time in minutes will be calculate by body length / 200 wpm',
-        },
-        AUTHOR: { type: 'string', description: 'Author name (optional)' },
-        THUMBNAIL_URL: {
-          type: 'string',
-          description: 'Thumbnail URL (generate when upload file)',
-        },
-        VIEW_COUNT: { type: 'number', description: 'View count', default: 0 },
-      },
-      required: ['TOPIC', 'BODY', 'file', 'DISEASES_TYPE_IDS'],
-    },
-  })
   @Post()
+  @ApiOperation({ summary: 'Create a new article' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: CreateArticleDto,
+    description: 'Article creation data with optional file upload',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Article created successfully',
+    type: Article,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   @UseInterceptors(FileInterceptor('file'))
   create(
     @Body() createArticleDto: CreateArticleDto,
@@ -85,23 +72,73 @@ export class ArticleController {
   }
 
   @Get('/search')
-  search(
-    @Query()
-    query?: ArticleParams,
-  ): Promise<PaginatedResponse<Article>> {
+  @ApiOperation({ summary: 'Search articles with optional filters' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search term for article topics',
+  })
+  @ApiQuery({
+    name: 'diseaseIds',
+    required: false,
+    type: [Number],
+    description: 'Filter by disease type IDs',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of articles',
+    // schema: {example: {data: Article[], meta: {total: }}},
+  })
+  search(@Query() query?: ArticleParams): Promise<PaginatedResponse<Article>> {
     if (query.diseaseIds && !Array.isArray(query.diseaseIds)) {
       query.diseaseIds = [query.diseaseIds];
     }
-
     return this.articleService.search(query);
   }
 
   @Get('/:aid')
+  @ApiOperation({ summary: 'Get article by ID' })
+  @ApiParam({
+    name: 'aid',
+    type: Number,
+    description: 'Article ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the article',
+    type: Article,
+  })
+  @ApiResponse({ status: 404, description: 'Article not found' })
   getById(@Param('aid') aid: number): Promise<Article> {
     return this.articleService.findOne(aid);
   }
 
   @Patch()
+  @ApiOperation({ summary: 'Update an article' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: UpdateArticleDto,
+    description: 'Article update data with optional file upload',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Article updated successfully',
+    type: Article,
+  })
+  @ApiResponse({ status: 404, description: 'Article not found' })
   @UseInterceptors(FileInterceptor('file'))
   update(
     @Body() dto: UpdateArticleDto,
@@ -111,15 +148,27 @@ export class ArticleController {
   }
 
   @Delete('/:aid')
+  @ApiOperation({ summary: 'Delete an article' })
+  @ApiParam({
+    name: 'aid',
+    type: Number,
+    description: 'Article ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Article deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        success: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Article not found' })
   delete(
     @Param('aid') aid: number,
   ): Promise<{ message: string; success: boolean }> {
     return this.articleService.delete(aid);
   }
-
-  @Get('/reccommend')
-  getReccommend() {}
-
-  // @Get('types')
-  // getTypes() {}
 }

@@ -107,7 +107,7 @@ export class ArticleRepository {
       });
     }
 
-  const total = await queryBuilder.getCount();
+    const total = await queryBuilder.getCount();
 
     // Include all order by fields in the select clause
     queryBuilder
@@ -117,6 +117,8 @@ export class ArticleRepository {
         'article.ESTIMATED_READ_TIME',
         'article.THUMBNAIL_URL',
         'article.PUBLISH_DATE',
+        'article.BODY',
+        'article.AUTHOR',
         'article.VIEW_COUNT', // Include the field you are ordering by
         'disease.DISEASE_ID',
         'disease.TH_NAME',
