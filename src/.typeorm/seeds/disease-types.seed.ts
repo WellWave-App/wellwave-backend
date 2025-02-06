@@ -31,4 +31,11 @@ export const diseaseTypesSeedData = [
       'ภาวะที่ร่างกายมีการสะสมไขมันมากเกินปกติ (ดัชนีมวลกาย ≥30 กก./ม²) ซึ่งส่งผลเสียต่อสุขภาพ',
     CREATED_AT: new Date(),
   },
+  {
+    DISEASE_ID: 5,
+    TH_NAME: 'อื่น ๆ',
+    ENG_NAME: 'Others',
+    // DESCRIPTION: null,
+    CREATED_AT: new Date(),
+  },
 ];

@@ -3,7 +3,7 @@ services:
   postgres:
     image: postgres:16.3
     container_name: wellwave-postgres
-    restart: always
+    # restart: always
     environment:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
       POSTGRES_DB: $POSTGRES_DATABASE
@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile
     image: nestjs-app
     container_name: wellwave-nestjs
-    restart: always
+    # restart: always
     ports:
       - '3000:3000'
     depends_on:
