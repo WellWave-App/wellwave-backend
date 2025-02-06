@@ -1,25 +1,28 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
 import { User } from './users.entity';
 
-enum Point {
-  DAY1 = 10,
-  DAY2 = 10,
+export enum CheckinRewards {
+  DAY1 = 5,
+  DAY2 = 5,
   DAY3 = 10,
   DAY4 = 10,
-  DAY5 = 10,
-  DAY6 = 10,
-  DAY7 = 20,
+  DAY5 = 15,
+  DAY6 = 15,
+  DAY7 = 30,
 }
 
-@Entity('CHECK_IN')
+@Entity('LOGIN_CHALLENGE')
 export class CheckInChallenge {
-  @PrimaryColumn({ name: 'ID', type: 'uuid' })
-  ID: string;
+  @PrimaryColumn({ name: 'UID', type: 'int', default: 1 })
+  UID: number;
+  @OneToOne(() => User)
+  @JoinColumn({ name: 'UID' })
+  user: User;
 
-  @Column({ name: 'STREAK_START_DATE', type: 'timestamp' })
+  @Column({ name: 'STREAK_START_DATE', type: 'date' })
   STREAK_START_DATE: Date;
 
-  @Column({ name: 'LAST_LOGIN_DATE', type: 'timestamp' })
+  @Column({ name: 'LAST_LOGIN_DATE', type: 'date' })
   LAST_LOGIN_DATE: Date;
 
   @Column({ name: 'CURRENT_STREAK', type: 'int', default: 1 })
@@ -38,8 +41,4 @@ export class CheckInChallenge {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   LAST_UPDATED: Date;
-
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'UID' })
-  user: User;
 }
