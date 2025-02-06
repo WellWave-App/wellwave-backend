@@ -1,30 +1,21 @@
 import {
-  BadRequestException,
   ConflictException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Like, Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../../.typeorm/entities/users.entity';
-import { RegisterUserDto } from '../dto/register.dto';
-import { AuthService } from 'src/auth/services/auth.service';
 import { LoginStreakService } from '@/login-streak/services/login-streak.service';
 // import { LogsService } from '@/user-logs/services/logs.service';
 import { ImageService } from '@/image/image.service';
 import { CreateUserDto } from '../dto/create-user.dto';
-import { UserReadHistoryService } from '@/article-group/user-read-history/services/user-read-history.service';
-import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
-import { query } from 'express';
 import { RiskCalculator } from '../../recommendation/utils/risk-calculator.util';
 import {
   HabitStatus,
   UserHabits,
 } from '@/.typeorm/entities/user-habits.entity';
-import { RecommendationModule } from '@/recommendation/recommendation.module';
 import { order, userSortList } from '../interfaces/user-list.interface';
 import { PaginatedResponse } from '@/response/response.interface';
 import {
@@ -33,9 +24,8 @@ import {
 } from '@/.typeorm/entities/user-quests.entity';
 import { HabitCategories } from '@/.typeorm/entities/habit.entity';
 import { LogsService } from '@/user-logs/services/logs.service';
-import { LogEntity } from '@/.typeorm/entities/logs.entity';
 import { THAI_MONTHS } from '../interfaces/date.formatter';
-import { CategoriesFilters } from '../../mission/habit/interfaces/habits.interfaces';
+import { CheckinChallengeService } from '@/checkin-challenge/services/checkin-challenge.service';
 
 interface MissionHistoryRecord {
   date: string;
@@ -52,6 +42,7 @@ export class UsersService {
     private usersRepository: Repository<User>,
     private readonly loginStreakService: LoginStreakService,
     private readonly imageService: ImageService,
+    private readonly checkinService: CheckinChallengeService,
     // @InjectRepository(UserReadHistory)
     // private userReadHistoryRepository: Repository<UserReadHistory>,
     @InjectRepository(UserHabits)
@@ -183,11 +174,7 @@ export class UsersService {
     const end = new Date(start);
     end.setDate(start.getDate() + 6); // Add 6 days to get to Sunday
 
-    const loginStats = await this.loginStreakService.getUserLoginHistoryStats(
-      uid,
-      start,
-      end,
-    );
+    const loginStats = await this.checkinService.getStats(uid);
 
     // acheivement
     // let mock first cuz didnt have this features yet!
