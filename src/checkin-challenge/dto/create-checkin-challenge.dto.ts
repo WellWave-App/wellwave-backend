@@ -1,6 +1,9 @@
-import { IsOptional } from 'class-validator';
+import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateCheckinChallengeDto {
+  @IsNotEmpty()
+  UID: number;
+
   @IsOptional()
   STREAK_START_DATE: Date;
 
