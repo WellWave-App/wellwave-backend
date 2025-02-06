@@ -8,5 +8,6 @@ import { CheckInChallenge } from '../.typeorm/entities/checkin-challenge.entity'
   imports: [TypeOrmModule.forFeature([CheckInChallenge])],
   controllers: [CheckinChallengeController],
   providers: [CheckinChallengeService],
+  exports: [CheckinChallengeService],
 })
 export class CheckinChallengeModule {}
