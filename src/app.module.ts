@@ -19,6 +19,7 @@ import { QuestModule } from './mission/quest/quest.module';
 import { HabitModule } from './mission/habit/habit.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
+import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
     RecommendationModule,
     QuestModule,
     HabitModule,
+    CheckinChallengeModule,
   ],
   controllers: [AppController],
   providers: [

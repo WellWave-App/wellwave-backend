@@ -8,8 +8,7 @@ import { UpdateLoginStreakDto } from '../dto/update-login-streak.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Not, Repository } from 'typeorm';
 import { LoginStreakEntity } from '@/.typeorm/entities/login-streak.entity';
-import { error } from 'console';
-import { LoginHistoryEntity } from '@/.typeorm/entities/login-history.entity';
+import { LoginHistory } from '@/.typeorm/entities/login-history.entity';
 
 // interface DailyLoginStatus {
 //   date: string; // ISO date string (YYYY-MM-DD)
@@ -30,8 +29,8 @@ export class LoginStreakService {
   constructor(
     @InjectRepository(LoginStreakEntity)
     private loginStreakReposity: Repository<LoginStreakEntity>,
-    @InjectRepository(LoginHistoryEntity)
-    private loginHistoryReposity: Repository<LoginHistoryEntity>,
+    @InjectRepository(LoginHistory)
+    private loginHistoryReposity: Repository<LoginHistory>,
   ) {}
 
   async createLoginStreak(
@@ -63,7 +62,7 @@ export class LoginStreakService {
   private async createLoginHistory(
     uid: number,
     loginDate: Date,
-  ): Promise<LoginHistoryEntity> {
+  ): Promise<LoginHistory> {
     const loginHistory = this.loginHistoryReposity.create({
       UID: uid,
       LOGIN_DATE: loginDate,

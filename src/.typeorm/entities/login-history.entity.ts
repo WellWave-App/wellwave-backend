@@ -11,7 +11,7 @@ import {
 import { User } from './users.entity';
 
 @Entity('LOGIN_HISTORY')
-export class LoginHistoryEntity {
+export class LoginHistory {
   @PrimaryGeneratedColumn()
   LH_ID: number;
 

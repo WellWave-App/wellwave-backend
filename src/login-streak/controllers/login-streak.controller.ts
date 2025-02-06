@@ -74,7 +74,6 @@ export class LoginStreakController {
   @Post('update-login')
   loggedIn(@Request() req) {
     return this.loginStreakService.updateUserLoginStreak(+req.user.UID);
-    // return req.user;
   }
 
   @ApiOperation({ summary: 'Create new login streak' })

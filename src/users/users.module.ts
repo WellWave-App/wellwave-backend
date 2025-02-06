@@ -13,6 +13,7 @@ import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
 import { UserHabits } from '@/.typeorm/entities/user-habits.entity';
 import { HabitModule } from '@/mission/habit/habit.module';
 import { RecommendationModule } from '@/recommendation/recommendation.module';
+import { CheckinChallengeModule } from '@/checkin-challenge/checkin-challenge.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { RecommendationModule } from '@/recommendation/recommendation.module';
     LogsModule,
     LoginStreakModule,
     ImageModule,
+    CheckinChallengeModule,
     forwardRef(() => RecommendationModule),
   ],
   controllers: [UsersController],
