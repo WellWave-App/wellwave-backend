@@ -73,37 +73,6 @@ export class Quest {
     // default: QuestType.NORMAL,
   })
   QUEST_TYPE: QuestType;
-  // @Column({
-  //   type: 'float',
-  //   name: 'RQ_TARGET_MINUTES',
-  //   nullable: true,
-  //   default: 0,
-  // })
-  // RQ_TARGET_MINUTES: number; // for general exercise based quest
-
-  // @Column({
-  //   type: 'float',
-  //   name: 'RQ_TARGET_KM_DISTANCE',
-  //   nullable: true,
-  //   default: 0,
-  // })
-  // RQ_TARGET_KM_DISTANCE: number; // for exercise that can measure distance
-
-  // @Column({
-  //   type: 'float',
-  //   name: 'RQ_TARGET_DAYS_STREAK',
-  //   nullable: true,
-  //   default: 0,
-  // })
-  // RQ_TARGET_DAYS_STREAK: number; // for streak-based quests (can be use with all category)
-
-  // @Column({
-  //   type: 'float',
-  //   name: 'RQ_TARGET_COUNT',
-  //   nullable: true,
-  //   default: 0,
-  // })
-  // RQ_TARGET_COUNT: number; // for count-based categories
 
   @CreateDateColumn({ name: 'CREATED_AT', type: 'date' })
   CREATED_AT: Date;

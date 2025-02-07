@@ -43,7 +43,7 @@ export class DailyHabitTrack {
 
   @Column({ name: 'COMPLETED', type: 'boolean', default: false })
   COMPLETED: boolean;
-  
+
   @Column({ name: 'DURATION_MINUTES', type: 'float', nullable: true })
   DURATION_MINUTES: number;
 

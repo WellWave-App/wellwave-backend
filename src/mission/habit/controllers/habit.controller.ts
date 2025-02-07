@@ -58,45 +58,6 @@ const imageFileValidator = new ParseFilePipe({
 export class HabitController {
   constructor(private readonly habitService: HabitService) {}
 
-  // @Get('/search-habits')
-  // async searchHabits(
-  //   @Query()
-  //   params: {
-  //     uid?: number;
-  //     page?: number;
-  //     limit?: number;
-  //     pagination?: boolean;
-  //     filterCategory?: HabitCategories;
-  //     filterStatus?: HabitFilterStatus;
-  //     query?: string;
-  //   },
-  // ) {
-  //   return await this.habitService.searchHabits(params);
-  // }
-
-  // @Post('/join-habit')
-  // async joinHabit(@Body() dto: StartHabitChallengeDto) {
-  //   return await this.habitService.assignHabitToUser(dto);
-  // }
-
-  // @Post()
-  // @UseInterceptors(FileInterceptor('file'))
-  // async createNewHabit(
-  //   @Body() dto: CreateHabitDto,
-  //   @UploadedFile(imageFileValidator) file?: Express.Multer.File,
-  // ) {
-  //   return await this.habitService.createNewHabit(dto, file);
-  // }
-
-  // @Patch()
-  // @UseInterceptors(FileInterceptor('file'))
-  // async updateHabit(
-  //   @Body() dto: UpdateHabitDto,
-  //   @UploadedFile(imageFileValidator) file?: Express.Multer.File,
-  // ) {
-  //   return await this.habitService.updateHabit(dto, file);
-  // }
-
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   @Roles(Role.ADMIN, Role.MODERATOR)
@@ -106,17 +67,7 @@ export class HabitController {
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    // schema: {
     type: CreateHabitDto,
-    // properties: {
-    //   file: {
-    //     type: 'string',
-    //     format: 'binary',
-    //     description: 'Thumbnail image file (jpeg/png/gif)',
-    //   },
-    //   ...CreateHabitDto,
-    // },
-    // },
   })
   @ApiResponse({
     status: 201,
@@ -199,7 +150,8 @@ export class HabitController {
   })
   @ApiBody({
     type: TrackHabitDto,
-    description: 'Habit tracking data',
+    description:
+      "Habit tracking data (MODD_FEEDBACK: ['ท้อแท้', 'กดดัน', 'เฉยๆ', 'พอใจ', 'สดใส']) ",
     examples: {
       duration: {
         value: {

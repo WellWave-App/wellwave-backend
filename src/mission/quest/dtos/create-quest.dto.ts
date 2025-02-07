@@ -4,6 +4,7 @@ import {
   TrackingType,
 } from '@/.typeorm/entities/habit.entity';
 import { QuestType } from '@/.typeorm/entities/quest.entity';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 import { Transform, TransformFnParams } from 'class-transformer';
 import {
   IsEnum,
@@ -62,6 +63,7 @@ export class CreateQuestDto {
   )
   RELATED_HABIT_CATEGORY: HabitCategories;
 
+  @ApiPropertyOptional({ enum: ExerciseType, description: 'Type of exercise' })
   @IsEnum(ExerciseType)
   @IsOptional()
   @Transform(({ value }: TransformFnParams) =>
@@ -69,12 +71,18 @@ export class CreateQuestDto {
   )
   EXERCISE_TYPE?: ExerciseType;
 
+  @ApiProperty({ enum: TrackingType, description: 'Type of tracking for the quest' })
   @IsEnum(TrackingType)
   @Transform(({ value }: TransformFnParams) =>
     value === '' ? undefined : value,
   )
   TRACKING_TYPE: TrackingType;
 
+  @ApiPropertyOptional({
+    enum: QuestType,
+    description: 'Type of quest',
+    default: QuestType.NORMAL,
+  })
   @IsEnum(QuestType)
   @IsOptional()
   @Transform(({ value }: TransformFnParams) =>
