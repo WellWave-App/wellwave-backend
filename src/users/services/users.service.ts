@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../../.typeorm/entities/users.entity';
 import { LoginStreakService } from '@/login-streak/services/login-streak.service';
@@ -26,6 +26,9 @@ import { HabitCategories } from '@/.typeorm/entities/habit.entity';
 import { LogsService } from '@/user-logs/services/logs.service';
 import { THAI_MONTHS } from '../interfaces/date.formatter';
 import { CheckinChallengeService } from '@/checkin-challenge/services/checkin-challenge.service';
+import { table } from 'console';
+import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
+import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 
 interface MissionHistoryRecord {
   date: string;
@@ -47,7 +50,11 @@ export class UsersService {
     // private userReadHistoryRepository: Repository<UserReadHistory>,
     @InjectRepository(UserHabits)
     private userHabit: Repository<UserHabits>,
+    @InjectRepository(UserQuests)
+    private userQuest: Repository<UserQuests>,
     private logsService: LogsService,
+    @InjectRepository(DailyHabitTrack)
+    private dailyHabitTrackRepository: Repository<DailyHabitTrack>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -202,6 +209,7 @@ export class UsersService {
     ];
 
     // log
+    const missionProgress = await this.getWeeklyMissionProgress(uid);
 
     return {
       userInfo: user,
@@ -211,7 +219,8 @@ export class UsersService {
         MIN_EXP: 1000,
         MAX_EXP: 2499,
       },
-      loginStats: loginStats,
+      missionProgress,
+      loginStats,
       usersAchievement: mockAcheivements,
     };
   }
@@ -683,5 +692,84 @@ export class UsersService {
     const year = date.getFullYear() + (buddhistYear ? 543 : 0);
 
     return `${day}${delimiter}${month}${delimiter}${year}`;
+  }
+
+  async getWeeklyMissionProgress(uid: number) {
+    const user = await this.getById(uid);
+    const { USER_GOAL_EX_TIME_WEEK, USER_GOAL_STEP_WEEK, habits, quests } =
+      user;
+
+    // Get start and end of current week
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(now);
+    endOfWeek.setDate(now.getDate() + (6 - now.getDay()));
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Single pass through habits array
+    const habitStats = habits.reduce(
+      (acc, habit) => {
+        acc[habit.STATUS]++;
+        return acc;
+      },
+      { [HabitStatus.Active]: 0, [HabitStatus.Completed]: 0 },
+    );
+
+    // Single pass through quests array
+    const questStats = quests.reduce(
+      (acc, quest) => {
+        acc[quest.STATUS]++;
+        return acc;
+      },
+      { [QuestStatus.Active]: 0, [QuestStatus.Completed]: 0 },
+    );
+
+    // Get step logs for this week
+    const stepLogs = await this.logsService.getWeeklyLogsByUser(
+      uid,
+      null,
+      LOG_NAME.STEP_LOG,
+    );
+
+    // Get all daily habit tracks for this week
+    const dailyTracks = await this.dailyHabitTrackRepository.find({
+      where: {
+        UserHabits: { UID: uid },
+        TRACK_DATE: Between(startOfWeek, endOfWeek),
+        // COMPLETED: true,
+      },
+    });
+
+    // Calculate total exercise time
+    const totalExerciseMinutes = dailyTracks.reduce(
+      (acc, track) => acc + (track.DURATION_MINUTES || 0),
+      0,
+    );
+
+    return {
+      progress: {
+        step: {
+          current: stepLogs.LOGS.reduce(
+            (acc, log) => acc + (log.VALUE || 0),
+            0,
+          ),
+          goal: USER_GOAL_STEP_WEEK,
+        },
+        exercise_time: {
+          current: totalExerciseMinutes,
+          goal: USER_GOAL_EX_TIME_WEEK,
+        },
+        mission: {
+          current:
+            habitStats[HabitStatus.Completed] +
+            questStats[QuestStatus.Completed],
+          goal: habitStats[HabitStatus.Active] + questStats[QuestStatus.Active],
+        },
+      },
+      daysLeft: 7 - (new Date().getDay() || 7),
+    };
   }
 }
