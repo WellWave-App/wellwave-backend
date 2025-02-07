@@ -14,6 +14,8 @@ import { UserHabits } from '@/.typeorm/entities/user-habits.entity';
 import { HabitModule } from '@/mission/habit/habit.module';
 import { RecommendationModule } from '@/recommendation/recommendation.module';
 import { CheckinChallengeModule } from '@/checkin-challenge/checkin-challenge.module';
+import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
+import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 
 @Module({
   imports: [
@@ -26,11 +28,18 @@ import { CheckinChallengeModule } from '@/checkin-challenge/checkin-challenge.mo
         },
       }),
     }),
-    TypeOrmModule.forFeature([User, UserReadHistory, UserHabits]),
+    TypeOrmModule.forFeature([
+      User,
+      UserReadHistory,
+      UserHabits,
+      UserQuests,
+      DailyHabitTrack,
+    ]),
     LogsModule,
     LoginStreakModule,
     ImageModule,
     CheckinChallengeModule,
+
     forwardRef(() => RecommendationModule),
   ],
   controllers: [UsersController],
