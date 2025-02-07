@@ -1,61 +1,59 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { UserEntity } from './users.entity';
+import { User } from './users.entity';
 
-
-@Entity('RISK_ASSESSMENT') 
-export class RiskAssessmentEntity { 
-  
-  @PrimaryGeneratedColumn()
+@Entity('RISK_ASSESSMENT')
+export class RiskAssessmentEntity {
+  @PrimaryGeneratedColumn({ name: 'RA_ID' })
   RA_ID: number;
 
-  @Column('float')
-  HEIGHT: number;
+  @Column({ name: 'DIASTOLIC_BLOOD_PRESSURE', type: 'float' })
+  DIASTOLIC_BLOOD_PRESSURE: number;
 
-  @Column('float')
-  WEIGHT: number;
+  @Column({ name: 'SYSTOLIC_BLOOD_PRESSURE', type: 'float' })
+  SYSTOLIC_BLOOD_PRESSURE: number;
 
-  @Column('float')
+  @Column({ name: 'HDL', type: 'float' })
   HDL: number;
 
-  @Column('float')
+  @Column({ name: 'LDL', type: 'float' })
   LDL: number;
 
-  @Column('float')
+  @Column({ name: 'WAIST_LINE', type: 'float' })
   WAIST_LINE: number;
 
-  @Column('float')
-  BLOOD_PRESSURE: number;
+  @Column({ name: 'HAS_SMOKE', type: 'boolean' })
+  HAS_SMOKE: boolean;
 
-  @Column('float')
-  BLOOD_GLUCOSE: number;
+  @Column({ name: 'HAS_DRINK', type: 'boolean' })
+  HAS_DRINK: boolean;
 
-  @Column('boolean')
-  HAS_HYPERTENSION: boolean;
+  @Column({ name: 'HYPERTENSION', type: 'int4', nullable: true })
+  HYPERTENSION: number;
 
-  @Column('boolean')
-  HAS_DIABETES: boolean;
+  @Column({ name: 'DIABETES', type: 'int4', nullable: true })
+  DIABETES: number;
 
-  @Column('boolean')
-  HAS_DYSLIPIDEMIA: boolean;
+  @Column({ name: 'DYSLIPIDEMIA', type: 'int4', nullable: true })
+  DYSLIPIDEMIA: number;
 
-  @Column('boolean')
-  HAS_OBESITY: boolean;
+  @Column({ name: 'OBESITY', type: 'int4', nullable: true })
+  OBESITY: number;
 
-  @OneToOne(() => UserEntity, (USER) => USER.RiskAssessment)
+  @CreateDateColumn({ name: 'createAt' })
+  createAt: Date;
+
+  @OneToOne(() => User, (USER) => USER.RiskAssessment)
   @JoinColumn({ name: 'UID' })
-  USER: UserEntity;
+  USER: User;
 
   @Column({ name: 'UID' })
   UID: number;
-
 }
-
-
-  

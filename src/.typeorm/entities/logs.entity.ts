@@ -1,14 +1,6 @@
-// logs/entities/log.entity.ts
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  CreateDateColumn,
-  JoinColumn,
-  Unique,
-} from 'typeorm';
-import { UserEntity } from './users.entity';
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
+import { User } from './users.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 export enum LOG_NAME {
   HDL_LOG = 'HDL_LOG',
@@ -19,31 +11,50 @@ export enum LOG_NAME {
   CAL_BURN_LOG = 'CAL_BURN_LOG',
   DRINK_LOG = 'DRINK_LOG',
   STEP_LOG = 'STEP_LOG',
-  WAIST_LINE_LOG = 'WAIST_LINE_LOG'
+  WAIST_LINE_LOG = 'WAIST_LINE_LOG',
+  DIASTOLIC_BLOOD_PRESSURE_LOG = 'DIASTOLIC_BLOOD_PRESSURE_LOG',
+  SYSTOLIC_BLOOD_PRESSURE_LOG = 'SYSTOLIC_BLOOD_PRESSURE_LOG',
 }
 
 @Entity('LOGS')
-// @Unique(['UID', 'DATE', 'LOG_NAME'])
 export class LogEntity {
-  @PrimaryGeneratedColumn()
-  LID: number;
+  @ApiProperty({
+    description: 'User ID',
+    example: 1,
+  })
+  @PrimaryColumn()
+  UID: number;
 
-  @Column({ type: 'date', default: new Date() })
-  DATE: Date;
-
-  @Column({type: 'float'})
-  VALUE: number;
-
-  @Column({
+  @ApiProperty({
+    description: 'Type of log entry',
+    enum: LOG_NAME,
+    example: LOG_NAME.WEIGHT_LOG,
+  })
+  @PrimaryColumn({
     type: 'enum',
     enum: LOG_NAME,
   })
   LOG_NAME: LOG_NAME;
 
-  @ManyToOne(() => UserEntity, (USER) => USER.LOGS)
-  @JoinColumn({ name: 'UID' })
-  USER: UserEntity;
+  @ApiProperty({
+    description: 'Date of the log entry',
+    example: '2024-12-22',
+  })
+  @PrimaryColumn({ type: 'date' })
+  DATE: Date;
 
-  @Column({ name: 'UID' })
-  UID: number;
+  @ApiProperty({
+    description: 'Numerical value for the log entry',
+    example: 75.5,
+  })
+  @Column({ type: 'float' })
+  VALUE: number;
+
+  @ApiProperty({
+    description: 'Associated user entity',
+    type: () => User,
+  })
+  @ManyToOne(() => User, (USER) => USER.LOGS, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'UID' })
+  USER: User;
 }

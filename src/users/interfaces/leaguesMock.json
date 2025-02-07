@@ -1,0 +1,42 @@
+[
+  {
+    "LB_ID": 1,
+    "LEAGUE_NAME": "Bronze",
+    "MIN_EXP": 0,
+    "MAX_EXP": 999,
+    "CREATE_AT": "2024-12-15",
+    "UPDATE_AT": "2024-12-15"
+  },
+  {
+    "LB_ID": 2,
+    "LEAGUE_NAME": "Silver",
+    "MIN_EXP": 1000,
+    "MAX_EXP": 2499,
+    "CREATE_AT": "2024-12-15",
+    "UPDATE_AT": "2024-12-15"
+  },
+  {
+    "LB_ID": 3,
+    "LEAGUE_NAME": "Gold",
+    "MIN_EXP": 2500,
+    "MAX_EXP": 4999,
+    "CREATE_AT": "2024-12-15",
+    "UPDATE_AT": "2024-12-15"
+  },
+  {
+    "LB_ID": 4,
+    "LEAGUE_NAME": "Platinum",
+    "MIN_EXP": 5000,
+    "MAX_EXP": 9999,
+    "CREATE_AT": "2024-12-15",
+    "UPDATE_AT": "2024-12-15"
+  },
+  {
+    "LB_ID": 5,
+    "LEAGUE_NAME": "Diamond",
+    "MIN_EXP": 10000,
+    "MAX_EXP": 999999,
+    "CREATE_AT": "2024-12-15",
+    "UPDATE_AT": "2024-12-15"
+  }
+]

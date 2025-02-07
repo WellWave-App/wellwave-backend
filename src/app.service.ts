@@ -14,7 +14,7 @@ export class AppService implements OnModuleInit {
       this.logger.log('Database connection has been established successfully.');
     } catch (error) {
       this.logger.error('Unable to connect to the database:', error);
-      // Optionally, you might want to rethrow the error or handle it in a way 
+      // Optionally, you might want to rethrow the error or handle it in a way
       // that prevents the application from starting if the DB is not available
       // throw error;
     }
