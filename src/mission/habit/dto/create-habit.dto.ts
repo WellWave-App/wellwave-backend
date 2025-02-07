@@ -45,9 +45,15 @@ export class CreateHabitDto {
 
   @IsEnum(ExerciseType)
   @IsOptional()
+  @Transform(({ value }: TransformFnParams) =>
+    value === '' ? undefined : value,
+  )
   EXERCISE_TYPE?: ExerciseType;
 
   @IsEnum(TrackingType)
+  @Transform(({ value }: TransformFnParams) =>
+    value === '' ? undefined : value,
+  )
   TRACKING_TYPE: TrackingType;
 
   @IsNumber()
@@ -91,6 +97,11 @@ export class CreateHabitDto {
   )
   THUMBNAIL_URL?: string;
 
+  @Transform(({ value }: TransformFnParams) =>
+    value === '' ? undefined : value,
+  )
+  IS_DAILY: boolean;
+
   @IsOptional({ message: 'Thumbnail image must not empty' })
-  imgFile?: any;
+  file?: any;
 }

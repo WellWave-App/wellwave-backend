@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   Query,
   UploadedFile,
   ParseFilePipe,
@@ -15,18 +13,12 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import {
-  CategoriesFilters,
-  CategoriesParamsDto,
-  HabitFilterStatus,
-  HabitListFilter,
-} from '../interfaces/habits.interfaces';
+import { HabitListFilter } from '../interfaces/habits.interfaces';
 import { HabitService } from '../services/habit.service';
 import { HabitCategories, Habits } from '@/.typeorm/entities/habit.entity';
 import { StartHabitChallengeDto } from '../dto/user-habit.dto';
 import { CreateHabitDto } from '../dto/create-habit.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UpdateHabitDto } from '../dto/update-habit.dto';
 import {
   HabitStatus,
   UserHabits,
@@ -34,6 +26,9 @@ import {
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
+import { Role } from '@/auth/roles/roles.enum';
+import { Roles } from '@/auth/roles/roles.decorator';
+import { RoleGuard } from '@/auth/guard/role.guard';
 
 const imageFileValidator = new ParseFilePipe({
   validators: [
@@ -46,6 +41,7 @@ const imageFileValidator = new ParseFilePipe({
   fileIsRequired: false,
 });
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('habit')
 export class HabitController {
   constructor(private readonly habitService: HabitService) {}
@@ -89,9 +85,9 @@ export class HabitController {
   //   return await this.habitService.updateHabit(dto, file);
   // }
 
-  // @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
+  @Roles(Role.ADMIN, Role.MODERATOR)
   createHabit(
     @Body() createHabitDto: CreateHabitDto,
     @UploadedFile(imageFileValidator) file?: Express.Multer.File,
@@ -100,7 +96,7 @@ export class HabitController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getHabits(
     @Request() req,
     @Query('filter') filter?: HabitListFilter,
@@ -120,7 +116,7 @@ export class HabitController {
   }
 
   @Post('/challenge')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   startChallenge(
     @Request() req,
     @Body() startDto: StartHabitChallengeDto,
@@ -129,7 +125,7 @@ export class HabitController {
   }
 
   @Post('/track')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   trackHabit(
     @Request() req,
     @Body() trackDto: TrackHabitDto,
@@ -138,7 +134,7 @@ export class HabitController {
   }
 
   @Get('/user')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getUserHabits(
     @Request() req,
     @Query('status') status?: HabitStatus,
@@ -156,7 +152,7 @@ export class HabitController {
   }
 
   @Get('/stats/:challengeId')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getHabitStats(
     @Request() req,
     @Param('challengeId') challengeId: number,
