@@ -52,13 +52,31 @@ export class HabitService {
   }
 
   async getDailyHabit(uid: number): Promise<PaginatedResponse<any>> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     // * updated outdate daily habit
     await this.updateOutdatedHabits(uid);
 
-    const today = new Date();
-    const userHabits = await this.getUserHabits(uid, HabitStatus.Active, false);
+    // * helper format function
+    const formatResponse = (h: UserHabits) => ({
+      CHALLENGE_ID: h.CHALLENGE_ID,
+      HID: h.HID,
+      TITLE: h.habits.TITLE,
+      THUMBNAIL_URL: h.habits.THUMBNAIL_URL,
+      EXP_REWARD: h.habits.EXP_REWARD,
+    });
 
-    const filterTodayDailyHabits = userHabits.data.filter((uh) => {
+    const userDailyHabits = await this.getUserHabits(
+      uid,
+      HabitStatus.Active,
+      false,
+      null,
+      null,
+      true,
+    );
+
+    const filterTodayDailyHabits = userDailyHabits.data.filter((uh) => {
       const startDate = new Date(uh.START_DATE);
       return (
         startDate.getDate() === today.getDate() &&
@@ -69,12 +87,7 @@ export class HabitService {
     });
 
     if (filterTodayDailyHabits.length > 0) {
-      const formatted = filterTodayDailyHabits.map((h) => ({
-        HID: h.HID,
-        TITLE: h.habits.TITLE,
-        THUMBNAIL_URL: h.habits.THUMBNAIL_URL,
-        EXP_REWARD: h.habits.EXP_REWARD,
-      }));
+      const formatted = filterTodayDailyHabits.map((uh) => formatResponse(uh));
       return {
         data: formatted,
         meta: { total: filterTodayDailyHabits.length },
@@ -88,17 +101,13 @@ export class HabitService {
       .limit(4)
       .getMany();
 
-    const formatted = randomHabits.map((h) => ({
-      HID: h.HID,
-      TITLE: h.TITLE,
-      THUMBNAIL_URL: h.THUMBNAIL_URL,
-      EXP_REWARD: h.EXP_REWARD,
-    }));
-
-    await Promise.all(
-      formatted.map((h) => this.startChallenge(uid, { UID: uid, HID: h.HID })),
+    const data = await Promise.all(
+      randomHabits.map((h) =>
+        this.startChallenge(uid, { UID: uid, HID: h.HID }),
+      ),
     );
 
+    const formatted = data.map((uh) => formatResponse(uh));
     return {
       data: formatted,
       meta: { total: formatted.length },
@@ -487,31 +496,38 @@ export class HabitService {
     pagination: boolean = false,
     page: number = 1,
     limit: number = 10,
+    isDaily: boolean = false,
   ): Promise<PaginatedResponse<UserHabits>> {
     const queryBuilder = this.userHabitsRepository
       .createQueryBuilder('userHabit')
       .leftJoinAndSelect('userHabit.habits', 'habit')
       .leftJoinAndSelect('userHabit.dailyTracks', 'tracks')
-      .where('userHabit.UID = :userId', { userId });
+      .where('userHabit.UID = :userId', { userId })
+      .andWhere('habit.IS_DAILY = :isDaily', { isDaily: isDaily });
 
     if (status) {
       queryBuilder.andWhere('userHabit.STATUS = :status', { status });
     }
 
     if (pagination) {
-      queryBuilder.skip((page - 1) * limit).take(limit);
+      if (page < 1) page = 1;
+      if (limit < 1) limit = 10;
+      queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .orderBy('userHabit.START_DATE', 'DESC'); // Add ordering for consistency
     }
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
     return {
-      data,
+      data: data || [],
       meta: {
         total,
         ...(pagination && {
           page,
           limit,
-          totalPages: Math.ceil(total / limit),
+          totalPages: Math.ceil(total / limit) || 0,
           pagination,
         }),
       },
