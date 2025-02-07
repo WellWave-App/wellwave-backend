@@ -153,10 +153,16 @@ export class HabitController {
 
   @Get('/stats/:challengeId')
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
-  getHabitStats(
+  getD(
     @Request() req,
     @Param('challengeId') challengeId: number,
   ): Promise<any> {
     return this.habitService.getHabitStats(req.user.UID, challengeId);
+  }
+
+  @Get('/daily')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  getDaily(@Request() req): Promise<any> {
+    return this.habitService.getDailyHabit(req.user.UID);
   }
 }
