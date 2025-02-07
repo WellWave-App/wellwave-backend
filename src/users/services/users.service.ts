@@ -209,7 +209,7 @@ export class UsersService {
     ];
 
     // log
-    const missionProgress = {};
+    const missionProgress = await this.getWeeklyMissionProgress(uid);
 
     return {
       userInfo: user,
@@ -219,7 +219,8 @@ export class UsersService {
         MIN_EXP: 1000,
         MAX_EXP: 2499,
       },
-      loginStats: loginStats,
+      missionProgress,
+      loginStats,
       usersAchievement: mockAcheivements,
     };
   }
