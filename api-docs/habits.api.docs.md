@@ -1,203 +1,291 @@
-# Habits API Documentation
+# Quest API Documentation
 
 ## Base URL
 
-`/habit`
+```
+/api/quest
+```
 
 ## Authentication
 
-All endpoints require JWT Bearer token authentication.
+All endpoints require JWT authentication. Include the JWT token in the Authorization header:
 
 ```
-Authorization: Bearer <token>
+Authorization: Bearer <jwt_token>
 ```
 
 ## Endpoints
 
-### Create Habit
+### Create Quest
 
-`POST /habit`
+Create a new quest in the system.
 
-- Role required: ADMIN, MODERATOR
-- Content-Type: multipart/form-data
+**Endpoint:** `POST /`  
+**Auth Required:** Yes  
+**Content-Type:** `multipart/form-data`
 
 **Request Body:**
 
 ```typescript
 {
-  TITLE: string;
-  DESCRIPTION?: string;
-  ADVICE?: string;
-  CATEGORY: "exercise" | "diet" | "sleep";
-  EXERCISE_TYPE?: "walking" | "running" | "cycling" | "swimming" | "strength" | "hiit" | "yoga" | "other";
-  TRACKING_TYPE: "duration" | "distance" | "boolean" | "count";
-  EXP_REWARD?: number;
-  GEM_REWARD?: number;
-  DEFAULT_DURATION_MINUTES?: number;
-  DEFAULT_DAYS_GOAL?: number;
-  CONDITIONS?: {
-    DIABETES_CONDITION: boolean;
-    OBESITY_CONDITION: boolean;
-    DYSLIPIDEMIA_CONDITION: boolean;
-    HYPERTENSION_CONDITION: boolean;
-  };
-  THUMBNAIL_URL?: string;
-  IS_DAILY: boolean;
-  file?: File; // Max size: 10MB, Types: jpeg/png/gif
+  TITLE: string;                    // Required: Quest title
+  IMG_URL?: string;                 // Optional: Image URL
+  DAY_DURATION: number;             // Required: Duration in days
+  DESCRIPTION: string;              // Required: Quest description
+  EXP_REWARDS?: number;             // Optional: Experience points reward
+  GEM_REWARDS?: number;             // Optional: Gem rewards
+  RELATED_HABIT_CATEGORY: string;   // Required: Category of related habit
+  EXERCISE_TYPE?: string;           // Optional: Type of exercise
+  TRACKING_TYPE: string;            // Required: Type of tracking
+  QUEST_TYPE?: string;              // Optional: Type of quest (default: 'normal')
+  TARGET_VALUE: number;             // Required: Target value to complete
+  file?: File;                      // Optional: Quest image file
 }
 ```
 
-### Get Habits List
+**Enums:**
 
-`GET /habit`
+```typescript
+enum HabitCategories {
+  Exercise = 'exercise',
+  Diet = 'diet',
+  Sleep = 'sleep',
+}
 
-- Role required: ADMIN, MODERATOR, USER
+enum ExerciseType {
+  Walking = 'walking',
+  Running = 'running',
+  Cycling = 'cycling',
+  Swimming = 'swimming',
+  Strength = 'strength',
+  HIIT = 'hiit',
+  Yoga = 'yoga',
+  // Other = 'other',
+}
+
+TrackingType {
+  Duration = 'duration', // For timed activities (exercise)
+  Distance = 'distance', // For distance-based activities (walking, running)
+  Boolean = 'boolean', // For yes/no activities (sleep, diet)
+  Count = 'count', // For counted activities (steps, repetitions)
+}
+
+enum QuestType {
+  NORMAL = 'normal', // Regular tracking quests (minutes, distance, etc.)
+  STREAK_BASED = 'streak_based', // Streak achievement quests
+  COMPLETION_BASED = 'completion_based', // Challenge completion quests
+  START_BASED = 'start_based', // Starting new habits quests
+  DAILY_COMPLETION = 'daily_completion', // Daily habit completion quests
+}
+```
+
+**Response:** `201 Created`
+
+```typescript
+{
+  QID: number;
+  // ... other quest properties
+}
+```
+
+### Get Quests
+
+Retrieve quests with optional filtering.
+
+**Endpoint:** `GET /`  
+**Auth Required:** Yes
 
 **Query Parameters:**
 
-```typescript
-{
-  filter?: "ALL" | "DOING" | "NOT_DOING";
-  category?: "exercise" | "diet" | "sleep";
-  page?: number;
-  limit?: number;
-  pagination?: boolean;
-}
-```
+- `filter` (optional): Enum `QuestListFilter` - Filter type ('ALL' | 'DOING' | 'NOT_DOING')
+- `category` (optional): Enum `HabitCategories` - Filter by habit category
 
-### Start Habit Challenge
-
-`POST /habit/challenge`
-
-- Role required: ADMIN, MODERATOR, USER
-
-**Request Body:**
+**Response:** `200 OK`
 
 ```typescript
-{
-  UID?: number;
-  HID: number;
-  DAILY_MINUTE_GOAL?: number;
-  DAYS_GOAL?: number;
-  IS_NOTIFICATION_ENABLED?: boolean;
-  WEEKDAYS_NOTI?: {
-    Sunday: boolean;
-    Monday: boolean;
-    Tuesday: boolean;
-    Wednesday: boolean;
-    Thursday: boolean;
-    Friday: boolean;
-    Saturday: boolean;
-  };
-}
-```
-
-### Track Habit Progress
-
-`POST /habit/track`
-
-- Role required: ADMIN, MODERATOR, USER
-
-**Request Body:**
-
-```typescript
-{
-  CHALLENGE_ID: number;
-  TRACK_DATE?: string; // YYYY-MM-DD format
-  DURATION_MINUTES?: number; // Required for duration tracking type
-  DISTANCE_KM?: number;      // Required for distance tracking type
-  COUNT_VALUE?: number;      // Required for count tracking type
-  COMPLETED?: boolean;       // Required for boolean tracking type
-  MOOD_FEEDBACK?: "ท้อแท้" | "กดดัน" | "เฉยๆ" | "พอใจ" | "สดใส";
-}
-```
-
-### Get User Habits
-
-`GET /habit/user`
-
-- Role required: ADMIN, MODERATOR, USER
-
-**Query Parameters:**
-
-```typescript
-{
-  status?: "active" | "completed" | "failed" | "cancled";
-  page?: number;
-  limit?: number;
-  pagination?: boolean;
-}
-```
-
-### Get Habit Challenge Statistics
-
-`GET /habit/stats/:challengeId`
-
-- Role required: ADMIN, MODERATOR, USER
-
-**Response:**
-
-```typescript
-{
-  totalDays: number;
-  completedDays: number;
-  currentStreak: number;
-  totalValue: number;
-  progressPercentage: number;
-  status: 'active' | 'completed' | 'failed' | 'cancled';
-  dailyTracks: Array<{
-    TRACK_ID: number;
-    CHALLENGE_ID: number;
-    TRACK_DATE: string;
-    COMPLETED: boolean;
-    DURATION_MINUTES?: number;
-    DISTANCE_KM?: number;
-    COUNT_VALUE?: number;
-    MOOD_FEEDBACK?: string;
-  }>;
-}
-```
-
-### Get Daily Habits
-
-`GET /habit/daily`
-
-- Role required: ADMIN, MODERATOR, USER
-
-**Response:**
-
-```typescript
-{
-  data: Array<{
-    CHALLENGE_ID: number;
-    HID: number;
+[
+  {
+    QID: number;
     TITLE: string;
-    THUMBNAIL_URL: string;
-    EXP_REWARD: number;
-  }>;
-  meta: {
-    total: number;
+    DESCRIPTION: string;
+    // ... other quest properties
+    isActive: boolean;
+    progressInfo?: {
+      startDate: Date;
+      endDate: Date;
+      currentValue: number;
+      targetValue: number;
+      progressPercentage: number;
+      daysLeft: number;
+    }
   }
-}
+]
 ```
 
-## Error Responses
+### Start Quest
 
-### Common Error Status Codes
+Start a quest for the current user.
 
-- 400: Bad Request - Invalid input data
-- 401: Unauthorized - Missing or invalid JWT token
-- 403: Forbidden - Insufficient role permissions
-- 404: Not Found - Resource not found
-- 409: Conflict - Resource conflict (e.g., active challenge already exists)
-- 500: Internal Server Error
+**Endpoint:** `POST /start/:questId`  
+**Auth Required:** Yes
 
-### Error Response Format
+**URL Parameters:**
+
+- `questId`: number - ID of the quest to start
+
+**Response:** `201 Created`
 
 ```typescript
 {
-  statusCode: number;
-  message: string | string[];
-  error: string;
+  QID: number;
+  UID: number;
+  START_DATE: Date;
+  END_DATE: Date;
+  STATUS: QuestStatus;
+  PROGRESS_PERCENTAGE: number;
 }
+```
+
+**Possible Errors:**
+
+- `404 Not Found`: Quest not found
+- `409 Conflict`: Quest already active
+
+### Track Quest Progress
+
+Track progress for an active quest.
+
+**Endpoint:** `POST /track`  
+**Auth Required:** Yes
+
+**Request Body:**
+
+```typescript
+{
+  QID: number; // Quest ID
+  value: number; // Progress value to add
+}
+```
+
+**Response:** `201 Created`
+
+```typescript
+{
+  PROGRESS_ID: number;
+  QID: number;
+  UID: number;
+  TRACK_DATE: Date;
+  VALUE_COMPLETED: number;
+}
+```
+
+**Possible Errors:**
+
+- `404 Not Found`: Active quest not found
+
+### Get Quest Statistics
+
+Get detailed statistics for a specific quest.
+
+**Endpoint:** `GET /stats/:questId`  
+**Auth Required:** Yes
+
+**URL Parameters:**
+
+- `questId`: number - ID of the quest
+
+**Response:** `200 OK`
+
+```typescript
+{
+  startDate: Date;
+  endDate: Date;
+  status: QuestStatus;
+  currentValue: number;
+  targetValue: number;
+  progressPercentage: number;
+  progressHistory: Array<{
+    PROGRESS_ID: number;
+    TRACK_DATE: Date;
+    VALUE_COMPLETED: number;
+  }>;
+  daysLeft: number;
+}
+```
+
+**Possible Errors:**
+
+- `404 Not Found`: Quest not found
+
+## Status Codes
+
+- `200`: Success
+- `201`: Created
+- `400`: Bad Request
+- `401`: Unauthorized
+- `404`: Not Found
+- `409`: Conflict
+- `500`: Internal Server Error
+
+## Notes for Frontend Implementation
+
+1. File Upload:
+
+   - When creating a quest with an image, use `multipart/form-data`
+   - Maximum file size: 10MB
+   - Supported formats: JPEG, PNG, GIF
+
+2. Progress Tracking:
+
+   - Progress percentage is automatically calculated based on target value
+   - Quest status automatically updates to 'completed' when progress reaches 100%
+   - Progress values are cumulative
+
+3. Real-time Considerations:
+
+   - Quest progress is synced with habit tracking
+   - Consider implementing polling or WebSocket for real-time progress updates
+
+4. Error Handling:
+   - Always check response status codes
+   - Implement proper error handling for file uploads
+   - Handle network timeouts appropriately
+
+## Example Usage
+
+### Creating a Quest
+
+```javascript
+const formData = new FormData();
+formData.append('TITLE', 'Run 30 Days');
+formData.append('DAY_DURATION', '30');
+formData.append('DESCRIPTION', 'Run 5km every day for 30 days');
+formData.append('RELATED_HABIT_CATEGORY', 'EXERCISE');
+formData.append('TRACKING_TYPE', 'DISTANCE');
+formData.append('TARGET_VALUE', '150');
+formData.append('file', imageFile);
+
+const response = await fetch('/api/quest', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+  body: formData,
+});
+```
+
+### Tracking Progress
+
+```javascript
+const response = await fetch('/api/quest/track', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    QID: questId,
+    value: 5, // e.g., 5km run
+  }),
+});
 ```
