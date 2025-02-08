@@ -353,6 +353,14 @@ export class UsersService {
   async getDeepProfile(uid: number, page: number = 1, limit: number = 10) {
     const data = await this.usersRepository.findOne({
       where: { UID: uid },
+      relations: [
+        'LOGS',
+        'RiskAssessment',
+        'loginStreak',
+        'quests',
+        'habits',
+        'articleReadHistory',
+      ],
     });
 
     if (!data) {
@@ -368,7 +376,6 @@ export class UsersService {
       articleReadHistory,
       ...userInfo
     } = data;
-
     const risk = this.calculateRiskWeights(RiskAssessment);
     const streakLogin = this.calculateLoginStats(loginStreak);
     const completeRate = this.getOverallCompleteRate(habits, quests);
