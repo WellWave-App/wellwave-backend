@@ -209,7 +209,7 @@ export class UsersService {
     ];
 
     // log
-    const missionProgress = await this.getWeeklyMissionProgress(uid);
+    const weeklyGoal = await this.getWeeklyMissionProgress(uid);
 
     return {
       userInfo: user,
@@ -219,7 +219,7 @@ export class UsersService {
         MIN_EXP: 1000,
         MAX_EXP: 2499,
       },
-      missionProgress,
+      weeklyGoal,
       loginStats,
       usersAchievement: mockAcheivements,
     };
@@ -710,22 +710,28 @@ export class UsersService {
     endOfWeek.setHours(23, 59, 59, 999);
 
     // Single pass through habits array
-    const habitStats = habits.reduce(
+    const habitStats = habits?.reduce(
       (acc, habit) => {
         acc[habit.STATUS]++;
         return acc;
       },
       { [HabitStatus.Active]: 0, [HabitStatus.Completed]: 0 },
-    );
+    ) || {
+      active: 0,
+      completed: 0,
+    };
 
     // Single pass through quests array
-    const questStats = quests.reduce(
+    const questStats = quests?.reduce(
       (acc, quest) => {
         acc[quest.STATUS]++;
         return acc;
       },
       { [QuestStatus.Active]: 0, [QuestStatus.Completed]: 0 },
-    );
+    ) || {
+      active: 0,
+      completed: 0,
+    };
 
     // Get step logs for this week
     const stepLogs = await this.logsService.getWeeklyLogsByUser(
@@ -752,7 +758,7 @@ export class UsersService {
     return {
       progress: {
         step: {
-          current: stepLogs.LOGS.reduce(
+          current: stepLogs.LOGS?.reduce(
             (acc, log) => acc + (log.VALUE || 0),
             0,
           ),
@@ -764,9 +770,11 @@ export class UsersService {
         },
         mission: {
           current:
-            habitStats[HabitStatus.Completed] +
-            questStats[QuestStatus.Completed],
-          goal: habitStats[HabitStatus.Active] + questStats[QuestStatus.Active],
+            (habitStats[HabitStatus.Completed] || 0) +
+            (questStats[QuestStatus.Completed] || 0),
+          goal:
+            (habitStats[HabitStatus.Active] || 0) +
+            (questStats[QuestStatus.Active] || 0),
         },
       },
       daysLeft: 7 - (new Date().getDay() || 7),
