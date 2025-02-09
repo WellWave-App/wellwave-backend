@@ -44,7 +44,7 @@ export class Achievement {
   @Column({ name: 'TITLE', type: 'varchar' })
   TITLE: string;
 
-  @Column({ name: 'TITLE', type: 'text' })
+  @Column({ name: 'DESCRIPTION', type: 'text' })
   DESCRIPTION: string;
 
   @Column({

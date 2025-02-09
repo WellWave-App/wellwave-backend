@@ -8,19 +8,19 @@ import {
 
 @Entity('USER_ACHIEVED')
 export class UserAchieved {
-  @PrimaryColumn('number', { name: 'ICON_URL' })
-  UID: string;
+  @PrimaryColumn('int', { name: 'UID' })
+  UID: number;
 
-  @PrimaryColumn('uuid', { name: 'ICON_URL' })
+  @PrimaryColumn('uuid', { name: 'ACH_ID' })
   ACH_ID: string;
 
-  @Column('int', { name: 'ICON_URL', nullable: true })
+  @Column('int', { name: 'CURRENT_LEVEL', nullable: true })
   CURRENT_LEVEL: number;
 
-  @Column('float', { name: 'ICON_URL', nullable: true })
+  @Column('float', { name: 'PROGRESS_VALUE', nullable: true })
   PROGRESS_VALUE: number;
 
-  @Column('date', { name: 'ICON_URL', nullable: true })
+  @Column('date', { name: 'ACHIEVED_DATE', nullable: true })
   ACHIEVED_DATE?: Date;
 
   @CreateDateColumn({ name: 'createdAt', type: 'date' })
