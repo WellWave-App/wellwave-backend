@@ -379,14 +379,30 @@ export class UsersService {
     const risk = this.calculateRiskWeights(RiskAssessment);
     const streakLogin = this.calculateLoginStats(loginStreak);
     const completeRate = this.getOverallCompleteRate(habits, quests);
+    // *formatting risk
+
+    const RISK_ASSESSMENT = RiskAssessment
+      ? {
+          ...RiskAssessment,
+          ...risk,
+          UID: undefined,
+          createAt: undefined,
+        }
+      : null;
 
     const profile = {
       ...userInfo,
       AGE:
         new Date().getFullYear() - new Date(data.YEAR_OF_BIRTH).getFullYear(),
-      RISK_ASSESSMENT: risk,
+      RISK_ASSESSMENT,
       LOGIN_STATS: streakLogin,
       COMPLETE_RATE: completeRate,
+      CURRENT_LEAGUE: {
+        LB_ID: 2,
+        LEAGUE_NAME: 'Silver',
+        ICON_URL: null,
+        RANKING: 1,
+      },
     };
     return { data: profile };
   }
