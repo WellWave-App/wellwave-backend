@@ -15,28 +15,28 @@ export enum AchievementType {
 
 @Entity('ACHIEVEMENTS')
 export class Achievement {
-  /*
-  * main
-  id: string,
-  title: string
-  description: string
-  achievement_type: enum('leveled', 'single', 'limited_edition')
-  level: ach_level 
-  requirements: ach_level.requirement_tracking
-  icon_url
-  * ach_level
-  level: number
-  taget_value: number
-  requirement_tracking (depend on level) : {
-    from_entity: entity_name,
-    track_property: property to track on that entity
-    tracking_type: how property was track for success
-  }
-  *user_achieved
-  ach_id
-  uid
-  achieved_date
-  */
+  // /*
+  // // * main
+  // id: string,
+  // title: string
+  // description: string
+  // achievement_type: enum('leveled', 'single', 'limited_edition')
+  // level: ach_level
+  // requirements: ach_level.requirement_tracking
+  // icon_url
+  // // * ach_level
+  // level: number
+  // taget_value: number
+  // requirement_tracking (depend on level) : {
+  //   from_entity: entity_name,
+  //   track_property: property to track on that entity
+  //   tracking_type: how property was track for success
+  // }
+  // // *user_achieved
+  // ach_id
+  // uid
+  // achieved_date
+  // */
 
   @PrimaryGeneratedColumn('uuid', { name: 'ID' })
   ID: string;
