@@ -20,6 +20,7 @@ import { HabitModule } from './mission/habit/habit.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
 import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.module';
+import { AchievementModule } from './achievement/achievement.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.mo
     QuestModule,
     HabitModule,
     CheckinChallengeModule,
+    AchievementModule,
   ],
   controllers: [AppController],
   providers: [
