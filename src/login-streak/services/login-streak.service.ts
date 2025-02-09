@@ -164,7 +164,11 @@ export class LoginStreakService {
   async updateUserLoginStreak(uid: number) {
     const loginStreak: LoginStreakEntity = await this.findOne(uid);
 
-    const today = new Date();
+    const today = new Date(
+      new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Bangkok',
+      }),
+    );
     await this.createLoginHistory(uid, today);
 
     if (!loginStreak) {
