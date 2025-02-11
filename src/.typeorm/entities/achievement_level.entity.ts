@@ -12,6 +12,23 @@ export class AchievementLevel {
   @Column({ name: 'TARGET_VALUE', type: 'float' })
   TARGET_VALUE: number;
 
+  @Column({ name: 'LEAGUE', type: 'varchar', nullable: true })
+  LEAGUE?: string;
+
+  @Column({ name: 'UNLOCK_LEAGUE', type: 'varchar', nullable: true })
+  UNLOCK_LEAGUE?: string;
+
+  @Column('jsonb', { name: 'PREREQUISITES_LEAGUE', nullable: true })
+  PREREQUISITES_LEAGUE?: string[];
+
+  @Column('jsonb', {
+    name: 'REWARDS',
+  })
+  REWARDS: {
+    EXP?: number;
+    GEMS?: number;
+  };
+
   @ManyToOne(() => Achievement, (achievement) => achievement.levels, {
     onDelete: 'CASCADE',
   })

@@ -21,6 +21,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
 import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.module';
 import { AchievementModule } from './achievement/achievement.module';
+import { LeaguesModule } from './leagues/leagues.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { AchievementModule } from './achievement/achievement.module';
     HabitModule,
     CheckinChallengeModule,
     AchievementModule,
+    LeaguesModule,
   ],
   controllers: [AppController],
   providers: [

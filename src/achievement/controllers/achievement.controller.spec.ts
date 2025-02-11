@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AchievementController } from './achievement.controller';
-import { AchievementService } from './achievement.service';
+import { AchievementService } from '../services/achievement.service';
 
 describe('AchievementController', () => {
   let controller: AchievementController;
