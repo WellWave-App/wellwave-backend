@@ -253,6 +253,12 @@ export class UsersController {
     return this.usersService.getProfile(req.user.UID);
   }
 
+  @Get('/weekly-progress')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  async getWeeklyMissionProgress(@Request() req) {
+    return await this.usersService.getWeeklyMissionProgress(req.user.UID);
+  }
+
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiParam({ name: 'uid', type: 'number', description: 'User ID' })
   @ApiResponse({ status: 200, type: CreateUserDto })
