@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateCheckinChallengeDto } from '../dto/create-checkin-challenge.dto';
@@ -77,8 +78,14 @@ export class CheckinChallengeService {
     const lastLoginDay = this.getStartOfDay(new Date(checkin.LAST_LOGIN_DATE));
     const currentDay = this.getStartOfDay(checkinDate);
 
-    if (lastLoginDay.getDate() === currentDay.getDate()) {
+    if (lastLoginDay.getTime() === currentDay.getTime()) {
       throw new ConflictException('Already checked in today');
+    }
+
+    if (lastLoginDay.getTime() > currentDay.getTime()) {
+      throw new InternalServerErrorException(
+        `Invalid check-in date: Cannot check-in for a date (${currentDay.toISOString()}) before last login (${lastLoginDay.toISOString()})`,
+      );
     }
 
     // *check is current date login is consecutive ? update streak : reset srteak
@@ -86,10 +93,10 @@ export class CheckinChallengeService {
     if (this.isConsecutiveDay(lastedDate, checkinDate)) {
       // checkin.STREAK_START_DATE stay the same
       checkin.CURRENT_STREAK += 1;
-      if (checkin.CURRENT_STREAK > 7) {
-        checkin.CURRENT_STREAK = 1;
-        checkin.STREAK_START_DATE = checkinDate;
-      }
+      // if (checkin.CURRENT_STREAK > 7) {
+      //   checkin.CURRENT_STREAK = 1;
+      //   checkin.STREAK_START_DATE = checkinDate;
+      // }
       // * update longest streak
       if (checkin.CURRENT_STREAK > checkin.LONGEST_STREAK) {
         checkin.LONGEST_STREAK = checkin.CURRENT_STREAK;
@@ -111,6 +118,7 @@ export class CheckinChallengeService {
 
   async getStats(uid: number) {
     const checkin = await this.findOne(uid);
+
     if (!checkin) {
       const defaultStats = Array.from({ length: 7 }, (_, index) => ({
         day: index + 1,
@@ -134,12 +142,22 @@ export class CheckinChallengeService {
 
     // Check if streak should be reset
     const lastLoginDay = this.getStartOfDay(new Date(checkin.LAST_LOGIN_DATE));
-    const today = this.getStartOfDay(new Date());
-    const dayDiff = Math.floor(today.getDate() - lastLoginDay.getDate());
+    const today = this.getStartOfDay(
+      new Date(
+        new Date().toLocaleString('en-US', {
+          timeZone: 'Asia/Bangkok',
+        }),
+      ),
+    );
+
+    // Calculate days since last login
+    const dayDiff = Math.floor(
+      (today.getTime() - lastLoginDay.getTime()) / (24 * 60 * 60 * 1000),
+    );
 
     // If more than 1 day has passed, reset streak
     let currentStreak = checkin.CURRENT_STREAK;
-    if (dayDiff > 1) {
+    if (dayDiff > 1 || (checkin.CURRENT_STREAK >= 7 && dayDiff >= 1)) {
       currentStreak = 0; // Set to 0 since they haven't checked in today yet
 
       // Update the database with reset streak
