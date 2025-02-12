@@ -9,6 +9,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   Achievement,
   AchievementType,
+  RequirementEntity,
+  RequirementTrackingType,
+  TrackableProperty,
 } from '@/.typeorm/entities/achievement.entity';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { ImageService } from '../../image/image.service';
@@ -16,11 +19,12 @@ import { AchievementLevel } from '@/.typeorm/entities/achievement_level.entity';
 import { UserAchieved } from '../../.typeorm/entities/user_achieved.entity';
 import { AchievementBodyDTO } from '../dto/achievement/create_ach.dto';
 import { UpdateAchievementBodyDTO } from '../dto/achievement/update_ach.dto';
+import { dropdownData } from '../interfaces/dropdown.data';
 
 interface TrackAchievementDto {
   uid: number;
-  entity: string;
-  property: string;
+  entity: RequirementEntity;
+  property: TrackableProperty;
   value: number;
   date: Date;
 }
@@ -75,8 +79,7 @@ export class AchievementService {
             ACH_ID: savedAchievement.ACH_ID,
             LEVEL: l.LEVEL,
             TARGET_VALUE: l.TARGET_VALUE,
-            LEAGUE: l.LEAGUE,
-            PREREQUISITES_LEAGUE: l.PREREQUISITES_LEAGUE,
+            TARGET_LEAGUE: l.TARGET_LEAGUE,
             REWARDS: l.REWARDS,
             ICON_URL: url || null,
           };
@@ -218,8 +221,7 @@ export class AchievementService {
               ACH_ID: achId,
               LEVEL: l.LEVEL,
               TARGET_VALUE: l.TARGET_VALUE,
-              LEAGUE: l.LEAGUE,
-              PREREQUISITES_LEAGUE: l.PREREQUISITES_LEAGUE,
+              TARGET_LEAGUE: l.TARGET_LEAGUE,
               REWARDS: l.REWARDS,
               ICON_URL: iconUrl,
             };

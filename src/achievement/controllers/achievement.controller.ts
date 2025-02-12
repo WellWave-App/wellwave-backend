@@ -21,6 +21,7 @@ import { Roles } from '@/auth/roles/roles.decorator';
 import { Role } from '@/auth/roles/roles.enum';
 import { UpdateAchievementBodyDTO } from '../dto/achievement/update_ach.dto';
 import { AchievementBodyDTO } from '../dto/achievement/create_ach.dto';
+import { dropdownData } from '../interfaces/dropdown.data';
 
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('achievement')
@@ -28,10 +29,18 @@ export class AchievementController {
   constructor(private readonly achievementService: AchievementService) {}
   private allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
 
+  @Get('/dropdown')
+  @Roles(Role.ADMIN, Role.MODERATOR)
+  getEntityDropdown() {
+    return {
+      data: dropdownData,
+    };
+  }
+
   @Get('/level/:id')
   @Roles(Role.ADMIN, Role.MODERATOR)
   getAchLevel(@Param('achId') achId: string) {
-    return { data: this.achievementService.findAchievementLevels(achId) };
+    return this.achievementService.findAchievementLevels(achId);
   }
   @Post()
   @Roles(Role.ADMIN, Role.MODERATOR)
@@ -59,14 +68,14 @@ export class AchievementController {
       });
     }
 
-    return { data: this.achievementService.create(dto) };
+    return this.achievementService.create(dto);
   }
 
   @Get()
   @Roles(Role.ADMIN, Role.MODERATOR)
   findAll(
     @Query()
-    query?: {
+    query: {
       page?: number;
       limit?: number;
       title?: string;
@@ -77,13 +86,13 @@ export class AchievementController {
     return this.achievementService.findAll(query);
   }
 
-  @Get(':achId')
+  @Get('/:achId')
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   findOne(@Param('achId') achId: string) {
     return this.achievementService.findOne(achId);
   }
 
-  @Patch(':achId')
+  @Patch('/:achId')
   @Roles(Role.ADMIN, Role.MODERATOR)
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -115,10 +124,10 @@ export class AchievementController {
       });
     }
 
-    return { data: this.achievementService.update(achId, dto) };
+    return this.achievementService.update(achId, dto)
   }
 
-  @Delete(':achId')
+  @Delete('/:achId')
   @Roles(Role.ADMIN, Role.MODERATOR)
   remove(@Param('achId') achId: string) {
     return this.achievementService.remove(achId);
