@@ -14,6 +14,7 @@ import {
   UseGuards,
   UploadedFiles,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { AchievementService } from '../services/achievement.service';
 import { CreateAchievementDto } from '../dto/create-achievement.dto';
@@ -29,8 +30,6 @@ import { Roles } from '@/auth/roles/roles.decorator';
 import { Role } from '@/auth/roles/roles.enum';
 import { UpdateAchievementBodyDTO } from '../dto/achievement/update_ach.dto';
 import { AchievementBodyDTO } from '../dto/achievement/create_ach.dto';
-import { imageFileValidator } from '@/image/imageFileValidator';
-import { plainToClass } from 'class-transformer';
 
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('achievement')
@@ -38,6 +37,11 @@ export class AchievementController {
   constructor(private readonly achievementService: AchievementService) {}
   private allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
 
+  @Get('/level/:id')
+  @Roles(Role.ADMIN, Role.MODERATOR)
+  getAchLevel(@Param('achId') achId: string) {
+    return { data: this.achievementService.findAchievementLevels(achId) };
+  }
   @Post()
   @Roles(Role.ADMIN, Role.MODERATOR)
   @UseInterceptors(
@@ -64,33 +68,31 @@ export class AchievementController {
       });
     }
 
-    return this.achievementService.create(dto);
+    return { data: this.achievementService.create(dto) };
   }
 
   @Get()
   @Roles(Role.ADMIN, Role.MODERATOR)
   findAll(
-    @Param('query')
-    query: {
+    @Query()
+    query?: {
       page?: number;
       limit?: number;
-      searchTitle?: string;
+      title?: string;
     },
   ) {
-    return this.achievementService.findAll({
-      page: query.page ? Number(query.page) : 1,
-      limit: query.limit ? Number(query.limit) : 10,
-      searchTitle: query.searchTitle,
-    });
+    query.page = query.page ? Number(query.page) : 1;
+    query.limit = query.limit ? Number(query.limit) : 10;
+    return this.achievementService.findAll(query);
   }
 
-  @Get(':id')
+  @Get(':achId')
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
-  findOne(@Param('id') id: string) {
-    return this.achievementService.findOneOrNull(id);
+  findOne(@Param('achId') achId: string) {
+    return this.achievementService.findOne(achId);
   }
 
-  @Patch(':id')
+  @Patch(':achId')
   @Roles(Role.ADMIN, Role.MODERATOR)
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -102,7 +104,7 @@ export class AchievementController {
     ]),
   )
   update(
-    @Param('id') id: string,
+    @Param('achId') achId: string,
     @Body() dto: UpdateAchievementBodyDTO,
     @UploadedFile()
     files: { [key: string]: Express.Multer.File[] },
@@ -122,12 +124,12 @@ export class AchievementController {
       });
     }
 
-    return this.achievementService.update(id, dto);
+    return { data: this.achievementService.update(achId, dto) };
   }
 
-  @Delete(':id')
+  @Delete(':achId')
   @Roles(Role.ADMIN, Role.MODERATOR)
-  remove(@Param('id') id: string) {
-    return this.achievementService.remove(id);
+  remove(@Param('achId') achId: string) {
+    return this.achievementService.remove(achId);
   }
 }

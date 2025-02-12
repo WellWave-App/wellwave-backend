@@ -109,12 +109,8 @@ export class AchievementService {
     }
   }
 
-  async findAll(query: {
-    page?: number;
-    limit?: number;
-    searchTitle?: string;
-  }) {
-    const { page = 1, limit = 10, searchTitle } = query;
+  async findAll(query: { page?: number; limit?: number; title?: string }) {
+    const { page = 1, limit = 10, title: searchTitle } = query;
     const queryBuilder = this.achievement
       .createQueryBuilder('ach')
       .leftJoinAndSelect('ach.levels', 'levels')
@@ -123,12 +119,12 @@ export class AchievementService {
         'ach.TITLE',
         'ach.DESCRIPTION',
         'ach.ACHIEVEMENTS_TYPE',
-        'level.LEVEL',
-        'level.REWARDS',
+        'levels.LEVEL',
+        'levels.REWARDS',
       ])
       .orderBy({
         'ach.TITLE': 'ASC',
-        'level.LEVEL': 'ASC',
+        'levels.LEVEL': 'ASC',
       });
 
     if (searchTitle) {
@@ -204,7 +200,10 @@ export class AchievementService {
       const oldIconUrls = existingAchievement.levels.map((l) => l.ICON_URL);
 
       // Delete existing levels
-      await queryRunner.manager.delete(AchievementLevel, { ACH_ID: achId });
+      await queryRunner.manager.delete(AchievementLevel, {
+        ACH_ID: achId,
+        // LEVEL: dto.levels[0].LEVEL,
+      });
 
       // Create new levels
       if (dto.levels?.length > 0) {
