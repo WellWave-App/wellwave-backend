@@ -211,11 +211,11 @@
         "required_missions": 10
       },
       "levels": [
-        { "level": 1, "target_value": 10, "unlock_league": "bronze" },
-        { "level": 2, "target_value": 1, "unlock_league": "silver", "prerequisites": ["bronze"] },
-        { "level": 3, "target_value": 1, "unlock_league": "gold", "prerequisites": ["silver"] },
-        { "level": 4, "target_value": 1, "unlock_league": "emerald", "prerequisites": ["gold"] },
-        { "level": 5, "target_value": 1, "unlock_league": "diamond", "prerequisites": ["emerald"] }
+        { "level": 1, "target_value": 10, "league": "bronze" },
+        { "level": 2, "target_value": 1, "league": "silver", "prerequisites_league": ["bronze"] },
+        { "level": 3, "target_value": 1, "league": "gold", "prerequisites_league": ["silver"] },
+        { "level": 4, "target_value": 1, "league": "emerald", "prerequisites_league": ["gold"] },
+        { "level": 5, "target_value": 1, "league": "diamond", "prerequisites_league": ["emerald"] }
       ]
     },
     {
