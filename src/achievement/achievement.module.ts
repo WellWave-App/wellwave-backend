@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { BadRequestException, Module } from '@nestjs/common';
 import { AchievementService } from './services/achievement.service';
 import { AchievementController } from './controllers/achievement.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -20,6 +20,24 @@ import { AchievementTrackingHistory } from '../.typeorm/entities/achievement_tra
           cb(null, filename);
         },
       }),
+      fileFilter: (req, file, cb) => {
+        const allowedTypes = [
+          'image/jpeg',
+          'image/png',
+          'image/jpg',
+          'image/gif',
+        ];
+        if (!allowedTypes.includes(file.mimetype)) {
+          // Reject the file with a custom error message
+          return cb(
+            new BadRequestException(
+              `Invalid file type: ${file.mimetype}. Only JPEG, PNG, JPG, and GIF are allowed.`,
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
     }),
     TypeOrmModule.forFeature([
       Achievement,
