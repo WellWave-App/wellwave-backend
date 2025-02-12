@@ -313,6 +313,7 @@ export class AchievementService {
           TRACK_PROPERTY: dto.property,
         },
       },
+      relations: ['levels'],
     });
 
     for (const ach of achievments) {
@@ -337,9 +338,47 @@ export class AchievementService {
       });
     }
 
-    // todo: check for progress type so we know how to process
-    // switch(ach.REQUIREMENT.TRACKING_TYPE) {
-    //   case
-    // }
+    // todo: progress update
+
+    // *-if time_contraint not valid -> return (no update progress)
+    // *-if prerequisites not valid -> return
+    // *-if user current league include in exclude_league -> return
+    // *-check tracking type to update target value
+    switch (ach.REQUIREMENT.TRACKING_TYPE) {
+      case RequirementTrackingType.CUMULATIVE:
+        userAchieveds.PROGRESS_VALUE += dto.value;
+      case RequirementTrackingType.MILESTONE:
+        userAchieveds.PROGRESS_VALUE = dto.value;
+      case RequirementTrackingType.STREAK:
+        if (this.isConsecutiveDay(userAchieveds.updatedAt, dto.date)) {
+          userAchieveds.PROGRESS_VALUE += dto.value;
+        } else {
+          userAchieveds.PROGRESS_VALUE = 0;
+        }
+      case RequirementTrackingType.HIGH_SCORE:
+        userAchieveds.PROGRESS_VALUE = Math.max(
+          userAchieveds.PROGRESS_VALUE,
+          dto.value,
+        );
+    }
+
+    // *check if user met the target value? on user current level
   }
+
+  // Helper function to get start of day in user's timezone (get midnight)
+  private getStartOfDay = (date: Date): Date => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  };
+
+  // Helper function to check if dates are consecutive
+  private isConsecutiveDay = (date: Date, greaterDate: Date): boolean => {
+    const dayDiff = Math.floor(
+      (this.getStartOfDay(greaterDate).getTime() -
+        this.getStartOfDay(date).getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
+    return dayDiff === 1;
+  };
 }

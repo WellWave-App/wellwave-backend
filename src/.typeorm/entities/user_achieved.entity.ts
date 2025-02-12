@@ -19,7 +19,7 @@ export class UserAchieved {
 
   @Column('float', { name: 'PROGRESS_VALUE', nullable: true })
   PROGRESS_VALUE: number;
-
+  
   @Column('date', { name: 'ACHIEVED_DATE', nullable: true })
   ACHIEVED_DATE?: Date;
 

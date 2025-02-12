@@ -7,11 +7,11 @@ export class AchievementLevel {
   @PrimaryColumn({ name: 'ACH_ID', type: 'uuid' })
   ACH_ID: string;
 
-  @Column('varchar', { name: 'ICON_URL', nullable: true })
-  ICON_URL?: string;
-
   @PrimaryColumn({ name: 'LEVEL', type: 'int' })
   LEVEL: number;
+
+  @Column('varchar', { name: 'ICON_URL', nullable: true })
+  ICON_URL?: string;
 
   @Column({ name: 'TARGET_VALUE', type: 'float' })
   TARGET_VALUE: number;
