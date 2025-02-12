@@ -85,7 +85,7 @@ export class Habits {
   @Column({ name: 'GEM_REWARD', type: 'int' })
   GEM_REWARD: number;
 
-  @Column({ name: 'DEFAULT_DURATION_MINUTES', type: 'int', nullable: true })
+  @Column({ name: 'DEFAULT_DAILY_MINUTE_GOAL', type: 'int', nullable: true })
   DEFAULT_DAILY_MINUTE_GOAL: number;
 
   @Column({ name: 'DEFAULT_DAYS_GOAL', type: 'int', nullable: true })

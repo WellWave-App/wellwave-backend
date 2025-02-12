@@ -29,6 +29,7 @@ import { CheckinChallengeService } from '@/checkin-challenge/services/checkin-ch
 import { table } from 'console';
 import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
+import { Role } from '@/auth/roles/roles.enum';
 
 interface MissionHistoryRecord {
   date: string;
@@ -234,6 +235,7 @@ export class UsersService {
   ): Promise<PaginatedResponse<any>> {
     const queryBuilder = this.usersRepository
       .createQueryBuilder('user')
+      .where('user.ROLE = :role', { role: Role.USER })
       .leftJoinAndSelect('user.RiskAssessment', 'risks')
       .leftJoinAndSelect('user.loginStreak', 'login')
       .leftJoinAndSelect('user.habits', 'habit')
