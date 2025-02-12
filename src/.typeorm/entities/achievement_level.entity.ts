@@ -1,5 +1,6 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Achievement } from './achievement.entity';
+import { LeagueType } from '@/leagues/enum/lagues.enum';
 
 @Entity('ACHIEVEMENT_LEVELS')
 export class AchievementLevel {
@@ -15,11 +16,8 @@ export class AchievementLevel {
   @Column({ name: 'TARGET_VALUE', type: 'float' })
   TARGET_VALUE: number;
 
-  @Column({ name: 'LEAGUE', type: 'varchar', nullable: true })
-  LEAGUE?: string;
-
-  @Column('jsonb', { name: 'PREREQUISITES_LEAGUE', nullable: true })
-  PREREQUISITES_LEAGUE?: string[];
+  @Column({ name: 'LEAGUE', type: 'enum', enum: LeagueType, nullable: true })
+  TARGET_LEAGUE?: LeagueType;
 
   @Column('jsonb', {
     name: 'REWARDS',

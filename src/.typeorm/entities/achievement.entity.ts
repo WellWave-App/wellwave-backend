@@ -1,11 +1,6 @@
-import {
-  Column,
-  Entity,
-  OneToMany,
-  PrimaryColumn,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { AchievementLevel } from './achievement_level.entity';
+import { LeagueType } from '@/leagues/enum/lagues.enum';
 
 // Achievement Types
 export enum AchievementType {
@@ -34,9 +29,9 @@ export enum RequirementEntity {
   USER_LOGS = 'user_logs', // User records/logs
   USER_MISSIONS = 'user_missions', // Mission completions (habit+quest)
   USER_DAILY_MISSIONS = 'user_daily_missions', // Daily mission tracking
+  USER_LEADERBOARD = 'user_leaderboard', // General leaderboard
   // DIAMOND_LEAGUE_RANKINGS = 'diamond_league_rankings', // Diamond league specific
   // USER_LEAGUE = 'user_league', // League progression
-  USER_LEADERBOARD = 'user_leaderboard', // General leaderboard
   // DAILY_USER_EXP = 'daily_user_exp', // Daily XP tracking
 }
 
@@ -49,18 +44,19 @@ export enum TimeConstraintType {
 
 // Achievement Properties that can be tracked
 export enum TrackableProperty {
-  CURRENT_STREAK = 'current_streak',
-  IS_READ = 'is_read',
+  CURRENT_STREAK = 'current_streak_day',
+  TOTAL_READ = 'total_read',
   TOTAL_REACTIONS = 'total_reactions',
   FOLLOWING_COUNT = 'following_count',
-  COMPLETED_CHALLENGES = 'is_complete',
+  TOTAL_COMPLETED_HABIT = 'total_completed_habit',
   TOTAL_EXP = 'total_exp',
   TOTAL_GEMS_SPENT = 'total_gems_spent',
   COMPLETED_MISSIONS = 'completed_missions',
-  DAILY_COMPLETION = 'daily_completion',
-  RANK = 'rank',
+  COMPLETED_MISSION = 'completed_mission',
+  END_LEAGUE_RANK = 'end_league_rank',
   CURRENT_LEAGUE = 'current_league',
-  // DAILY_EXP = 'daily_exp',
+  CONSECUTIVE_WEEKS = 'consecutive_weeks',
+  TOTAL_EXERCISE_MINUTE = 'total_exercise_minute',
 }
 
 @Entity('ACHIEVEMENTS')
@@ -68,7 +64,7 @@ export class Achievement {
   @PrimaryGeneratedColumn('uuid', { name: 'ACH_ID' })
   ACH_ID: string;
 
-  @Column({ name: 'TITLE', type: 'varchar' })
+  @Column({ name: 'TITLE', type: 'varchar', unique: true })
   TITLE: string;
 
   @Column({ name: 'DESCRIPTION', type: 'text' })
@@ -82,10 +78,10 @@ export class Achievement {
 
   @Column('jsonb', { name: 'REQUIREMENT' })
   REQUIREMENT: {
-    FROM_ENTITY: string;
-    TRACK_PROPERTY: string;
+    FROM_ENTITY: RequirementEntity;
+    TRACK_PROPERTY: TrackableProperty;
     TRACKING_TYPE: RequirementTrackingType;
-    EXCLUDE_LEAGUE?: string[];
+    EXCLUDE_LEAGUE?: LeagueType[];
     TARGET_VALUE?: number;
     RESET_CONDITIONS?: string;
   };
@@ -94,7 +90,6 @@ export class Achievement {
   TIME_CONSTRAINT?: {
     START_DATE: Date;
     END_DATE: Date;
-    DATE: string;
   };
 
   @Column('jsonb', { name: 'PREREQUISITES', nullable: true })

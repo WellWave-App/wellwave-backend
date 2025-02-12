@@ -1,6 +1,8 @@
 import {
   AchievementType,
+  RequirementEntity,
   RequirementTrackingType,
+  TrackableProperty,
 } from '@/.typeorm/entities/achievement.entity';
 import { LeagueType } from '@/leagues/enum/lagues.enum';
 import { Expose, Transform, TransformFnParams, Type } from 'class-transformer';
@@ -58,15 +60,7 @@ export class AchievementLevelDto {
   @IsEnum(LeagueType)
   @Transform(({ value }) => handleEmpty(value))
   @Expose()
-  LEAGUE?: LeagueType;
-
-  @IsOptional()
-  @Transform(({ value }) => {
-    const parsed = parseJSON(value, []);
-    return Array.isArray(parsed) ? parsed : [];
-  })
-  @Expose()
-  PREREQUISITES_LEAGUE?: string[];
+  TARGET_LEAGUE?: LeagueType;
 
   @Transform(({ value }) => {
     const parsed = parseJSON(value, { EXP: 0, GEMS: 0 });
@@ -122,10 +116,10 @@ export class AchievementBodyDTO {
     };
   })
   REQUIREMENT: {
-    FROM_ENTITY: string;
-    TRACK_PROPERTY: string;
+    FROM_ENTITY: RequirementEntity;
+    TRACK_PROPERTY: TrackableProperty;
     TRACKING_TYPE: RequirementTrackingType;
-    EXCLUDE_LEAGUE?: string[];
+    EXCLUDE_LEAGUE?: LeagueType[];
     TARGET_VALUE?: number;
     RESET_CONDITIONS?: string;
   };
@@ -138,13 +132,13 @@ export class AchievementBodyDTO {
     return {
       START_DATE: parsed.START_DATE ? new Date(parsed.START_DATE) : undefined,
       END_DATE: parsed.END_DATE ? new Date(parsed.END_DATE) : undefined,
-      DATE: handleEmpty(parsed.DATE),
+      // DATE: handleEmpty(parsed.DATE),
     };
   })
   TIME_CONSTRAINT?: {
     START_DATE: Date;
     END_DATE: Date;
-    DATE: string;
+    // DATE: string;
   };
 
   @IsOptional()
