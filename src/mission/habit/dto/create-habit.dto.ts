@@ -68,7 +68,7 @@ export class CreateHabitDto {
   @Transform(({ value }: TransformFnParams) =>
     value === '' ? undefined : value,
   )
-  DEFAULT_DURATION_MINUTES?: number;
+  DEFAULT_DAILY_MINUTE_GOAL?: number;
 
   @IsInt()
   @IsOptional()
