@@ -8,22 +8,13 @@ import {
   Delete,
   UploadedFile,
   UseInterceptors,
-  FileTypeValidator,
-  MaxFileSizeValidator,
-  ParseFilePipe,
   UseGuards,
   UploadedFiles,
   BadRequestException,
   Query,
 } from '@nestjs/common';
 import { AchievementService } from '../services/achievement.service';
-import { CreateAchievementDto } from '../dto/create-achievement.dto';
-import { UpdateAchievementDto } from '../dto/update-achievement.dto';
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { RoleGuard } from '@/auth/guard/role.guard';
 import { Roles } from '@/auth/roles/roles.decorator';
