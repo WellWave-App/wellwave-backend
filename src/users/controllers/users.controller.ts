@@ -37,17 +37,7 @@ import { order, userSortList } from '../interfaces/user-list.interface';
 import { RoleGuard } from '@/auth/guard/role.guard';
 import { Roles } from '@/auth/roles/roles.decorator';
 import { Role } from '@/auth/roles/roles.enum';
-
-const imageFileValidator = new ParseFilePipe({
-  validators: [
-    new FileTypeValidator({ fileType: /(image\/jpeg|image\/png|image\/gif)/ }),
-    new MaxFileSizeValidator({
-      maxSize: 10 * 1024 * 1024,
-      message: 'file must be smaller than 10 MB',
-    }),
-  ],
-  fileIsRequired: false,
-});
+import { imageFileValidator } from '@/image/imageFileValidator';
 
 @ApiTags('Users')
 @Controller('users')

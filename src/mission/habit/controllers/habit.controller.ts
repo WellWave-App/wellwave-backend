@@ -34,17 +34,7 @@ import {
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
-
-const imageFileValidator = new ParseFilePipe({
-  validators: [
-    new FileTypeValidator({ fileType: /(image\/jpeg|image\/png|image\/gif)/ }),
-    new MaxFileSizeValidator({
-      maxSize: 10 * 1024 * 1024,
-      message: 'file must be smaller than 10 MB',
-    }),
-  ],
-  fileIsRequired: false,
-});
+import { imageFileValidator } from '@/image/imageFileValidator';
 
 @Controller('habit')
 export class HabitController {
