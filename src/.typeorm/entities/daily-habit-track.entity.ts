@@ -42,16 +42,16 @@ export class DailyHabitTrack {
   // STATUS: DailyStatus;
 
   @Column({ name: 'COMPLETED', type: 'boolean', default: false })
-  COMPLETED: boolean;
-  
+  COMPLETED: boolean; // Boolean completion for sleep/diet and also set to complete if exercise met goal
+
   @Column({ name: 'DURATION_MINUTES', type: 'float', nullable: true })
-  DURATION_MINUTES: number;
+  DURATION_MINUTES: number; // Duration tracking for exercises
 
   @Column({ name: 'DISTANCE_KM', type: 'float', nullable: true })
-  DISTANCE_KM: number;
+  DISTANCE_KM: number; // Distance tracking for walking/running
 
   @Column({ name: 'COUNT_VALUE', type: 'int', nullable: true })
-  COUNT_VALUE: number;
+  COUNT_VALUE: number; // Count-based tracking for steps
 
   // @Column({ nullable: true, name: 'MINUTES_SPENT', type: 'float' })
   // MINUTES_SPENT: number; // Actual time spent (in case of exercise habit type)
@@ -61,7 +61,7 @@ export class DailyHabitTrack {
     enum: Moods,
     nullable: true,
   })
-  MOOD_FEEDBACK: string; // Mood options
+  MOOD_FEEDBACK: Moods; // Mood options
 
   @ManyToOne(() => UserHabits, (userHabits) => userHabits.dailyTracks)
   @JoinColumn({ name: 'CHALLENGE_ID' })
