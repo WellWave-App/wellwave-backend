@@ -314,7 +314,7 @@ export class HabitService {
         break;
     }
 
-    // dailyTrack.NOTES = trackDto.notes;
+    dailyTrack.MOOD_FEEDBACK = trackDto.MOOD_FEEDBACK;
     await this.dailyTrackRepository.save(dailyTrack);
     await this.questService.updateQuestProgress(userId, {
       category: userHabit.habits.CATEGORY,
