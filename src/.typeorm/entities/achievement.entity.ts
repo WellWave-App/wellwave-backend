@@ -37,7 +37,7 @@ export enum RequirementEntity {
   // DIAMOND_LEAGUE_RANKINGS = 'diamond_league_rankings', // Diamond league specific
   // USER_LEAGUE = 'user_league', // League progression
   USER_LEADERBOARD = 'user_leaderboard', // General leaderboard
-  DAILY_USER_EXP = 'daily_user_exp', // Daily XP tracking
+  // DAILY_USER_EXP = 'daily_user_exp', // Daily XP tracking
 }
 
 // Time Constraint Types
@@ -60,7 +60,7 @@ export enum TrackableProperty {
   DAILY_COMPLETION = 'daily_completion',
   RANK = 'rank',
   CURRENT_LEAGUE = 'current_league',
-  DAILY_EXP = 'daily_exp',
+  // DAILY_EXP = 'daily_exp',
 }
 
 @Entity('ACHIEVEMENTS')

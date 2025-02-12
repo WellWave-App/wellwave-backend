@@ -186,7 +186,7 @@
       "achievement_type": "leveled",
       "requirement_tracking": {
         "from_entity": "user_logs",
-        "track_property": "?",
+        "track_property": "consecutive_weeks",
         "tracking_type": "streak"
       },
       "levels": [
