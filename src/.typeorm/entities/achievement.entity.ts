@@ -32,7 +32,7 @@ export enum RequirementEntity {
   USER = 'users', // Experience/Gems points
   USER_GEM_USAGE = 'user_gem_usage', // Gem spending
   USER_LOGS = 'user_logs', // User records/logs
-  USER_MISSIONS = 'user_missions', // Mission completions
+  USER_MISSIONS = 'user_missions', // Mission completions (habit+quest)
   USER_DAILY_MISSIONS = 'user_daily_missions', // Daily mission tracking
   // DIAMOND_LEAGUE_RANKINGS = 'diamond_league_rankings', // Diamond league specific
   // USER_LEAGUE = 'user_league', // League progression
@@ -102,9 +102,6 @@ export class Achievement {
     REQUIRED_ACHIEVEMENTS?: string[];
     REQUIRED_MISSIONS?: number;
   };
-
-  @Column('varchar', { name: 'ICON_URL', nullable: true })
-  ICON_URL?: string;
 
   @OneToMany(() => AchievementLevel, (level) => level.achievement, {
     onDelete: 'CASCADE',

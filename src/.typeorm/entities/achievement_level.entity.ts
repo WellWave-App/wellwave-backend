@@ -6,6 +6,9 @@ export class AchievementLevel {
   @PrimaryColumn({ name: 'ACH_ID', type: 'uuid' })
   ACH_ID: string;
 
+  @Column('varchar', { name: 'ICON_URL', nullable: true })
+  ICON_URL?: string;
+
   @PrimaryColumn({ name: 'LEVEL', type: 'int' })
   LEVEL: number;
 
@@ -14,9 +17,6 @@ export class AchievementLevel {
 
   @Column({ name: 'LEAGUE', type: 'varchar', nullable: true })
   LEAGUE?: string;
-
-  @Column({ name: 'UNLOCK_LEAGUE', type: 'varchar', nullable: true })
-  UNLOCK_LEAGUE?: string;
 
   @Column('jsonb', { name: 'PREREQUISITES_LEAGUE', nullable: true })
   PREREQUISITES_LEAGUE?: string[];
