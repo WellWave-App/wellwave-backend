@@ -87,4 +87,17 @@ export class RiskAssessmentService {
 
     return riskAssessment;
   }
+
+  //patch
+  async partialUpdate(uid: number, updateRiskDto: Partial<UpdateRiskAssessmentDto>) {
+    const existingRiskAssessment = await this.riskAssessmentRepository.findOne({ where: { UID: uid } });
+    if (!existingRiskAssessment) {
+      throw new NotFoundException('Risk assessment not found');
+    }
+  
+    Object.assign(existingRiskAssessment, updateRiskDto);
+    return this.riskAssessmentRepository.save(existingRiskAssessment);
+  }
 }
+
+
