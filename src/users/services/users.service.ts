@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -116,6 +118,20 @@ export class UsersService {
     return user;
   }
 
+  async updatePassword(uid: number, newPassword: string) {
+    try {
+      const user = await this.getById(uid);
+      user.setPassword(newPassword);
+      Object.assign(user, { PASSWORD: newPassword });
+      return await this.usersRepository.save(user);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to process request',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async update(
     uid: number,
     updateUserDto: UpdateUserDto,
@@ -142,7 +158,6 @@ export class UsersService {
     // Handle password separately
     if ('PASSWORD' in cleanedDto) {
       user.setPassword(cleanedDto.PASSWORD);
-      delete cleanedDto.PASSWORD; // Remove from cleanedDto to prevent double-handling
     }
 
     // Update other fields
