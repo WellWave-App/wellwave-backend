@@ -509,7 +509,12 @@ export class HabitService {
       throw new NotFoundException('User habit not found');
     }
 
-    await this.userHabitsRepository.update(uh.CHALLENGE_ID, dto);
+    await this.userHabitsRepository.update(uh.CHALLENGE_ID, {
+      ...dto,
+      NOTI_TIME: dto.NOTI_TIME
+        ? this.convertTimeStringToDate(dto.NOTI_TIME)
+        : null,
+    });
 
     return {
       ...uh,
@@ -517,6 +522,14 @@ export class HabitService {
     };
   }
 
+  private convertTimeStringToDate(timeString: string): Date {
+    if (!timeString) return null;
+    const date = new Date(0);
+    const [hours, minutes] = timeString.split(':');
+    date.setHours(Number(hours), Number(minutes), 0, 0);
+    return date;
+  }
+  
   // Batch update for daily completed habits
   // @Cron('0 0 * * *') // Run daily at midnight
   // async processDailyHabitCompletion() {

@@ -70,6 +70,9 @@ export class UserHabits {
   })
   WEEKDAYS_NOTI: Weekdays;
 
+  @Column({ type: 'time', nullable: true })
+  NOTI_TIME: Date;
+  
   // relations
   @ManyToOne(() => Habits, { eager: true })
   @JoinColumn({ name: 'HID' }) // Relation with QUEST
