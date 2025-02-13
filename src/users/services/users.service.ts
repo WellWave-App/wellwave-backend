@@ -720,7 +720,13 @@ export class UsersService {
   }
 
   async getWeeklyMissionProgress(uid: number) {
-    const user = await this.getById(uid);
+    // const user = await this.getById(uid);
+    const user = await this.usersRepository.findOne({
+      where: {
+        UID: uid,
+      },
+      relations: ['habits', 'quests'],
+    });
     const { USER_GOAL_EX_TIME_WEEK, USER_GOAL_STEP_WEEK, habits, quests } =
       user;
 

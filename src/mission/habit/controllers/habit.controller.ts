@@ -35,7 +35,12 @@ import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { imageFileValidator } from '@/image/imageFileValidator';
+import { updateHabitNotiDto } from '../dto/noti-update.dto';
+import { RoleGuard } from '@/auth/guard/role.guard';
+import { Roles } from '@/auth/roles/roles.decorator';
+import { Role } from '@/auth/roles/roles.enum';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('habit')
 export class HabitController {
   constructor(private readonly habitService: HabitService) {}
@@ -82,6 +87,7 @@ export class HabitController {
   // @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
+  @Roles(Role.ADMIN, Role.MODERATOR)
   createHabit(
     @Body() createHabitDto: CreateHabitDto,
     @UploadedFile(imageFileValidator) file?: Express.Multer.File,
@@ -90,7 +96,7 @@ export class HabitController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getHabits(
     @Request() req,
     @Query('filter') filter?: HabitListFilter,
@@ -110,7 +116,7 @@ export class HabitController {
   }
 
   @Post('/challenge')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   startChallenge(
     @Request() req,
     @Body() startDto: StartHabitChallengeDto,
@@ -119,7 +125,7 @@ export class HabitController {
   }
 
   @Post('/track')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   trackHabit(
     @Request() req,
     @Body() trackDto: TrackHabitDto,
@@ -128,7 +134,7 @@ export class HabitController {
   }
 
   @Get('/user')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getUserHabits(
     @Request() req,
     @Query('status') status?: HabitStatus,
@@ -146,11 +152,20 @@ export class HabitController {
   }
 
   @Get('/stats/:challengeId')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getHabitStats(
     @Request() req,
     @Param('challengeId') challengeId: number,
   ): Promise<any> {
     return this.habitService.getHabitStats(req.user.UID, challengeId);
+  }
+
+  @Patch('/noti-set')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  updateUserHabitsNotification(
+    @Request() req,
+    @Body() dto: updateHabitNotiDto,
+  ) {
+    return this.habitService.updateUserHabitsNotification(req.user.UID, dto);
   }
 }

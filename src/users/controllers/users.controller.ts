@@ -296,7 +296,7 @@ export class UsersController {
     @UploadedFile(imageFileValidator)
     file?: Express.Multer.File,
   ) {
-    if (req.user.UID !== +UID) {
+    if (req.user.UID !== +UID && req.user.ROLE === Role.USER) {
       throw new ForbiddenException('You can only update your own profile');
     }
     return this.usersService.update(+UID, updateUserDto, file);
