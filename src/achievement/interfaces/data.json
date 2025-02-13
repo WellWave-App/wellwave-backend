@@ -115,9 +115,12 @@
         "from_entity": "user_leaderboard",
         "track_property": "end_league_rank",
         "tracking_type": "milestone",
-        "target_value": 1,
         "exclude_league": ["diamond"]
-      }
+      },
+      "levels": [
+        { "level": 1, "target_value": 1}
+      ]
+
     },
     {
       "id": "rarest_diamond",
@@ -128,9 +131,11 @@
         "from_entity": "user_leaderboard",
         "track_property": "end_league_rank",
         "tracking_type": "milestone",
-        "target_value": 1,
         "exclude_league": ["bronze", "silver", "gold", "emerald"]
-      }
+      },
+      "levels": [
+        { "level": 1, "target_value": 1, "target_league": "diamond" }
+      ]
     },
     {
       "id": "highest_league",

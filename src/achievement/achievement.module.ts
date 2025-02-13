@@ -9,6 +9,7 @@ import { ImageModule } from '@/image/image.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { AchievementTrackingHistory } from '../.typeorm/entities/achievement_tracking_history.entity';
+import { User } from '@/.typeorm/entities/users.entity';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AchievementTrackingHistory } from '../.typeorm/entities/achievement_tra
       AchievementLevel,
       UserAchieved,
       AchievementTrackingHistory,
+      User,
     ]),
     ImageModule,
   ],

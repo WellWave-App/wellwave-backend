@@ -20,12 +20,17 @@ import { UserAchieved } from '../../.typeorm/entities/user_achieved.entity';
 import { AchievementBodyDTO } from '../dto/achievement/create_ach.dto';
 import { UpdateAchievementBodyDTO } from '../dto/achievement/update_ach.dto';
 import { dropdownData } from '../interfaces/dropdown.data';
+import { LeagueType } from '@/leagues/enum/lagues.enum';
+import { User } from '@/.typeorm/entities/users.entity';
+import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
+import { QuestStatus } from '@/.typeorm/entities/user-quests.entity';
 
 interface TrackAchievementDto {
   uid: number;
   entity: RequirementEntity;
   property: TrackableProperty;
   value: number;
+  current_league?: LeagueType;
   date: Date;
 }
 
@@ -39,7 +44,10 @@ export class AchievementService {
     private achievementLevel: Repository<AchievementLevel>,
     @InjectRepository(UserAchieved)
     private userAchieved: Repository<UserAchieved>,
+    @InjectRepository(User)
+    private user: Repository<User>,
     private readonly imageService: ImageService,
+    // private eventEmitter: EventEmitter2,
   ) {}
 
   async create(dto: AchievementBodyDTO) {
@@ -306,7 +314,7 @@ export class AchievementService {
 
   async trackProgress(dto: TrackAchievementDto) {
     // todo: find relevent achms for tracking event
-    const achievments = await this.achievement.find({
+    const achievements = await this.achievement.find({
       where: {
         REQUIREMENT: {
           FROM_ENTITY: dto.entity,
@@ -316,7 +324,13 @@ export class AchievementService {
       relations: ['levels'],
     });
 
-    for (const ach of achievments) {
+    const validAchievements = await Promise.all(
+      achievements.map(async (ach) =>
+        (await this.validateContraint(ach, dto)) ? ach : null,
+      ),
+    );
+
+    for (const ach of validAchievements) {
       await this.processProgress(ach, dto);
     }
   }
@@ -339,30 +353,125 @@ export class AchievementService {
     }
 
     // todo: progress update
-
-    // *-if time_contraint not valid -> return (no update progress)
-    // *-if prerequisites not valid -> return
-    // *-if user current league include in exclude_league -> return
     // *-check tracking type to update target value
     switch (ach.REQUIREMENT.TRACKING_TYPE) {
       case RequirementTrackingType.CUMULATIVE:
         userAchieveds.PROGRESS_VALUE += dto.value;
+        break;
       case RequirementTrackingType.MILESTONE:
         userAchieveds.PROGRESS_VALUE = dto.value;
+        break;
       case RequirementTrackingType.STREAK:
         if (this.isConsecutiveDay(userAchieveds.updatedAt, dto.date)) {
-          userAchieveds.PROGRESS_VALUE += dto.value;
+          userAchieveds.PROGRESS_VALUE += 1;
         } else {
-          userAchieveds.PROGRESS_VALUE = 0;
+          userAchieveds.PROGRESS_VALUE = 1;
         }
+        break;
       case RequirementTrackingType.HIGH_SCORE:
         userAchieveds.PROGRESS_VALUE = Math.max(
           userAchieveds.PROGRESS_VALUE,
           dto.value,
         );
+        break;
     }
 
     // *check if user met the target value? on user current level
+    const nextLevel = ach.levels.find(
+      (l) => l.LEVEL === userAchieveds.CURRENT_LEVEL + 1,
+    );
+
+    if (nextLevel && this.isLevelUp(ach, userAchieveds, nextLevel, dto)) {
+      // * (cumulative, streak):  level up when progress >= target_value
+      // * (milestone): level up when progress == target_value
+      userAchieveds.CURRENT_LEVEL += 1;
+      userAchieveds.ACHIEVED_DATE = new Date(
+        new Date().toLocaleString('en-US', {
+          timeZone: 'Asia/Bangkok',
+        }),
+      );
+      // Emit achievement unlocked event
+      await this.emitAchievementUnlocked(userAchieveds);
+    }
+  }
+
+  private async emitAchievementUnlocked(
+    userAchieved: UserAchieved,
+  ): Promise<void> {
+    // Emit achievement unlocked event
+    // this.eventEmitter.emit('achievement.unlocked', {
+    //   userId: userAchieved.UID,
+    //   achievementId: userAchieved.ACH_ID,
+    //   level: newLevel,
+    //   timestamp: new Date(),
+    // });
+  }
+
+  private isLevelUp(
+    achievement: Achievement,
+    userAchievement: UserAchieved,
+    nextLevel: AchievementLevel,
+    dto: TrackAchievementDto,
+  ): boolean {
+    switch (achievement.REQUIREMENT.TRACKING_TYPE) {
+      case RequirementTrackingType.MILESTONE:
+        // For ranks and specific achievements
+        return (
+          userAchievement.PROGRESS_VALUE === nextLevel.TARGET_VALUE &&
+          (!nextLevel.TARGET_LEAGUE ||
+            nextLevel.TARGET_LEAGUE === dto.current_league)
+        );
+
+      case RequirementTrackingType.CUMULATIVE:
+      case RequirementTrackingType.STREAK:
+      case RequirementTrackingType.HIGH_SCORE:
+        // For accumulating achievements
+        return userAchievement.PROGRESS_VALUE >= nextLevel.TARGET_VALUE;
+
+      default:
+        return false;
+    }
+  }
+
+  // *Validate achievement time constraints and prerequisites
+  private async validateContraint(ach: Achievement, dto: TrackAchievementDto) {
+    // *date out of bound
+    if (ach.TIME_CONSTRAINT) {
+      const startDate = new Date(ach.TIME_CONSTRAINT.START_DATE);
+      const endDate = new Date(ach.TIME_CONSTRAINT.END_DATE);
+      if (startDate > dto.date || dto.date > endDate) return false;
+    }
+
+    // * user league in exlcude league
+    if (ach.REQUIREMENT.EXCLUDE_LEAGUE?.includes(dto.current_league)) {
+      return false;
+    }
+
+    // * prerquisites check
+    if (ach.PREREQUISITES) {
+      if (ach.PREREQUISITES.REQUIRED_MISSIONS > 0) {
+        const user = await this.user.findOne({
+          where: { UID: dto.uid },
+          relations: ['quests', 'habits'],
+        });
+
+        const completedHabit =
+          user.habits?.filter((h) => h.STATUS === HabitStatus.Completed)
+            .length || 0;
+        const completedQuest =
+          user.quests?.filter((q) => q.STATUS === QuestStatus.Completed)
+            .length || 0;
+
+        if (
+          completedHabit + completedQuest <
+          ach.PREREQUISITES.REQUIRED_MISSIONS
+        ) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   // Helper function to get start of day in user's timezone (get midnight)
