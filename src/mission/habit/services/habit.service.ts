@@ -31,6 +31,7 @@ import { Repository } from 'typeorm';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HabitListFilter } from '../interfaces/habits.interfaces';
 import { QuestService } from '../../quest/services/quest.service';
+import { updateHabitNotiDto } from '../dto/noti-update.dto';
 
 @Injectable()
 export class HabitService {
@@ -493,6 +494,26 @@ export class HabitService {
       ),
       status: userHabit.STATUS,
       dailyTracks: userHabit.dailyTracks,
+    };
+  }
+
+  async updateUserHabitsNotification(uid: number, dto: updateHabitNotiDto) {
+    const uh = await this.userHabitsRepository.findOne({
+      where: {
+        CHALLENGE_ID: dto.CHALLENGE_ID,
+        UID: uid,
+      },
+    });
+
+    if (!uh) {
+      throw new NotFoundException('User habit not found');
+    }
+
+    await this.userHabitsRepository.update(uh.CHALLENGE_ID, dto);
+
+    return {
+      ...uh,
+      ...dto,
     };
   }
 
