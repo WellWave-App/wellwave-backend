@@ -150,8 +150,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RoleGuard)
   async forgotPassword(@Body() body: { EMAIL: string }, @Request() req) {
     try {
-      // const user = await this.usersService.getByEmail(body.EMAIL);
-      const user = await this.usersService.getById(req.user.UID);
+      const user = await this.usersService.getByEmail(body.EMAIL);
+      // const user = await this.usersService.getById(req.user.UID);
 
       if (!user) throw new NotFoundException('User not found');
 
