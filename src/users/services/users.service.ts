@@ -1,10 +1,12 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../../.typeorm/entities/users.entity';
 import { LoginStreakService } from '@/login-streak/services/login-streak.service';
@@ -26,6 +28,10 @@ import { HabitCategories } from '@/.typeorm/entities/habit.entity';
 import { LogsService } from '@/user-logs/services/logs.service';
 import { THAI_MONTHS } from '../interfaces/date.formatter';
 import { CheckinChallengeService } from '@/checkin-challenge/services/checkin-challenge.service';
+import { table } from 'console';
+import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
+import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
+import { Role } from '@/auth/roles/roles.enum';
 
 interface MissionHistoryRecord {
   date: string;
@@ -47,7 +53,11 @@ export class UsersService {
     // private userReadHistoryRepository: Repository<UserReadHistory>,
     @InjectRepository(UserHabits)
     private userHabit: Repository<UserHabits>,
+    @InjectRepository(UserQuests)
+    private userQuest: Repository<UserQuests>,
     private logsService: LogsService,
+    @InjectRepository(DailyHabitTrack)
+    private dailyHabitTrackRepository: Repository<DailyHabitTrack>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -108,6 +118,20 @@ export class UsersService {
     return user;
   }
 
+  async updatePassword(uid: number, newPassword: string) {
+    try {
+      const user = await this.getById(uid);
+      user.setPassword(newPassword);
+      Object.assign(user, { PASSWORD: newPassword });
+      return await this.usersRepository.save(user);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to process request',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async update(
     uid: number,
     updateUserDto: UpdateUserDto,
@@ -134,7 +158,6 @@ export class UsersService {
     // Handle password separately
     if ('PASSWORD' in cleanedDto) {
       user.setPassword(cleanedDto.PASSWORD);
-      delete cleanedDto.PASSWORD; // Remove from cleanedDto to prevent double-handling
     }
 
     // Update other fields
@@ -202,6 +225,7 @@ export class UsersService {
     ];
 
     // log
+    const weeklyGoal = await this.getWeeklyMissionProgress(uid);
 
     return {
       userInfo: user,
@@ -211,7 +235,8 @@ export class UsersService {
         MIN_EXP: 1000,
         MAX_EXP: 2499,
       },
-      loginStats: loginStats,
+      weeklyGoal,
+      loginStats,
       usersAchievement: mockAcheivements,
     };
   }
@@ -225,6 +250,7 @@ export class UsersService {
   ): Promise<PaginatedResponse<any>> {
     const queryBuilder = this.usersRepository
       .createQueryBuilder('user')
+      .where('user.ROLE = :role', { role: Role.USER })
       .leftJoinAndSelect('user.RiskAssessment', 'risks')
       .leftJoinAndSelect('user.loginStreak', 'login')
       .leftJoinAndSelect('user.habits', 'habit')
@@ -344,6 +370,14 @@ export class UsersService {
   async getDeepProfile(uid: number, page: number = 1, limit: number = 10) {
     const data = await this.usersRepository.findOne({
       where: { UID: uid },
+      relations: [
+        'LOGS',
+        'RiskAssessment',
+        'loginStreak',
+        'quests',
+        'habits',
+        'articleReadHistory',
+      ],
     });
 
     if (!data) {
@@ -359,18 +393,33 @@ export class UsersService {
       articleReadHistory,
       ...userInfo
     } = data;
-
     const risk = this.calculateRiskWeights(RiskAssessment);
     const streakLogin = this.calculateLoginStats(loginStreak);
     const completeRate = this.getOverallCompleteRate(habits, quests);
+    // *formatting risk
+
+    const RISK_ASSESSMENT = RiskAssessment
+      ? {
+          ...RiskAssessment,
+          ...risk,
+          UID: undefined,
+          createAt: undefined,
+        }
+      : null;
 
     const profile = {
       ...userInfo,
       AGE:
         new Date().getFullYear() - new Date(data.YEAR_OF_BIRTH).getFullYear(),
-      RISK_ASSESSMENT: risk,
+      RISK_ASSESSMENT,
       LOGIN_STATS: streakLogin,
       COMPLETE_RATE: completeRate,
+      CURRENT_LEAGUE: {
+        LB_ID: 2,
+        LEAGUE_NAME: 'Silver',
+        ICON_URL: null,
+        RANKING: 1,
+      },
     };
     return { data: profile };
   }
@@ -683,5 +732,98 @@ export class UsersService {
     const year = date.getFullYear() + (buddhistYear ? 543 : 0);
 
     return `${day}${delimiter}${month}${delimiter}${year}`;
+  }
+
+  async getWeeklyMissionProgress(uid: number) {
+    // const user = await this.getById(uid);
+    const user = await this.usersRepository.findOne({
+      where: {
+        UID: uid,
+      },
+      relations: ['habits', 'quests'],
+    });
+    const { USER_GOAL_EX_TIME_WEEK, USER_GOAL_STEP_WEEK, habits, quests } =
+      user;
+
+    // Get start and end of current week
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(now);
+    endOfWeek.setDate(now.getDate() + (6 - now.getDay()));
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Single pass through habits array
+    const habitStats = habits?.reduce(
+      (acc, habit) => {
+        acc[habit.STATUS]++;
+        return acc;
+      },
+      { [HabitStatus.Active]: 0, [HabitStatus.Completed]: 0 },
+    ) || {
+      active: 0,
+      completed: 0,
+    };
+
+    // Single pass through quests array
+    const questStats = quests?.reduce(
+      (acc, quest) => {
+        acc[quest.STATUS]++;
+        return acc;
+      },
+      { [QuestStatus.Active]: 0, [QuestStatus.Completed]: 0 },
+    ) || {
+      active: 0,
+      completed: 0,
+    };
+
+    // Get step logs for this week
+    const stepLogs = await this.logsService.getWeeklyLogsByUser(
+      uid,
+      null,
+      LOG_NAME.STEP_LOG,
+    );
+
+    // Get all daily habit tracks for this week
+    const dailyTracks = await this.dailyHabitTrackRepository.find({
+      where: {
+        UserHabits: { UID: uid },
+        TRACK_DATE: Between(startOfWeek, endOfWeek),
+        // COMPLETED: true,
+      },
+    });
+
+    // Calculate total exercise time
+    const totalExerciseMinutes = dailyTracks.reduce(
+      (acc, track) => acc + (track.DURATION_MINUTES || 0),
+      0,
+    );
+
+    return {
+      progress: {
+        step: {
+          current: stepLogs.LOGS?.reduce(
+            (acc, log) => acc + (log.VALUE || 0),
+            0,
+          ),
+          goal: USER_GOAL_STEP_WEEK,
+        },
+        exercise_time: {
+          current: totalExerciseMinutes,
+          goal: USER_GOAL_EX_TIME_WEEK,
+        },
+        mission: {
+          current:
+            (habitStats[HabitStatus.Completed] || 0) +
+            (questStats[QuestStatus.Completed] || 0),
+          goal:
+            (habitStats[HabitStatus.Active] || 0) +
+            (questStats[QuestStatus.Active] || 0),
+        },
+      },
+      daysLeft: 7 - (new Date().getDay() || 7),
+    };
   }
 }

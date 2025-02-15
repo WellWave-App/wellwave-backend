@@ -145,12 +145,8 @@ export class LoginStreakService {
   async findOne(uid: number) {
     const loginStreak = await this.loginStreakReposity.findOne({
       where: { UID: uid },
-      relations: ['USER'],
+      // relations: ['USER'],
     });
-
-    if (!loginStreak) {
-      throw new NotFoundException(`login Streak with UID:${uid} not found`);
-    }
 
     return loginStreak;
   }
@@ -166,16 +162,13 @@ export class LoginStreakService {
   }
 
   async updateUserLoginStreak(uid: number) {
-    const loginStreak: LoginStreakEntity = await this.findOne(uid).catch(
-      (error) => {
-        if (error instanceof NotFoundException) {
-          throw error;
-        }
-        return null;
-      },
-    );
+    const loginStreak: LoginStreakEntity = await this.findOne(uid);
 
-    const today = new Date();
+    const today = new Date(
+      new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Bangkok',
+      }),
+    );
     await this.createLoginHistory(uid, today);
 
     if (!loginStreak) {

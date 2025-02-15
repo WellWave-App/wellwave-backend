@@ -33,12 +33,4 @@ export class CheckInChallenge {
 
   @Column({ name: 'TOTAL_POINTS_EARNED', type: 'int', default: 0 })
   TOTAL_POINTS_EARNED: number;
-
-  @Column({
-    name: 'LAST_UPDATED',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  LAST_UPDATED: Date;
 }

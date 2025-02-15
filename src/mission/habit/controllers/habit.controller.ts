@@ -26,9 +26,6 @@ import {
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
-import { Role } from '@/auth/roles/roles.enum';
-import { Roles } from '@/auth/roles/roles.decorator';
-import { RoleGuard } from '@/auth/guard/role.guard';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -39,6 +36,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { updateHabitNotiDto } from '../dto/noti-update.dto';
+import { RoleGuard } from '@/auth/guard/role.guard';
+import { Roles } from '@/auth/roles/roles.decorator';
+import { Role } from '@/auth/roles/roles.enum';
+import { Patch } from '@nestjs/common';
 
 const imageFileValidator = new ParseFilePipe({
   validators: [
@@ -342,5 +344,14 @@ export class HabitController {
   })
   getDaily(@Request() req): Promise<any> {
     return this.habitService.getDailyHabit(req.user.UID);
+  }
+
+  @Patch('/noti-set')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  updateUserHabitsNotification(
+    @Request() req,
+    @Body() dto: updateHabitNotiDto,
+  ) {
+    return this.habitService.updateUserHabitsNotification(req.user.UID, dto);
   }
 }

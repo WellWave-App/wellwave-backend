@@ -23,6 +23,7 @@ import { Repository } from 'typeorm';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HabitListFilter } from '../interfaces/habits.interfaces';
 import { QuestService } from '../../quest/services/quest.service';
+import { updateHabitNotiDto } from '../dto/noti-update.dto';
 
 @Injectable()
 export class HabitService {
@@ -405,7 +406,7 @@ export class HabitService {
         break;
     }
 
-    // dailyTrack.NOTES = trackDto.notes;
+    dailyTrack.MOOD_FEEDBACK = trackDto.MOOD_FEEDBACK;
     await this.dailyTrackRepository.save(dailyTrack);
     await this.questService.updateQuestProgress(userId, {
       category: userHabit.habits.CATEGORY,
@@ -594,6 +595,39 @@ export class HabitService {
     };
   }
 
+  async updateUserHabitsNotification(uid: number, dto: updateHabitNotiDto) {
+    const uh = await this.userHabitsRepository.findOne({
+      where: {
+        CHALLENGE_ID: dto.CHALLENGE_ID,
+        UID: uid,
+      },
+    });
+
+    if (!uh) {
+      throw new NotFoundException('User habit not found');
+    }
+
+    await this.userHabitsRepository.update(uh.CHALLENGE_ID, {
+      ...dto,
+      NOTI_TIME: dto.NOTI_TIME
+        ? this.convertTimeStringToDate(dto.NOTI_TIME)
+        : null,
+    });
+
+    return {
+      ...uh,
+      ...dto,
+    };
+  }
+
+  private convertTimeStringToDate(timeString: string): Date {
+    if (!timeString) return null;
+    const date = new Date(0);
+    const [hours, minutes] = timeString.split(':');
+    date.setHours(Number(hours), Number(minutes), 0, 0);
+    return date;
+  }
+  
   // Batch update for daily completed habits
   // @Cron('0 0 * * *') // Run daily at midnight
   // async processDailyHabitCompletion() {

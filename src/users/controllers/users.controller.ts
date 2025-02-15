@@ -253,6 +253,12 @@ export class UsersController {
     return this.usersService.getProfile(req.user.UID);
   }
 
+  @Get('/weekly-progress')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  async getWeeklyMissionProgress(@Request() req) {
+    return await this.usersService.getWeeklyMissionProgress(req.user.UID);
+  }
+
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiParam({ name: 'uid', type: 'number', description: 'User ID' })
   @ApiResponse({ status: 200, type: CreateUserDto })
@@ -300,7 +306,7 @@ export class UsersController {
     @UploadedFile(imageFileValidator)
     file?: Express.Multer.File,
   ) {
-    if (req.user.UID !== +UID) {
+    if (req.user.UID !== +UID && req.user.ROLE === Role.USER) {
       throw new ForbiddenException('You can only update your own profile');
     }
     return this.usersService.update(+UID, updateUserDto, file);
