@@ -50,6 +50,7 @@ import { NotificationHistoryModule } from '@/notification_history/notification_h
     ]),
     ImageModule,
     NotificationHistoryModule,
+    AchievementModule,
   ],
   controllers: [AchievementController],
   providers: [AchievementService],

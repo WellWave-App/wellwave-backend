@@ -26,14 +26,15 @@ import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
 import { QuestStatus } from '@/.typeorm/entities/user-quests.entity';
 import { UserAchieved } from '@/.typeorm/entities/user_achieved.entity';
 import { NotificationHistoryService } from '@/notification_history/notification_history.service';
+import { PaginatedResponse } from '@/response/response.interface';
 
-interface TrackAchievementDto {
+export class TrackAchievementDto {
   uid: number;
   entity: RequirementEntity;
   property: TrackableProperty;
   value: number;
-  current_league?: LeagueType;
   date: Date;
+  current_league?: LeagueType;
 }
 
 @Injectable()
@@ -52,7 +53,6 @@ export class AchievementService {
     private user: Repository<User>,
     private readonly imageService: ImageService,
     private readonly notiService: NotificationHistoryService,
-    // private eventEmitter: EventEmitter2,
   ) {}
 
   async create(dto: AchievementBodyDTO) {
@@ -135,6 +135,7 @@ export class AchievementService {
         'ach.TITLE',
         'ach.DESCRIPTION',
         'ach.ACHIEVEMENTS_TYPE',
+        'ach.REQUIREMENT',
         'levels.LEVEL',
         'levels.REWARDS',
       ])
@@ -319,15 +320,19 @@ export class AchievementService {
 
   async trackProgress(dto: TrackAchievementDto) {
     // todo: find relevent achms for tracking event
-    const achievements = await this.achievement.find({
-      where: {
-        REQUIREMENT: {
-          FROM_ENTITY: dto.entity,
-          TRACK_PROPERTY: dto.property,
-        },
-      },
-      relations: ['levels'],
-    });
+    // const achievements = await this.achievement.find({
+    //   where: {
+    //     REQUIREMENT: {
+    //       FROM_ENTITY: dto.entity,
+    //       TRACK_PROPERTY: dto.property,
+    //     },
+    //   },
+    //   relations: ['levels'],
+    // });
+    const achievements = await this.findAchByEntiyAndProperty(
+      dto.entity,
+      dto.property,
+    );
 
     const validAchievements = await Promise.all(
       achievements.map(async (ach) =>
@@ -357,6 +362,10 @@ export class AchievementService {
       });
     }
 
+    if (userAchievementProgress.CURRENT_LEVEL === ach.levels.length) {
+      return;
+    }
+
     // todo: progress update
     // *-check tracking type to update target value
     switch (ach.REQUIREMENT.TRACKING_TYPE) {
@@ -367,6 +376,7 @@ export class AchievementService {
         userAchievementProgress.PROGRESS_VALUE = dto.value;
         break;
       case RequirementTrackingType.STREAK:
+        if (dto.date === userAchievementProgress.updatedAt) return;
         if (
           this.isConsecutiveDay(userAchievementProgress.updatedAt, dto.date)
         ) {
@@ -401,11 +411,14 @@ export class AchievementService {
         }),
       );
       // Emit achievement unlocked event
-      await this.achievementUnlocked(userAchievementProgress);
+      await this.achievementUnlocked(ach, userAchievementProgress);
     }
+
+    await this.userAchievementProgress.save(userAchievementProgress);
   }
 
   private async achievementUnlocked(
+    ach: Achievement,
     userAchievementProgress: UserAchievementProgress,
   ): Promise<void> {
     // todo: add to user achived then add noti
@@ -418,14 +431,9 @@ export class AchievementService {
     });
 
     if (userAchieved) {
-      try {
-        const ach = await this.findOne(userAchievementProgress.ACH_ID);
-        throw new ConflictException(
-          `user already achieved level ${userAchievementProgress.CURRENT_LEVEL} of ${ach.TITLE}`,
-        );
-      } catch (error) {
-        throw new NotFoundException(error.message);
-      }
+      throw new ConflictException(
+        `User already achieved level ${userAchievementProgress.CURRENT_LEVEL} of ${ach.ACH_ID}`,
+      );
     }
 
     const newAchieved = this.userAchieved.create({
@@ -433,20 +441,21 @@ export class AchievementService {
       UID: userAchievementProgress.UID,
       LEVEL: userAchievementProgress.CURRENT_LEVEL,
       ACHIEVED_DATE: userAchievementProgress.ACHIEVED_DATE,
+      user: { UID: userAchievementProgress.UID },
+      achievement: { ACH_ID: userAchievementProgress.ACH_ID },
     });
 
     const unlock = await this.userAchieved.save(newAchieved);
     if (unlock) {
       const data = {
-        MESSAGE: `ปลดล็อค${newAchieved.achievment.TITLE} ระดับ${userAchievementProgress.CURRENT_LEVEL}`,
+        MESSAGE: `ปลดล็อค${ach.TITLE} ระดับ${unlock.LEVEL}`,
         FROM: `Wellwave`,
-        TO: `${newAchieved.UID}`,
-        UID: newAchieved.UID,
+        TO: `${unlock.UID}`,
+        UID: unlock.UID,
         IS_READ: false,
         IMAGE_URL:
-          newAchieved.achievment.levels[
-            userAchievementProgress.CURRENT_LEVEL - 1
-          ].ICON_URL || null,
+          ach.levels[userAchievementProgress.CURRENT_LEVEL - 1].ICON_URL ||
+          null,
       };
 
       await this.notiService.create(data);
@@ -521,6 +530,41 @@ export class AchievementService {
     return true;
   }
 
+  async getUserAchieved(query?: {
+    userId: number;
+    page?: number;
+    limit?: number;
+    title?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const { userId, page = 1, limit = 10, title } = query;
+    const queryBuilder = this.userAchieved
+      .createQueryBuilder('ua')
+      .where('ua.UID = :userId', { userId })
+      .leftJoin('ua.achievement', 'ach')
+      .orderBy('ua.ACHIEVED_DATE', 'DESC');
+
+    if (title !== undefined) {
+      queryBuilder.andWhere('LOWER(ach.TITLE) LIKE LOWER(:search)', {
+        search: `%${title}%`,
+      });
+    }
+
+    const [data, total] = await queryBuilder
+      .take(limit)
+      .skip((page - 1) * limit)
+      .getManyAndCount();
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   // Helper function to get start of day in user's timezone (get midnight)
   private getStartOfDay = (date: Date): Date => {
     const normalized = new Date(date);
@@ -537,4 +581,46 @@ export class AchievementService {
     );
     return dayDiff === 1;
   };
+
+  async findAchByEntiyAndProperty(
+    from_entity: RequirementEntity,
+    track_property: TrackableProperty,
+  ) {
+    const achievements = await this.achievement
+      .createQueryBuilder('achievement')
+      .leftJoinAndSelect('achievement.levels', 'levels')
+      .where('achievement.REQUIREMENT @> :requirement', {
+        requirement: {
+          FROM_ENTITY: from_entity,
+          TRACK_PROPERTY: track_property,
+        },
+      })
+      .getMany();
+
+    return achievements;
+  }
+
+  async getUserAchProgress(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const [data, total] = await this.userAchievementProgress.findAndCount({
+      where: {
+        UID: userId,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 }

@@ -12,8 +12,12 @@ import {
   UploadedFiles,
   BadRequestException,
   Query,
+  Request,
 } from '@nestjs/common';
-import { AchievementService } from '../services/achievement.service';
+import {
+  AchievementService,
+  TrackAchievementDto,
+} from '../services/achievement.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { RoleGuard } from '@/auth/guard/role.guard';
@@ -22,12 +26,46 @@ import { Role } from '@/auth/roles/roles.enum';
 import { UpdateAchievementBodyDTO } from '../dto/achievement/update_ach.dto';
 import { AchievementBodyDTO } from '../dto/achievement/create_ach.dto';
 import { dropdownData } from '../interfaces/dropdown.data';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
 
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('achievement')
 export class AchievementController {
   constructor(private readonly achievementService: AchievementService) {}
   private allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+
+  @Get('/user-achieveds')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  getUserAchieveds(
+    @Request() req,
+    @Query()
+    query?: { userId: number; page?: number; limit?: number; title?: string },
+  ) {
+    if (!query.userId) {
+      query.userId = req.user.UID;
+    }
+    return this.achievementService.getUserAchieved(query);
+  }
+
+  @Get('/user-progresses/:userId')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  getUserAchProgress(
+    @Param('userId') userId: number,
+    @Query()
+    query: {
+      page: number;
+      limit: number;
+    },
+  ) {
+    return this.achievementService.getUserAchProgress(
+      +userId,
+      query.page || 1,
+      query.limit || 10,
+    );
+  }
 
   @Get('/dropdown')
   @Roles(Role.ADMIN, Role.MODERATOR)
@@ -72,7 +110,7 @@ export class AchievementController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.MODERATOR)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   findAll(
     @Query()
     query: {
@@ -124,12 +162,35 @@ export class AchievementController {
       });
     }
 
-    return this.achievementService.update(achId, dto)
+    return this.achievementService.update(achId, dto);
   }
 
   @Delete('/:achId')
   @Roles(Role.ADMIN, Role.MODERATOR)
   remove(@Param('achId') achId: string) {
     return this.achievementService.remove(achId);
+  }
+
+  @Post('/track')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  trackProgress(
+    @Request() req,
+    // @Body()
+    // body: {
+    //   entity: RequirementEntity;
+    //   property: TrackableProperty;
+    // },
+  ) {
+    return this.achievementService.trackProgress({
+      uid: req.user.UID,
+      value: 1,
+      entity: RequirementEntity.USER_LOGIN_STREAK,
+      property: TrackableProperty.CURRENT_STREAK,
+      date: new Date(
+        new Date().toLocaleString('en-US', {
+          timeZone: 'Asia/Bangkok',
+        }),
+      ),
+    });
   }
 }
