@@ -17,6 +17,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { UserHabits } from './user-habits.entity';
 import { UserQuests } from './user-quests.entity';
 import { Role } from '@/auth/roles/roles.enum';
+import { UserAchieved } from './user_achieved.entity';
+import { NotificationHistory } from './notification_history.entity';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -137,4 +139,10 @@ export class User {
 
   @OneToMany(() => UserQuests, (quest) => quest.user)
   quests: UserQuests[];
+
+  @OneToMany(() => UserAchieved, (ua) => ua.user)
+  UserAchieveds: UserAchieved[];
+
+  @OneToMany(() => NotificationHistory, (noti) => noti.user)
+  notfications: NotificationHistory[];
 }

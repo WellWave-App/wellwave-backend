@@ -23,6 +23,7 @@ import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.mo
 import { AchievementModule } from './achievement/achievement.module';
 import { LeaguesModule } from './leagues/leagues.module';
 import { OtpModule } from './otp/otp.module';
+import { NotificationHistoryModule } from './notification_history/notification_history.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { OtpModule } from './otp/otp.module';
     AchievementModule,
     LeaguesModule,
     OtpModule,
+    NotificationHistoryModule,
   ],
   controllers: [AppController],
   providers: [
