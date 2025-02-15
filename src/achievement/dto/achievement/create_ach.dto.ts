@@ -5,7 +5,7 @@ import {
   TrackableProperty,
 } from '@/.typeorm/entities/achievement.entity';
 import { LeagueType } from '@/leagues/enum/lagues.enum';
-import { Expose, Transform, TransformFnParams, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsNotEmpty,
@@ -13,7 +13,6 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  ValidateNested,
 } from 'class-validator';
 
 // Helper function for handling JSON strings

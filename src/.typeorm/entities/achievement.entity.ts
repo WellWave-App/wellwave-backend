@@ -53,10 +53,11 @@ export enum TrackableProperty {
   TOTAL_GEMS_SPENT = 'total_gems_spent',
   COMPLETED_MISSIONS = 'completed_missions',
   COMPLETED_MISSION = 'completed_mission',
-  END_LEAGUE_RANK = 'end_league_rank',
+  CURRENT_RANK = 'current_rank',
   CURRENT_LEAGUE = 'current_league',
   CONSECUTIVE_WEEKS = 'consecutive_weeks',
   TOTAL_EXERCISE_MINUTE = 'total_exercise_minute',
+  LEAGUE_REACHED = 'league_reached',
 }
 
 @Entity('ACHIEVEMENTS')
@@ -100,6 +101,7 @@ export class Achievement {
 
   @OneToMany(() => AchievementLevel, (level) => level.achievement, {
     onDelete: 'CASCADE',
+    eager: true,
   })
   levels?: AchievementLevel[];
 }

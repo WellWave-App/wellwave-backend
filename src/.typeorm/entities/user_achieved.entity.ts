@@ -1,10 +1,6 @@
-import {
-  Entity,
-  Column,
-  PrimaryColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryColumn, Column, ManyToOne, OneToOne } from 'typeorm';
+import { User } from './users.entity';
+import { Achievement } from './achievement.entity';
 
 @Entity('USER_ACHIEVED')
 export class UserAchieved {
@@ -14,18 +10,18 @@ export class UserAchieved {
   @PrimaryColumn('uuid', { name: 'ACH_ID' })
   ACH_ID: string;
 
-  @Column('int', { name: 'CURRENT_LEVEL', nullable: true })
-  CURRENT_LEVEL: number;
+  @PrimaryColumn('int', { name: 'LEVEL' })
+  LEVEL: number;
 
-  @Column('float', { name: 'PROGRESS_VALUE', nullable: true })
-  PROGRESS_VALUE: number;
-  
-  @Column('date', { name: 'ACHIEVED_DATE', nullable: true })
-  ACHIEVED_DATE?: Date;
+  @Column('date', { name: 'ACHIEVED_DATE' })
+  ACHIEVED_DATE: Date;
 
-  @CreateDateColumn({ name: 'createdAt', type: 'date' })
-  createdAt: Date;
+  @Column('boolean', { name: 'IS_READ', default: false })
+  IS_READ?: boolean;
 
-  @UpdateDateColumn({ name: 'updatedAt', type: 'date' })
-  updatedAt: Date;
+  @ManyToOne(() => User, (user) => user.UserAchieveds, { eager: true })
+  user: User;
+
+  @ManyToOne(() => Achievement, { eager: true })
+  achievment: Achievement;
 }
