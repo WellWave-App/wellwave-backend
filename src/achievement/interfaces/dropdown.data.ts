@@ -1,4 +1,8 @@
-import { RequirementEntity, TrackableProperty, RequirementTrackingType } from "@/.typeorm/entities/achievement.entity";
+import {
+  RequirementEntity,
+  TrackableProperty,
+  RequirementTrackingType,
+} from '@/.typeorm/entities/achievement.entity';
 
 export const dropdownData = {
   [RequirementEntity.USER_LOGIN_STREAK]: [
@@ -47,11 +51,15 @@ export const dropdownData = {
   ],
   [RequirementEntity.USER_LEADERBOARD]: [
     {
-      property: TrackableProperty.END_LEAGUE_RANK,
+      property: TrackableProperty.CURRENT_RANK,
       trackingType: RequirementTrackingType.MILESTONE,
     },
     {
       property: TrackableProperty.CURRENT_LEAGUE,
+      trackingType: RequirementTrackingType.MILESTONE,
+    },
+    {
+      property: TrackableProperty.LEAGUE_REACHED,
       trackingType: RequirementTrackingType.MILESTONE,
     },
   ],

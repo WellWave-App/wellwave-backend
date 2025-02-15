@@ -113,7 +113,7 @@
       "achievement_type": "single",
       "requirement_tracking": {
         "from_entity": "user_leaderboard",
-        "track_property": "end_league_rank",
+        "track_property": "current_rank",
         "tracking_type": "milestone",
         "exclude_league": ["diamond"]
       },
@@ -129,7 +129,7 @@
       "achievement_type": "single",
       "requirement_tracking": {
         "from_entity": "user_leaderboard",
-        "track_property": "end_league_rank",
+        "track_property": "current_rank",
         "tracking_type": "milestone",
         "exclude_league": ["bronze", "silver", "gold", "emerald"]
       },
@@ -144,15 +144,15 @@
       "achievement_type": "leveled",
       "requirement_tracking": {
         "from_entity": "user_leaderboard",
-        "track_property": "end_league_rank",
+        "track_property": "league_reached",
         "tracking_type": "milestone"
       },
       "levels": [
         { "level": 1, "target_value": 1, "target_league": "bronze" },
-        { "level": 2, "target_value": 1, "target_league": "silver" },
-        { "level": 3, "target_value": 1, "target_league": "gold" },
-        { "level": 4, "target_value": 1, "target_league": "emerald" },
-        { "level": 5, "target_value": 1, "target_league": "diamond" }
+        { "level": 2, "target_value": 2, "target_league": "silver" },
+        { "level": 3, "target_value": 3, "target_league": "gold" },
+        { "level": 4, "target_value": 4, "target_league": "emerald" },
+        { "level": 5, "target_value": 5, "target_league": "diamond" }
       ]
     },
     {
