@@ -53,5 +53,6 @@ import { NotificationHistoryModule } from '@/notification_history/notification_h
   ],
   controllers: [AchievementController],
   providers: [AchievementService],
+  exports: [AchievementService],
 })
 export class AchievementModule {}
