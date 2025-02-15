@@ -62,5 +62,5 @@ export class CreateNotificationDto {
   UID?: number;
 
   @IsOptional()
-  file: any;
+  file?: any;
 }
