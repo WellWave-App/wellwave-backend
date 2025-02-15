@@ -1,5 +1,5 @@
 import { QuestStatus } from '@/.typeorm/entities/user-quests.entity';
-import { PartialType } from '@nestjs/swagger';
+import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateUserQuestDto {
@@ -18,6 +18,10 @@ export class CreateUserQuestDto {
   END_DATE: Date;
 
   @IsOptional()
+  @ApiPropertyOptional({
+    enum: QuestStatus,
+    description: 'Current status of the quest',
+  })
   STATUS: QuestStatus; // 'active', 'completed', 'failed'
 
   @IsOptional()
