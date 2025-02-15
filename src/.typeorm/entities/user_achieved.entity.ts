@@ -1,4 +1,11 @@
-import { Entity, PrimaryColumn, Column, ManyToOne, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  ManyToOne,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from './users.entity';
 import { Achievement } from './achievement.entity';
 
@@ -20,8 +27,10 @@ export class UserAchieved {
   IS_READ?: boolean;
 
   @ManyToOne(() => User, (user) => user.UserAchieveds, { eager: true })
+  @JoinColumn({ name: 'UID' })
   user: User;
 
   @ManyToOne(() => Achievement, { eager: true })
-  achievment: Achievement;
+  @JoinColumn({ name: 'ACH_ID' })
+  achievement: Achievement;
 }
