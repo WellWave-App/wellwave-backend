@@ -22,6 +22,7 @@ import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
 import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.module';
 import { AchievementModule } from './achievement/achievement.module';
 import { LeaguesModule } from './leagues/leagues.module';
+import { OtpModule } from './otp/otp.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { LeaguesModule } from './leagues/leagues.module';
     CheckinChallengeModule,
     AchievementModule,
     LeaguesModule,
+    OtpModule,
   ],
   controllers: [AppController],
   providers: [
