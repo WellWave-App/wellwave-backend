@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -16,14 +17,15 @@ import {
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { ImageService } from '../../image/image.service';
 import { AchievementLevel } from '@/.typeorm/entities/achievement_level.entity';
-import { UserAchieved } from '../../.typeorm/entities/user_achieved.entity';
+import { UserAchievementProgress } from '../../.typeorm/entities/user_achievement_progress.entity';
 import { AchievementBodyDTO } from '../dto/achievement/create_ach.dto';
 import { UpdateAchievementBodyDTO } from '../dto/achievement/update_ach.dto';
-import { dropdownData } from '../interfaces/dropdown.data';
 import { LeagueType } from '@/leagues/enum/lagues.enum';
 import { User } from '@/.typeorm/entities/users.entity';
 import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
 import { QuestStatus } from '@/.typeorm/entities/user-quests.entity';
+import { UserAchieved } from '@/.typeorm/entities/user_achieved.entity';
+import { NotificationHistoryService } from '@/notification_history/notification_history.service';
 
 interface TrackAchievementDto {
   uid: number;
@@ -42,11 +44,14 @@ export class AchievementService {
     private achievement: Repository<Achievement>,
     @InjectRepository(AchievementLevel)
     private achievementLevel: Repository<AchievementLevel>,
+    @InjectRepository(UserAchievementProgress)
+    private userAchievementProgress: Repository<UserAchievementProgress>,
     @InjectRepository(UserAchieved)
     private userAchieved: Repository<UserAchieved>,
     @InjectRepository(User)
     private user: Repository<User>,
     private readonly imageService: ImageService,
+    private readonly notiService: NotificationHistoryService,
     // private eventEmitter: EventEmitter2,
   ) {}
 
@@ -336,15 +341,15 @@ export class AchievementService {
   }
 
   async processProgress(ach: Achievement, dto: TrackAchievementDto) {
-    let userAchieveds = await this.userAchieved.findOne({
+    let userAchievementProgress = await this.userAchievementProgress.findOne({
       where: {
         ACH_ID: ach.ACH_ID,
         UID: dto.uid,
       },
     });
 
-    if (!userAchieveds) {
-      userAchieveds = this.userAchieved.create({
+    if (!userAchievementProgress) {
+      userAchievementProgress = this.userAchievementProgress.create({
         UID: dto.uid,
         ACH_ID: ach.ACH_ID,
         CURRENT_LEVEL: 0,
@@ -356,21 +361,23 @@ export class AchievementService {
     // *-check tracking type to update target value
     switch (ach.REQUIREMENT.TRACKING_TYPE) {
       case RequirementTrackingType.CUMULATIVE:
-        userAchieveds.PROGRESS_VALUE += dto.value;
+        userAchievementProgress.PROGRESS_VALUE += dto.value;
         break;
       case RequirementTrackingType.MILESTONE:
-        userAchieveds.PROGRESS_VALUE = dto.value;
+        userAchievementProgress.PROGRESS_VALUE = dto.value;
         break;
       case RequirementTrackingType.STREAK:
-        if (this.isConsecutiveDay(userAchieveds.updatedAt, dto.date)) {
-          userAchieveds.PROGRESS_VALUE += 1;
+        if (
+          this.isConsecutiveDay(userAchievementProgress.updatedAt, dto.date)
+        ) {
+          userAchievementProgress.PROGRESS_VALUE += 1;
         } else {
-          userAchieveds.PROGRESS_VALUE = 1;
+          userAchievementProgress.PROGRESS_VALUE = 1;
         }
         break;
       case RequirementTrackingType.HIGH_SCORE:
-        userAchieveds.PROGRESS_VALUE = Math.max(
-          userAchieveds.PROGRESS_VALUE,
+        userAchievementProgress.PROGRESS_VALUE = Math.max(
+          userAchievementProgress.PROGRESS_VALUE,
           dto.value,
         );
         break;
@@ -378,38 +385,77 @@ export class AchievementService {
 
     // *check if user met the target value? on user current level
     const nextLevel = ach.levels.find(
-      (l) => l.LEVEL === userAchieveds.CURRENT_LEVEL + 1,
+      (l) => l.LEVEL === userAchievementProgress.CURRENT_LEVEL + 1,
     );
 
-    if (nextLevel && this.isLevelUp(ach, userAchieveds, nextLevel, dto)) {
+    if (
+      nextLevel &&
+      this.isLevelUp(ach, userAchievementProgress, nextLevel, dto)
+    ) {
       // * (cumulative, streak):  level up when progress >= target_value
       // * (milestone): level up when progress == target_value
-      userAchieveds.CURRENT_LEVEL += 1;
-      userAchieveds.ACHIEVED_DATE = new Date(
+      userAchievementProgress.CURRENT_LEVEL += 1;
+      userAchievementProgress.ACHIEVED_DATE = new Date(
         new Date().toLocaleString('en-US', {
           timeZone: 'Asia/Bangkok',
         }),
       );
       // Emit achievement unlocked event
-      await this.emitAchievementUnlocked(userAchieveds);
+      await this.achievementUnlocked(userAchievementProgress);
     }
   }
 
-  private async emitAchievementUnlocked(
-    userAchieved: UserAchieved,
+  private async achievementUnlocked(
+    userAchievementProgress: UserAchievementProgress,
   ): Promise<void> {
-    // Emit achievement unlocked event
-    // this.eventEmitter.emit('achievement.unlocked', {
-    //   userId: userAchieved.UID,
-    //   achievementId: userAchieved.ACH_ID,
-    //   level: newLevel,
-    //   timestamp: new Date(),
-    // });
+    // todo: add to user achived then add noti
+    const userAchieved = await this.userAchieved.findOne({
+      where: {
+        UID: userAchievementProgress.UID,
+        ACH_ID: userAchievementProgress.ACH_ID,
+        LEVEL: userAchievementProgress.CURRENT_LEVEL,
+      },
+    });
+
+    if (userAchieved) {
+      try {
+        const ach = await this.findOne(userAchievementProgress.ACH_ID);
+        throw new ConflictException(
+          `user already achieved level ${userAchievementProgress.CURRENT_LEVEL} of ${ach.TITLE}`,
+        );
+      } catch (error) {
+        throw new NotFoundException(error.message);
+      }
+    }
+
+    const newAchieved = this.userAchieved.create({
+      ACH_ID: userAchievementProgress.ACH_ID,
+      UID: userAchievementProgress.UID,
+      LEVEL: userAchievementProgress.CURRENT_LEVEL,
+      ACHIEVED_DATE: userAchievementProgress.ACHIEVED_DATE,
+    });
+
+    const unlock = await this.userAchieved.save(newAchieved);
+    if (unlock) {
+      const data = {
+        MESSAGE: `ปลดล็อค${newAchieved.achievment.TITLE} ระดับ${userAchievementProgress.CURRENT_LEVEL}`,
+        FROM: `Wellwave`,
+        TO: `${newAchieved.UID}`,
+        UID: newAchieved.UID,
+        IS_READ: false,
+        IMAGE_URL:
+          newAchieved.achievment.levels[
+            userAchievementProgress.CURRENT_LEVEL - 1
+          ].ICON_URL || null,
+      };
+
+      await this.notiService.create(data);
+    }
   }
 
   private isLevelUp(
     achievement: Achievement,
-    userAchievement: UserAchieved,
+    userAchievement: UserAchievementProgress,
     nextLevel: AchievementLevel,
     dto: TrackAchievementDto,
   ): boolean {
@@ -417,9 +463,10 @@ export class AchievementService {
       case RequirementTrackingType.MILESTONE:
         // For ranks and specific achievements
         return (
-          userAchievement.PROGRESS_VALUE === nextLevel.TARGET_VALUE &&
-          (!nextLevel.TARGET_LEAGUE ||
-            nextLevel.TARGET_LEAGUE === dto.current_league)
+          userAchievement.PROGRESS_VALUE === nextLevel.TARGET_VALUE
+          // &&
+          // (!nextLevel.TARGET_LEAGUE ||
+          //   nextLevel.TARGET_LEAGUE === dto.current_league)
         );
 
       case RequirementTrackingType.CUMULATIVE:
