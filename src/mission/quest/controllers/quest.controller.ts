@@ -26,10 +26,28 @@ import { QuestListFilter } from '../interfaces/quests.interfaces';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { imageFileValidator } from '@/image/imageFileValidator';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
 
+@ApiTags('Quest')
 @Controller('quest')
 export class QuestController {
   constructor(private readonly questService: QuestService) {}
+
+  @ApiOperation({ summary: 'Create a new quest' })
+  @ApiResponse({
+    status: 201,
+    description: 'Quest created successfully',
+    type: Quest,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiBody({ type: CreateQuestDto })
   @Post()
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
@@ -40,6 +58,10 @@ export class QuestController {
     return this.questService.createQuest(createQuestDto, file);
   }
 
+  @ApiOperation({ summary: 'Get all quests with optional filters' })
+  @ApiQuery({ name: 'filter', enum: QuestListFilter, required: false })
+  @ApiQuery({ name: 'category', enum: HabitCategories, required: false })
+  @ApiResponse({ status: 200, description: 'Retrieved quests successfully' })
   @Get()
   @UseGuards(JwtAuthGuard)
   getQuests(
@@ -50,6 +72,15 @@ export class QuestController {
     return this.questService.getQuests(req.user.UID, filter, category);
   }
 
+  @ApiOperation({ summary: 'Start a quest for the current user' })
+  @ApiParam({ name: 'questId', description: 'ID of the quest to start' })
+  @ApiResponse({
+    status: 201,
+    description: 'Quest started successfully',
+    type: UserQuests,
+  })
+  @ApiResponse({ status: 404, description: 'Quest not found' })
+  @ApiResponse({ status: 409, description: 'Quest already active' })
   @Post('/start/:questId')
   @UseGuards(JwtAuthGuard)
   startQuest(
@@ -59,6 +90,14 @@ export class QuestController {
     return this.questService.startQuest(req.user.UID, questId);
   }
 
+  @ApiOperation({ summary: 'Track progress for a quest' })
+  @ApiBody({ type: TrackQuestDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Progress tracked successfully',
+    type: QuestProgress,
+  })
+  @ApiResponse({ status: 404, description: 'Active quest not found' })
   @Post('/track')
   @UseGuards(JwtAuthGuard)
   trackProgress(
@@ -68,6 +107,16 @@ export class QuestController {
     return this.questService.trackProgress(req.user.UID, trackDto);
   }
 
+  @ApiOperation({ summary: 'Get statistics for a specific quest' })
+  @ApiParam({
+    name: 'questId',
+    description: 'ID of the quest to get stats for',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Retrieved quest stats successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Quest not found' })
   @Get('/stats/:questId')
   @UseGuards(JwtAuthGuard)
   getQuestStats(

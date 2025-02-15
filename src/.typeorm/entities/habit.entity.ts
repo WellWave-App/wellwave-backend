@@ -94,6 +94,8 @@ export class Habits {
   @Column({ type: 'varchar', length: 2048, nullable: true })
   THUMBNAIL_URL: string;
 
+  @Column({ type: 'bool', default: false })
+  IS_DAILY: boolean;
   // @Column({
   //   name: 'DIFFICULTY_LEVEL',
   //   type: 'enum',

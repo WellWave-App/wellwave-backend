@@ -4,11 +4,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  HabitFilterStatus,
-  QueryHabitsDto,
-} from '../interfaces/habits.interfaces';
-// import { HabitRepository } from '../repositories/habit.repository';
 import { CreateHabitDto } from '../dto/create-habit.dto';
 import { ImageService } from '../../../image/image.service';
 import {
@@ -17,14 +12,11 @@ import {
   TrackingType,
 } from '@/.typeorm/entities/habit.entity';
 import { PaginatedResponse } from '@/response/response.interface';
-// import { UserHabitRepository } from '../repositories/user-habit.repository';
 import {
   HabitStatus,
   UserHabits,
 } from '@/.typeorm/entities/user-habits.entity';
 import { StartHabitChallengeDto } from '../dto/user-habit.dto';
-import { UpdateHabitDto } from '../dto/update-habit.dto';
-// import { DailyHabitTrackRepository } from '../repositories/track.repository';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -60,6 +52,103 @@ export class HabitService {
     return await this.habitsRepository.save(habit);
   }
 
+  async getDailyHabit(uid: number): Promise<PaginatedResponse<any>> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // * updated outdate daily habit
+    await this.updateOutdatedHabits(uid);
+
+    // * helper format function
+    const formatResponse = (h: UserHabits) => ({
+      CHALLENGE_ID: h.CHALLENGE_ID,
+      HID: h.HID,
+      TITLE: h.habits.TITLE,
+      THUMBNAIL_URL: h.habits.THUMBNAIL_URL,
+      EXP_REWARD: h.habits.EXP_REWARD,
+    });
+
+    const userDailyHabits = await this.getUserHabits(
+      uid,
+      HabitStatus.Active,
+      false,
+      null,
+      null,
+      true,
+    );
+
+    const filterTodayDailyHabits = userDailyHabits.data.filter((uh) => {
+      const startDate = new Date(uh.START_DATE);
+      return (
+        startDate.getDate() === today.getDate() &&
+        startDate.getMonth() === today.getMonth() &&
+        startDate.getFullYear() === today.getFullYear() &&
+        uh.habits.IS_DAILY
+      );
+    });
+
+    if (filterTodayDailyHabits.length > 0) {
+      const formatted = filterTodayDailyHabits.map((uh) => formatResponse(uh));
+      return {
+        data: formatted,
+        meta: { total: filterTodayDailyHabits.length },
+      };
+    }
+
+    const randomHabits = await this.habitsRepository
+      .createQueryBuilder('habits')
+      .where('habits.IS_DAILY = true')
+      .orderBy('RANDOM()')
+      .limit(4)
+      .getMany();
+
+    const data = await Promise.all(
+      randomHabits.map((h) =>
+        this.startChallenge(uid, { UID: uid, HID: h.HID }),
+      ),
+    );
+
+    const formatted = data.map((uh) => formatResponse(uh));
+    return {
+      data: formatted,
+      meta: { total: formatted.length },
+    };
+  }
+
+  async updateOutdatedHabits(uid: number): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day
+
+    // Find all active habits for the user
+    const userHabits = await this.userHabitsRepository
+      .createQueryBuilder('uh')
+      .leftJoinAndSelect('uh.habits', 'habits')
+      .where('uh.UID = :uid', { uid })
+      .andWhere('uh.STATUS = :status', { status: HabitStatus.Active })
+      .getMany();
+
+    // Filter out habits that were started today
+    const outdatedHabits = userHabits.filter((habit) => {
+      const endDate = new Date(habit.END_DATE);
+      endDate.setHours(0, 0, 0, 0);
+      return endDate < today;
+    });
+
+    if (outdatedHabits.length === 0) {
+      return;
+    }
+
+    // Update status of outdated habits to calcled
+    await this.userHabitsRepository
+      .createQueryBuilder()
+      .update()
+      .set({
+        STATUS: HabitStatus.Failed,
+      })
+      .whereInIds(outdatedHabits.map((habit) => habit.CHALLENGE_ID))
+      .execute();
+  }
+
   async getHabits(
     userId: number,
     filter: HabitListFilter = HabitListFilter.ALL,
@@ -69,6 +158,8 @@ export class HabitService {
     pagination: boolean = false,
   ): Promise<PaginatedResponse<any>> {
     // Start with habits query
+    await this.updateOutdatedHabits(userId);
+
     const habitsQuery = this.habitsRepository.createQueryBuilder('habit');
 
     if (category) {
@@ -406,31 +497,38 @@ export class HabitService {
     pagination: boolean = false,
     page: number = 1,
     limit: number = 10,
+    isDaily: boolean = false,
   ): Promise<PaginatedResponse<UserHabits>> {
     const queryBuilder = this.userHabitsRepository
       .createQueryBuilder('userHabit')
       .leftJoinAndSelect('userHabit.habits', 'habit')
       .leftJoinAndSelect('userHabit.dailyTracks', 'tracks')
-      .where('userHabit.UID = :userId', { userId });
+      .where('userHabit.UID = :userId', { userId })
+      .andWhere('habit.IS_DAILY = :isDaily', { isDaily: isDaily });
 
     if (status) {
       queryBuilder.andWhere('userHabit.STATUS = :status', { status });
     }
 
     if (pagination) {
-      queryBuilder.skip((page - 1) * limit).take(limit);
+      if (page < 1) page = 1;
+      if (limit < 1) limit = 10;
+      queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .orderBy('userHabit.START_DATE', 'DESC'); // Add ordering for consistency
     }
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
     return {
-      data,
+      data: data || [],
       meta: {
         total,
         ...(pagination && {
           page,
           limit,
-          totalPages: Math.ceil(total / limit),
+          totalPages: Math.ceil(total / limit) || 0,
           pagination,
         }),
       },
