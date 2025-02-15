@@ -44,6 +44,12 @@ import { NotificationHistoryModule } from './notification_history/notification_h
           join(__dirname, '.typeorm', 'entities', '*.entity{.ts,.js}'),
         ],
         synchronize: true,
+        timezone: 'Asia/Bangkok',
+        // Add these options for better timezone handling
+        extra: {
+          timezone: 'Asia/Bangkok',
+        },
+        dateStrings: true,
       }),
       inject: [ConfigService],
     }),
