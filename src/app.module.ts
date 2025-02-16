@@ -24,6 +24,8 @@ import { AchievementModule } from './achievement/achievement.module';
 import { LeaguesModule } from './leagues/leagues.module';
 import { OtpModule } from './otp/otp.module';
 import { NotificationHistoryModule } from './notification_history/notification_history.module';
+import { HelperModule } from './helpers/helper.module';
+import { TestingModule } from '@nestjs/testing';
 
 @Module({
   imports: [
@@ -71,6 +73,8 @@ import { NotificationHistoryModule } from './notification_history/notification_h
     LeaguesModule,
     OtpModule,
     NotificationHistoryModule,
+    HelperModule,
+    TestingModule,
   ],
   controllers: [AppController],
   providers: [

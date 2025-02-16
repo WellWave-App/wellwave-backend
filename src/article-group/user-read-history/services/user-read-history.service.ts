@@ -17,7 +17,6 @@ export class UserReadHistoryService {
   constructor(
     private readonly repository: UserReadHistoryReposity,
     private readonly usersService: UsersService,
-    private readonly articleService: ArticleService,
   ) {}
 
   async create(dto: CreateUserReadHistoryDto): Promise<UserReadHistory> {
