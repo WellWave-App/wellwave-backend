@@ -25,6 +25,7 @@ import { TrackQuestDto } from '../dtos/track-quest.dto';
 import { QuestListFilter } from '../interfaces/quests.interfaces';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { imageFileValidator } from '@/image/imageFileValidator';
 import {
   ApiTags,
   ApiOperation,
@@ -33,17 +34,6 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-
-const imageFileValidator = new ParseFilePipe({
-  validators: [
-    new FileTypeValidator({ fileType: /(image\/jpeg|image\/png|image\/gif)/ }),
-    new MaxFileSizeValidator({
-      maxSize: 10 * 1024 * 1024,
-      message: 'file must be smaller than 10 MB',
-    }),
-  ],
-  fileIsRequired: false,
-});
 
 @ApiTags('Quest')
 @Controller('quest')

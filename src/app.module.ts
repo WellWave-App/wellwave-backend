@@ -20,7 +20,12 @@ import { HabitModule } from './mission/habit/habit.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
 import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.module';
+import { AchievementModule } from './achievement/achievement.module';
+import { LeaguesModule } from './leagues/leagues.module';
 import { OtpModule } from './otp/otp.module';
+import { NotificationHistoryModule } from './notification_history/notification_history.module';
+import { HelperModule } from './helpers/helper.module';
+import { TestingModule } from '@nestjs/testing';
 
 @Module({
   imports: [
@@ -41,6 +46,12 @@ import { OtpModule } from './otp/otp.module';
           join(__dirname, '.typeorm', 'entities', '*.entity{.ts,.js}'),
         ],
         synchronize: true,
+        timezone: 'Asia/Bangkok',
+        // Add these options for better timezone handling
+        extra: {
+          timezone: 'Asia/Bangkok',
+        },
+        dateStrings: true,
       }),
       inject: [ConfigService],
     }),
@@ -58,7 +69,12 @@ import { OtpModule } from './otp/otp.module';
     QuestModule,
     HabitModule,
     CheckinChallengeModule,
+    AchievementModule,
+    LeaguesModule,
     OtpModule,
+    NotificationHistoryModule,
+    HelperModule,
+    TestingModule,
   ],
   controllers: [AppController],
   providers: [

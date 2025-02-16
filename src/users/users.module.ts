@@ -16,6 +16,7 @@ import { RecommendationModule } from '@/recommendation/recommendation.module';
 import { CheckinChallengeModule } from '@/checkin-challenge/checkin-challenge.module';
 import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
+import { HelperModule } from '@/helpers/helper.module';
 
 @Module({
   imports: [
@@ -34,13 +35,14 @@ import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
       UserHabits,
       UserQuests,
       DailyHabitTrack,
+      HelperModule,
     ]),
+    forwardRef(() => RecommendationModule),
     LogsModule,
     LoginStreakModule,
     ImageModule,
     CheckinChallengeModule,
-
-    forwardRef(() => RecommendationModule),
+    HelperModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

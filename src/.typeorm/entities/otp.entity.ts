@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 
 // otp.entity.ts
-@Entity()
+@Entity('OTP')
 export class OTP {
   @PrimaryColumn()
   UID: number;

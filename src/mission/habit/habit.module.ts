@@ -11,6 +11,10 @@ import { diskStorage } from 'multer';
 // import { UserHabitRepository } from './repositories/user-habit.repository';
 import { HabitService } from './services/habit.service';
 import { QuestModule } from '../quest/quest.module';
+import { LogsModule } from '@/user-logs/logs.module';
+import { ExerciseCalculator } from './utils/exercise-calculator.util';
+import { UsersModule } from '@/users/users.module';
+import { HelperModule } from '@/helpers/helper.module';
 
 @Module({
   imports: [
@@ -26,11 +30,12 @@ import { QuestModule } from '../quest/quest.module';
     TypeOrmModule.forFeature([Habits, UserHabits, DailyHabitTrack]),
     ImageModule,
     QuestModule,
+    LogsModule,
+    UsersModule,
+    HelperModule,
   ],
   controllers: [HabitController],
-  providers: [
-    HabitService,
-    // HabitRepository, UserHabitRepository,
-  ],
+  providers: [HabitService, ExerciseCalculator],
+  exports: [HabitService, ExerciseCalculator],
 })
 export class HabitModule {}

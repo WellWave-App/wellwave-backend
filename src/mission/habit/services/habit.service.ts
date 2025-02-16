@@ -7,6 +7,7 @@ import {
 import { CreateHabitDto } from '../dto/create-habit.dto';
 import { ImageService } from '../../../image/image.service';
 import {
+  ExerciseType,
   HabitCategories,
   Habits,
   TrackingType,
@@ -24,6 +25,11 @@ import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HabitListFilter } from '../interfaces/habits.interfaces';
 import { QuestService } from '../../quest/services/quest.service';
 import { updateHabitNotiDto } from '../dto/noti-update.dto';
+import { LogsService } from '@/user-logs/services/logs.service';
+import { DateService } from '@/helpers/date/date.services';
+import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
+import { ExerciseCalculator } from '../utils/exercise-calculator.util';
+import { UsersService } from '@/users/services/users.service';
 
 @Injectable()
 export class HabitService {
@@ -36,6 +42,9 @@ export class HabitService {
     private dailyTrackRepository: Repository<DailyHabitTrack>,
     private readonly imageService: ImageService,
     private readonly questService: QuestService,
+    private readonly logService: LogsService,
+    private readonly userService: UsersService,
+    private readonly dateService: DateService,
   ) {}
 
   async createHabit(
@@ -53,7 +62,7 @@ export class HabitService {
   }
 
   async getDailyHabit(uid: number): Promise<PaginatedResponse<any>> {
-    const today = new Date();
+    const today = new Date(this.dateService.getCurrentDate().date);
     today.setHours(0, 0, 0, 0);
 
     // * updated outdate daily habit
@@ -116,7 +125,7 @@ export class HabitService {
   }
 
   async updateOutdatedHabits(uid: number): Promise<void> {
-    const today = new Date();
+    const today = new Date(this.dateService.getCurrentDate().date);
     today.setHours(0, 0, 0, 0); // Set to start of day
 
     // Find all active habits for the user
@@ -295,7 +304,7 @@ export class HabitService {
     const userHabit = this.userHabitsRepository.create({
       UID: userId,
       HID: startDto.HID,
-      START_DATE: new Date(),
+      START_DATE: new Date(this.dateService.getCurrentDate().date),
       STATUS: HabitStatus.Active,
       DAYS_GOAL: startDto.DAYS_GOAL || habit.DEFAULT_DAYS_GOAL,
       DAILY_MINUTE_GOAL:
@@ -313,7 +322,7 @@ export class HabitService {
     });
 
     // Calculate end date
-    const endDate = new Date();
+    const endDate = new Date(this.dateService.getCurrentDate().date);
     endDate.setDate(endDate.getDate() + userHabit.DAYS_GOAL);
     userHabit.END_DATE = endDate;
 
@@ -333,7 +342,7 @@ export class HabitService {
     });
     const trackDate = trackDto.TRACK_DATE
       ? new Date(trackDto.TRACK_DATE)
-      : new Date();
+      : new Date(this.dateService.getCurrentDate().date);
 
     if (!userHabit) {
       throw new NotFoundException('Challenge not found');
@@ -343,7 +352,7 @@ export class HabitService {
       throw new BadRequestException('Challenge is not active');
     }
 
-    if (trackDate > userHabit.END_DATE) {
+    if (trackDate > new Date(userHabit.END_DATE)) {
       throw new BadRequestException('Cannot track after challenge end date');
     }
 
@@ -353,6 +362,7 @@ export class HabitService {
         CHALLENGE_ID: trackDto.CHALLENGE_ID,
         TRACK_DATE: trackDate,
       },
+      // relations: ['UserHabits'],
     });
 
     if (!dailyTrack) {
@@ -406,8 +416,20 @@ export class HabitService {
         break;
     }
 
+    // calculateMetrics, before saving dailyTrack
+    if (userHabit.habits.TRACKING_TYPE === TrackingType.Duration) {
+      const user = await this.userService.getById(userId);
+      if (user) {
+        dailyTrack.calculateMetrics(user, userHabit.habits);
+      }
+    }
     dailyTrack.MOOD_FEEDBACK = trackDto.MOOD_FEEDBACK;
-    await this.dailyTrackRepository.save(dailyTrack);
+
+    const savedTrack = await this.dailyTrackRepository.save(dailyTrack);
+
+    // * update related logs
+    await this.updateRelatedLogs(userId, savedTrack);
+    // * update realted quests
     await this.questService.updateQuestProgress(userId, {
       category: userHabit.habits.CATEGORY,
       exerciseType: userHabit.habits.EXERCISE_TYPE,
@@ -419,7 +441,50 @@ export class HabitService {
     await this.updateStreakCount(userHabit.CHALLENGE_ID);
     await this.checkChallengeCompletion(userHabit.CHALLENGE_ID);
 
-    return dailyTrack;
+    return savedTrack;
+  }
+
+  async updateRelatedLogs(userId: number, dailyTrack: DailyHabitTrack) {
+    const track = await this.dailyTrackRepository.findOne({
+      where: {
+        TRACK_ID: dailyTrack.TRACK_ID,
+      },
+      relations: ['UserHabits'],
+    });
+    if (!track) {
+      throw new NotFoundException(`Not found trackId: ${dailyTrack.TRACK_ID}`);
+    }
+    // Only create logs if we have calculated values
+    if (track.UserHabits?.habits?.EXERCISE_TYPE) {
+      if (track.STEPS_CALCULATED) {
+        await this.logService.create({
+          UID: userId,
+          DATE: new Date(track.TRACK_DATE),
+          LOG_NAME: LOG_NAME.STEP_LOG,
+          VALUE: track.STEPS_CALCULATED,
+        });
+      }
+
+      // Log calories if calculated
+      if (track.CALORIES_BURNED) {
+        await this.logService.create({
+          UID: userId,
+          DATE: new Date(track.TRACK_DATE),
+          LOG_NAME: LOG_NAME.CAL_BURN_LOG,
+          VALUE: track.CALORIES_BURNED,
+        });
+      }
+
+      // Log heart rate if calculated
+      if (track.HEART_RATE) {
+        await this.logService.create({
+          UID: userId,
+          DATE: new Date(track.TRACK_DATE),
+          LOG_NAME: LOG_NAME.HEART_RATE_LOG,
+          VALUE: track.HEART_RATE,
+        });
+      }
+    }
   }
 
   private async updateStreakCount(challengeId: number): Promise<void> {
@@ -453,7 +518,7 @@ export class HabitService {
         exerciseType: userHabit.habits.EXERCISE_TYPE,
         trackingType: TrackingType.Count, // Streaks are counted
         value: currentStreak, // Pass the full streak value
-        date: new Date(),
+        date: new Date(this.dateService.getCurrentDate().date),
         progressType: 'streak', // Add this to differentiate streak updates
       });
     }
@@ -465,7 +530,7 @@ export class HabitService {
       relations: ['dailyTracks', 'habits'],
     });
 
-    const today = new Date();
+    const today = new Date(this.dateService.getCurrentDate().date);
     if (today > userHabit.END_DATE) {
       const completedDays = userHabit.dailyTracks.filter(
         (track) => track.COMPLETED,
@@ -478,7 +543,7 @@ export class HabitService {
           exerciseType: userHabit.habits.EXERCISE_TYPE,
           trackingType: TrackingType.Count,
           value: 1, // One completion
-          date: new Date(),
+          date: new Date(this.dateService.getCurrentDate().date),
           progressType: 'completion',
         });
         // TODO: Implement reward system
@@ -627,7 +692,7 @@ export class HabitService {
     date.setHours(Number(hours), Number(minutes), 0, 0);
     return date;
   }
-  
+
   // Batch update for daily completed habits
   // @Cron('0 0 * * *') // Run daily at midnight
   // async processDailyHabitCompletion() {

@@ -7,6 +7,9 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { UserHabits } from './user-habits.entity';
+import { Habits } from './habit.entity';
+import { User } from './users.entity';
+import { ExerciseCalculator } from '../../mission/habit/utils/exercise-calculator.util';
 
 export enum DailyStatus {
   COMPLETE = 'complete',
@@ -53,8 +56,36 @@ export class DailyHabitTrack {
   @Column({ name: 'COUNT_VALUE', type: 'int', nullable: true })
   COUNT_VALUE: number; // Count-based tracking for steps
 
-  // @Column({ nullable: true, name: 'MINUTES_SPENT', type: 'float' })
-  // MINUTES_SPENT: number; // Actual time spent (in case of exercise habit type)
+  @Column({ name: 'STEPS_CALCULATED', type: 'int', nullable: true })
+  STEPS_CALCULATED: number;
+
+  @Column({ name: 'CALORIES_BURNED', type: 'int', nullable: true })
+  CALORIES_BURNED: number;
+
+  @Column({ name: 'HEART_RATE', type: 'int', nullable: true })
+  HEART_RATE: number;
+
+  calculateMetrics(user: User, habit: Habits) {
+    if (this.DURATION_MINUTES && habit.EXERCISE_TYPE) {
+      this.STEPS_CALCULATED = ExerciseCalculator.calculateSteps(
+        this.DURATION_MINUTES,
+        habit.EXERCISE_TYPE,
+        user,
+      );
+
+      this.CALORIES_BURNED = ExerciseCalculator.calculateCaloriesBurned(
+        this.DURATION_MINUTES,
+        habit.EXERCISE_TYPE,
+        user,
+      );
+
+      this.HEART_RATE = ExerciseCalculator.calculateHeartRate(
+        habit.EXERCISE_TYPE,
+        user,
+        0.7, // default intensity at 70%
+      );
+    }
+  }
 
   @Column({
     type: 'enum',

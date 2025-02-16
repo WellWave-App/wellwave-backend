@@ -9,6 +9,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Not, Repository } from 'typeorm';
 import { LoginStreakEntity } from '@/.typeorm/entities/login-streak.entity';
 import { LoginHistory } from '@/.typeorm/entities/login-history.entity';
+import { AchievementService } from '@/achievement/services/achievement.service';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
 
 // interface DailyLoginStatus {
 //   date: string; // ISO date string (YYYY-MM-DD)
@@ -31,6 +36,7 @@ export class LoginStreakService {
     private loginStreakReposity: Repository<LoginStreakEntity>,
     @InjectRepository(LoginHistory)
     private loginHistoryReposity: Repository<LoginHistory>,
+    private readonly achievmentService: AchievementService,
   ) {}
 
   async createLoginStreak(
@@ -44,7 +50,11 @@ export class LoginStreakService {
       );
     }
 
-    const today = new Date();
+    const today = new Date(
+      new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Bangkok',
+      }),
+    );
 
     this.createLoginHistory(createLoginStreakDto.UID, today);
 
@@ -56,17 +66,23 @@ export class LoginStreakService {
       LONGEST_STREAK: 1,
     });
 
+    await this.achievmentService.trackProgress({
+      uid: createLoginStreakDto.UID,
+      value: 1,
+      entity: RequirementEntity.USER_LOGIN_STREAK,
+      property: TrackableProperty.CURRENT_STREAK,
+      date: today,
+    });
+
     return await this.loginStreakReposity.save(loginStreak);
   }
 
-  private async createLoginHistory(
-    uid: number,
-    loginDate: Date,
-  ): Promise<LoginHistory> {
+  private async createLoginHistory(uid: number, loginDate: Date) {
     const loginHistory = this.loginHistoryReposity.create({
       UID: uid,
       LOGIN_DATE: loginDate,
     });
+
     return await this.loginHistoryReposity.save(loginHistory);
   }
 
@@ -200,6 +216,14 @@ export class LoginStreakService {
     }
 
     loginStreak.LAST_LOGIN_DATE = today;
+
+    await this.achievmentService.trackProgress({
+      uid,
+      value: 1,
+      entity: RequirementEntity.USER_LOGIN_STREAK,
+      property: TrackableProperty.CURRENT_STREAK,
+      date: today,
+    });
     return await this.update(uid, loginStreak);
     // return updatedLoginStreak;
   }
