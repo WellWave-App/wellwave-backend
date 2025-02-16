@@ -15,6 +15,8 @@ import {
   ParseFilePipe,
   FileTypeValidator,
   MaxFileSizeValidator,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -38,13 +40,17 @@ import { RoleGuard } from '@/auth/guard/role.guard';
 import { Roles } from '@/auth/roles/roles.decorator';
 import { Role } from '@/auth/roles/roles.enum';
 import { imageFileValidator } from '@/image/imageFileValidator';
+import { DateService } from '@/helpers/date/date.services';
 
 @ApiTags('Users')
 @Controller('users')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RoleGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly dateService: DateService,
+  ) {}
 
   @ApiOperation({ summary: 'Get users list with search and sorting options' })
   @ApiQuery({
@@ -184,28 +190,6 @@ export class UsersController {
     return this.usersService.getAll(page, limit);
   }
 
-  // @ApiOperation({ summary: 'Register new user' })
-  // @ApiBody({
-  //   schema: {
-  //     type: 'object',
-  //     properties: {
-  //       EMAIL: { type: 'string' },
-  //       PASSWORD: { type: 'string' },
-  //     },
-  //     required: ['EMAIL', 'PASSWORD'],
-  //   },
-  // })
-  // @ApiResponse({
-  //   status: 201,
-  //   description: 'User successfully created',
-  //   type: CreateUserDto,
-  // })
-  // @ApiResponse({ status: 409, description: 'Email already exists' })
-  // @Post('/register')
-  // create(@Body() registerUserDto: RegisterUserDto) {
-  //   return this.usersService.create(registerUserDto);
-  // }
-
   @ApiOperation({ summary: 'Get user profile' })
   @ApiResponse({
     status: 200,
@@ -243,10 +227,113 @@ export class UsersController {
     return this.usersService.getProfile(req.user.UID);
   }
 
+  @Get('/logs-progress')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  @ApiOperation({ summary: 'Get mission logs with date range' })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  async getMissionLogs(
+    @Request() req,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    // try {
+    const now = this.dateService.getCurrentDate().date;
+    const defaultFromDate = new Date(now);
+    defaultFromDate.setMonth(defaultFromDate.getMonth() - 6);
+    defaultFromDate.setHours(0, 0, 0, 0);
+
+    let from = defaultFromDate;
+    let to = new Date(now);
+
+    if (fromDate && toDate) {
+      from = new Date(fromDate);
+      to = new Date(toDate);
+
+      if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+        throw new BadRequestException('Invalid date format');
+      }
+
+      if (from > to) {
+        throw new BadRequestException('fromDate must be before toDate');
+      }
+
+      const oneYearAgo = new Date(now);
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+      if (from < oneYearAgo) {
+        throw new BadRequestException('Date range cannot exceed 1 year');
+      }
+    }
+
+    to.setHours(23, 59, 59, 999);
+    return await this.usersService.getMissionLogs(req.user.UID, from, to);
+    // } catch (error) {
+    //   if (error instanceof BadRequestException) throw error;
+    //   throw new InternalServerErrorException('Error fetching mission logs');
+    // }
+  }
+
+  // @Get('/weekly-progress')
+  // @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  // @ApiOperation({ summary: 'Get mission weekly progress with date range' })
+  // async getWeeklyMissionProgress(@Request() req) {
+  //   return await this.usersService.getWeeklyMissionProgress(req.user.UID);
+  // }
+
   @Get('/weekly-progress')
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
-  async getWeeklyMissionProgress(@Request() req) {
-    return await this.usersService.getWeeklyMissionProgress(req.user.UID);
+  @ApiOperation({ summary: 'Get mission progress with date range' })
+  @ApiQuery({
+    name: 'fromDate',
+    required: false,
+    type: String,
+    description: 'Start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: false,
+    type: String,
+    description: 'End date (YYYY-MM-DD)',
+  })
+  async getMissionProgress(
+    @Request() req,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    const { startOfWeek, endOfWeek } = this.dateService.getCurrentWeekRange();
+    let from: Date = startOfWeek;
+    let to: Date = endOfWeek;
+
+    if (fromDate && toDate) {
+      from = new Date(fromDate);
+      to = new Date(toDate);
+
+      if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+        throw new BadRequestException('Invalid date format. Use YYYY-MM-DD');
+      }
+
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+
+      if (from > to) {
+        throw new BadRequestException('fromDate must be before toDate');
+      }
+
+      const today = this.dateService.getCurrentDate();
+      const oneYearAgo = new Date(today.date);
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+      if (from < oneYearAgo) {
+        throw new BadRequestException('Date range cannot exceed 1 year');
+      }
+    }
+
+    return await this.usersService.getWeeklyMissionProgress(
+      req.user.UID,
+      from,
+      to,
+    );
   }
 
   @ApiOperation({ summary: 'Get user by ID' })

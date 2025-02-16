@@ -32,6 +32,7 @@ import { table } from 'console';
 import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { Role } from '@/auth/roles/roles.enum';
+import { DateService } from '@/helpers/date/date.services';
 
 interface MissionHistoryRecord {
   date: string;
@@ -58,6 +59,7 @@ export class UsersService {
     private logsService: LogsService,
     @InjectRepository(DailyHabitTrack)
     private dailyHabitTrackRepository: Repository<DailyHabitTrack>,
+    private dateService: DateService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -734,28 +736,31 @@ export class UsersService {
     return `${day}${delimiter}${month}${delimiter}${year}`;
   }
 
-  async getWeeklyMissionProgress(uid: number) {
-    // const user = await this.getById(uid);
+  async getWeeklyMissionProgress(uid: number, fromDate?: Date, toDate?: Date) {
+    // Get date range, default to current week if not provided
+    const dateRange =
+      fromDate && toDate
+        ? { startOfWeek: fromDate, endOfWeek: toDate }
+        : this.dateService.getCurrentWeekRange();
+
+    const { startOfWeek, endOfWeek } = dateRange;
+
+    // Get user with relations
     const user = await this.usersRepository.findOne({
       where: {
         UID: uid,
       },
       relations: ['habits', 'quests'],
     });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${uid} not found`);
+    }
+
     const { USER_GOAL_EX_TIME_WEEK, USER_GOAL_STEP_WEEK, habits, quests } =
       user;
 
-    // Get start and end of current week
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(now);
-    endOfWeek.setDate(now.getDate() + (6 - now.getDay()));
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    // Single pass through habits array
+    // Calculate habit statistics
     const habitStats = habits?.reduce(
       (acc, habit) => {
         acc[habit.STATUS]++;
@@ -763,11 +768,11 @@ export class UsersService {
       },
       { [HabitStatus.Active]: 0, [HabitStatus.Completed]: 0 },
     ) || {
-      active: 0,
-      completed: 0,
+      [HabitStatus.Active]: 0,
+      [HabitStatus.Completed]: 0,
     };
 
-    // Single pass through quests array
+    // Calculate quest statistics
     const questStats = quests?.reduce(
       (acc, quest) => {
         acc[quest.STATUS]++;
@@ -775,44 +780,63 @@ export class UsersService {
       },
       { [QuestStatus.Active]: 0, [QuestStatus.Completed]: 0 },
     ) || {
-      active: 0,
-      completed: 0,
+      [QuestStatus.Active]: 0,
+      [QuestStatus.Completed]: 0,
     };
 
-    // Get step logs for this week
-    const stepLogs = await this.logsService.getWeeklyLogsByUser(
+    // Get step logs for the date range
+    const stepLogs = await this.logsService.getLogsByUserAndType(
       uid,
-      null,
       LOG_NAME.STEP_LOG,
+      startOfWeek,
+      endOfWeek,
     );
 
-    // Get all daily habit tracks for this week
+    // Get daily habit tracks for the date range
     const dailyTracks = await this.dailyHabitTrackRepository.find({
       where: {
         UserHabits: { UID: uid },
         TRACK_DATE: Between(startOfWeek, endOfWeek),
-        // COMPLETED: true,
       },
     });
 
-    // Calculate total exercise time
+    // Calculate total exercise minutes
     const totalExerciseMinutes = dailyTracks.reduce(
       (acc, track) => acc + (track.DURATION_MINUTES || 0),
       0,
     );
 
+    // Calculate total steps
+    const totalSteps =
+      stepLogs.LOGS?.reduce((acc, log) => acc + (log.VALUE || 0), 0) || 0;
+
+    // Calculate days left
+    const now = new Date();
+    const daysLeft =
+      now > endOfWeek
+        ? 0
+        : Math.ceil(
+            (endOfWeek.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+          );
+
     return {
+      dateRange: {
+        from: this.dateService.formatDate(startOfWeek),
+        to: this.dateService.formatDate(endOfWeek),
+      },
       progress: {
         step: {
-          current: stepLogs.LOGS?.reduce(
-            (acc, log) => acc + (log.VALUE || 0),
-            0,
-          ),
+          current: totalSteps,
           goal: USER_GOAL_STEP_WEEK,
+          // percentage: Math.min(100, (totalSteps / USER_GOAL_STEP_WEEK) * 100),
         },
         exercise_time: {
           current: totalExerciseMinutes,
           goal: USER_GOAL_EX_TIME_WEEK,
+          // percentage: Math.min(
+          //   100,
+          //   (totalExerciseMinutes / USER_GOAL_EX_TIME_WEEK) * 100,
+          // ),
         },
         mission: {
           current:
@@ -821,9 +845,72 @@ export class UsersService {
           goal:
             (habitStats[HabitStatus.Active] || 0) +
             (questStats[QuestStatus.Active] || 0),
+          // percentage: Math.min(
+          //   100,
+          //   ((habitStats[HabitStatus.Completed] +
+          //     questStats[QuestStatus.Completed]) /
+          //     (habitStats[HabitStatus.Active] +
+          //       questStats[QuestStatus.Active])) *
+          //     100 || 0,
+          // ),
         },
       },
-      daysLeft: 7 - (new Date().getDay() || 7),
+      daysLeft,
+      // isCurrentWeek: this.dateService.isDateInRange(
+      //   now,
+      //   startOfWeek,
+      //   endOfWeek,
+      // ),
+    };
+  }
+
+  async getMissionLogs(uid: number, fromDate?: Date, toDate?: Date) {
+    // Get date range, default to current week if not provided
+    const dateRange =
+      fromDate && toDate
+        ? { startOfWeek: fromDate, endOfWeek: toDate }
+        : this.dateService.getCurrentWeekRange();
+
+    const { startOfWeek, endOfWeek } = dateRange;
+
+    // Get step logs for the date range
+    const stepLogs = await this.logsService.getLogsByUserAndType(
+      uid,
+      LOG_NAME.STEP_LOG,
+      startOfWeek,
+      endOfWeek,
+    );
+
+    // Get daily habit tracks for the date range
+    const dailyTracks = await this.dailyHabitTrackRepository.find({
+      where: {
+        UserHabits: { UID: uid },
+        TRACK_DATE: Between(startOfWeek, endOfWeek),
+      },
+      order: {
+        TRACK_DATE: 'ASC',
+      },
+    });
+
+    // Format habit&step tracks
+    const habits = dailyTracks.map((track) => ({
+      value: track.DURATION_MINUTES || 0,
+      date: this.dateService.formatDate(new Date(track.TRACK_DATE)),
+    }));
+
+    const step = stepLogs.LOGS.map((log) => ({
+      value: log.VALUE || 0,
+      date: this.dateService.formatDate(new Date(log.DATE)),
+    }));
+    return {
+      dateRange: {
+        from: this.dateService.formatDate(startOfWeek),
+        to: this.dateService.formatDate(endOfWeek),
+      },
+      data: {
+        step,
+        habits,
+      },
     };
   }
 }
