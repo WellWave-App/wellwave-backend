@@ -14,6 +14,7 @@ import {
   IsNumber,
   Min,
   IsObject,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateHabitDto {
@@ -85,6 +86,7 @@ export class CreateHabitDto {
 
   // @ValidateNested()
   @IsObject()
+  @IsOptional()
   @Transform(({ value }: TransformFnParams) =>
     value === '' ? undefined : value,
   )
@@ -98,8 +100,10 @@ export class CreateHabitDto {
   THUMBNAIL_URL?: string;
 
   @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : value,
+    value === '' ? undefined : Boolean(value),
   )
+  @IsOptional()
+  @IsBoolean()
   IS_DAILY: boolean;
 
   @IsOptional({ message: 'Thumbnail image must not empty' })

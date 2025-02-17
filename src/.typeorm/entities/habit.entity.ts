@@ -91,10 +91,15 @@ export class Habits {
   @Column({ name: 'DEFAULT_DAYS_GOAL', type: 'int', nullable: true })
   DEFAULT_DAYS_GOAL: number;
 
-  @Column({ type: 'varchar', length: 2048, nullable: true })
+  @Column({
+    name: 'THUMBNAIL_URL',
+    type: 'varchar',
+    length: 2048,
+    nullable: true,
+  })
   THUMBNAIL_URL: string;
 
-  @Column({ type: 'bool', default: false })
+  @Column({ name: 'IS_DAILY', type: 'bool', default: false })
   IS_DAILY: boolean;
   // @Column({
   //   name: 'DIFFICULTY_LEVEL',
