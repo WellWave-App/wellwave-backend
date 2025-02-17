@@ -1,5 +1,6 @@
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { APP_ROUTE } from '../../.typeorm/entities/notification_history.entity';
 import {
   IsString,
   IsOptional,
@@ -54,6 +55,12 @@ export class CreateNotificationDto {
   @IsOptional()
   @Transform(({ value }) => handleEmpty(value))
   TO?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => handleEmpty(value))
+  APP_ROUTE?: APP_ROUTE;
 
   @ApiProperty()
   @IsNumber()
