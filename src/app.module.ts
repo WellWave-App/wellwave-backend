@@ -47,7 +47,6 @@ import { TestingModule } from '@nestjs/testing';
         ],
         synchronize: true,
         timezone: 'Asia/Bangkok',
-        // Add these options for better timezone handling
         extra: {
           timezone: 'Asia/Bangkok',
         },

@@ -141,7 +141,7 @@ export class User {
   quests: UserQuests[];
 
   @OneToMany(() => UserAchieved, (ua) => ua.user)
-  UserAchieveds: UserAchieved[];
+  userAchieveds: UserAchieved[];
 
   @OneToMany(() => NotificationHistory, (noti) => noti.user)
   notfications: NotificationHistory[];

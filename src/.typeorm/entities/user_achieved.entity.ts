@@ -26,7 +26,7 @@ export class UserAchieved {
   @Column('boolean', { name: 'IS_READ', default: false })
   IS_READ?: boolean;
 
-  @ManyToOne(() => User, (user) => user.UserAchieveds, { eager: true })
+  @ManyToOne(() => User, (user) => user.userAchieveds, { eager: true })
   @JoinColumn({ name: 'UID' })
   user: User;
 

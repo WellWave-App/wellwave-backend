@@ -535,12 +535,13 @@ export class AchievementService {
     page?: number;
     limit?: number;
     title?: string;
-  }): Promise<PaginatedResponse<any>> {
+  }): Promise<PaginatedResponse<UserAchieved>> {
     const { userId, page = 1, limit = 10, title } = query;
     const queryBuilder = this.userAchieved
       .createQueryBuilder('ua')
       .where('ua.UID = :userId', { userId })
-      .leftJoin('ua.achievement', 'ach')
+      .leftJoinAndSelect('ua.achievement', 'ach')
+      .leftJoinAndSelect('ach.levels', 'levels')
       .orderBy('ua.ACHIEVED_DATE', 'DESC');
 
     if (title !== undefined) {

@@ -33,6 +33,8 @@ import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { Role } from '@/auth/roles/roles.enum';
 import { DateService } from '@/helpers/date/date.services';
+import { UserAchieved } from '@/.typeorm/entities/user_achieved.entity';
+import { AchievementService } from '@/achievement/services/achievement.service';
 
 interface MissionHistoryRecord {
   date: string;
@@ -60,6 +62,7 @@ export class UsersService {
     @InjectRepository(DailyHabitTrack)
     private dailyHabitTrackRepository: Repository<DailyHabitTrack>,
     private dateService: DateService,
+    private achievementService: AchievementService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -201,31 +204,18 @@ export class UsersService {
 
     const loginStats = await this.checkinService.getStats(uid);
 
-    // acheivement
-    // let mock first cuz didnt have this features yet!
-    const mockAcheivements = [
-      {
-        imgPath: '',
-        achTitle: '',
-        dateAcheived: '',
-      },
-      {
-        imgPath: '',
-        achTitle: '',
-        dateAcheived: '',
-      },
-      {
-        imgPath: '',
-        achTitle: '',
-        dateAcheived: '',
-      },
-      {
-        imgPath: '',
-        achTitle: '',
-        dateAcheived: '',
-      },
-    ];
-
+    // achievements
+    const userAchieved = await this.achievementService.getUserAchieved({
+      userId: uid,
+      page: 1,
+      limit: 4,
+    });
+    const formatUA =
+      userAchieved?.data.map((ua) => ({
+        imgPath: ua.achievement.levels[ua.LEVEL - 1].ICON_URL,
+        achTitle: `${ua.achievement.TITLE} ระดับ${ua.LEVEL}`,
+        dateAcheived: ua.ACHIEVED_DATE,
+      })) || [];
     // log
     const weeklyGoal = await this.getWeeklyMissionProgress(uid);
 
@@ -239,7 +229,7 @@ export class UsersService {
       },
       weeklyGoal,
       loginStats,
-      usersAchievement: mockAcheivements,
+      usersAchievement: formatUA,
     };
   }
 
