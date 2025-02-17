@@ -12,6 +12,9 @@ import { ArticleRecommendationService } from '../services/article-recommendation
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PaginatedResponse } from '@/response/response.interface';
 import { Article } from '@/.typeorm/entities/article.entity';
+import { USER_GOAL } from '@/.typeorm/entities/users.entity';
+import { testUsers, testHabits } from '../services/_test_/rec-habits';
+import { HabitRecommendService } from '../services/habits-recommendation.service';
 
 @ApiTags('Recommendations')
 @Controller('get-rec')
@@ -71,5 +74,39 @@ export default class RecommendationController {
       limit || 9,
       includeRead || false,
     );
+  }
+
+  @Get('/test-habits')
+  async testRecommendationSystem() {
+    for (const user of testUsers) {
+      console.log(`\nRecommendations for ${user.USERNAME}:`);
+      console.log(
+        `Risk Profile: Diabetes=${user.RiskAssessment.DIABETES}, Hypertension=${user.RiskAssessment.HYPERTENSION}, DYSLIPIDEMIA=${user.RiskAssessment.DYSLIPIDEMIA}, OBESITY=${user.RiskAssessment.OBESITY}`,
+      );
+      console.log(`Goal: ${USER_GOAL[user.USER_GOAL]}`);
+
+      const recommendations = await HabitRecommendService.recommendHabits(
+        testHabits,
+        user,
+        testUsers,
+        3, // Get top 3 recommendations
+      );
+
+      console.log('Recommended Habits:');
+      recommendations.forEach((habit, index) => {
+        console.log(
+          `${index + 1}. ${habit.habit.TITLE} (${habit.habit.CATEGORY}) ${habit.scoreInfo.score}`,
+        );
+      });
+    }
+
+    const recommendations = await HabitRecommendService.recommendHabits(
+      testHabits,
+      testUsers[0],
+      testUsers,
+      4, // Get top 3 recommendations
+    );
+
+    return recommendations;
   }
 }

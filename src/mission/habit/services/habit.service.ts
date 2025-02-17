@@ -30,6 +30,12 @@ import { DateService } from '@/helpers/date/date.services';
 import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
 import { ExerciseCalculator } from '../utils/exercise-calculator.util';
 import { UsersService } from '@/users/services/users.service';
+import { HabitRecommendService } from '@/recommendation/services/habits-recommendation.service';
+import { User, USER_GOAL } from '@/.typeorm/entities/users.entity';
+import {
+  RiskCalculator,
+  RiskLevel,
+} from '@/recommendation/utils/risk-calculator.util';
 
 @Injectable()
 export class HabitService {
@@ -40,11 +46,14 @@ export class HabitService {
     private userHabitsRepository: Repository<UserHabits>,
     @InjectRepository(DailyHabitTrack)
     private dailyTrackRepository: Repository<DailyHabitTrack>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private readonly imageService: ImageService,
     private readonly questService: QuestService,
     private readonly logService: LogsService,
     private readonly userService: UsersService,
     private readonly dateService: DateService,
+    private readonly habitRecService: HabitRecommendService,
   ) {}
 
   async createHabit(
@@ -161,7 +170,7 @@ export class HabitService {
   async getHabits(
     userId: number,
     filter: HabitListFilter = HabitListFilter.ALL,
-    category?: HabitCategories,
+    category?: HabitCategories | 'rec',
     page: number = 1,
     limit: number = 10,
     pagination: boolean = false,
@@ -170,26 +179,50 @@ export class HabitService {
     await this.updateOutdatedHabits(userId);
 
     const habitsQuery = this.habitsRepository.createQueryBuilder('habit');
-
-    if (category) {
-      habitsQuery.andWhere('habit.CATEGORY = :category', { category });
-    }
-
-    // Get all habits first
-    const allHabits = await habitsQuery.getMany();
-
-    // Get user's active habits
     const activeHabits = await this.userHabitsRepository
       .createQueryBuilder('userHabit')
       .where('userHabit.UID = :userId', { userId })
       .andWhere('userHabit.STATUS = :status', { status: HabitStatus.Active })
       .getMany();
 
-    // Create a set of active habit IDs for quick lookup
     const activeHabitIds = new Set(activeHabits.map((h) => h.HID));
+    let filteredHabits;
+    let recommendationScores = new Map();
+    const allHabits = await habitsQuery.getMany();
 
-    // Process habits based on filter
-    let filteredHabits = allHabits;
+    if (category === 'rec') {
+      const user = await this.userRepository.findOne({
+        where: { UID: userId },
+        relations: ['RiskAssessment', 'habits'],
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const allUsers = await this.userRepository.find({
+        relations: ['RiskAssessment', 'habits'],
+      });
+
+      const recommendations = await HabitRecommendService.recommendHabits(
+        allHabits.filter((habit) => !activeHabitIds.has(habit.HID)),
+        user,
+        allUsers,
+        limit || 5,
+      );
+
+      // Store scores for later use
+      recommendationScores = new Map(
+        recommendations.map((rec) => [rec.habit.HID, rec.scoreInfo]),
+      );
+
+      // Extract just the habits for filtering
+      filteredHabits = recommendations.map((rec) => rec.habit);
+    } else {
+      if (category) {
+        habitsQuery.andWhere('habit.CATEGORY = :category', { category });
+      }
+    }
 
     switch (filter) {
       case HabitListFilter.DOING:
@@ -202,21 +235,19 @@ export class HabitService {
           (habit) => !activeHabitIds.has(habit.HID),
         );
         break;
-      // For ALL, we keep all habits but will add the status
+      default:
+        filteredHabits = allHabits;
     }
 
-    // Calculate pagination values
     const total = filteredHabits.length;
     const totalPages = pagination ? Math.ceil(total / limit) : undefined;
 
-    // Apply pagination if enabled
     if (pagination) {
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
       filteredHabits = filteredHabits.slice(startIndex, endIndex);
     }
 
-    // Map habits to include active status and challenge info if exists
     const mappedHabits = await Promise.all(
       filteredHabits.map(async (habit) => {
         const isActive = activeHabitIds.has(habit.HID);
@@ -232,11 +263,11 @@ export class HabitService {
             relations: ['dailyTracks'],
           });
 
-          const daysCompleted = activeChallenge.dailyTracks.filter(
-            (track) => track.COMPLETED,
-          ).length;
-
           if (activeChallenge) {
+            const daysCompleted = activeChallenge.dailyTracks.filter(
+              (track) => track.COMPLETED,
+            ).length;
+
             challengeInfo = {
               challengeId: activeChallenge.CHALLENGE_ID,
               startDate: activeChallenge.START_DATE,
@@ -251,15 +282,18 @@ export class HabitService {
           }
         }
 
+        // Get scoreInfo from recommendationScores if available, else null
+        const scoreInfo = recommendationScores.get(habit.HID) || null;
+
         return {
           ...habit,
           isActive,
           challengeInfo,
+          scoreInfo,
         };
       }),
     );
 
-    // Return paginated response
     return {
       data: mappedHabits,
       meta: {
@@ -272,6 +306,86 @@ export class HabitService {
         }),
       },
     };
+  }
+
+  // Helper method to calculate match score
+  private async calculateMatchScore(
+    habit: Habits,
+    userId: number,
+  ): Promise<number> {
+    const user = await this.userRepository.findOne({
+      where: { UID: userId },
+      relations: ['RiskAssessment'],
+    });
+
+    if (!user || !user.RiskAssessment) {
+      return 0.7; // Default score if no risk assessment
+    }
+
+    // Calculate individual scores
+    const riskScore = HabitRecommendService['calculateRiskScore'](
+      habit,
+      user.RiskAssessment,
+    );
+    const goalScore = HabitRecommendService['calculateGoalScore'](
+      habit,
+      user.USER_GOAL,
+    );
+
+    // Return weighted average
+    return riskScore * 0.6 + goalScore * 0.4;
+  }
+
+  // Helper method to get recommendation reasons
+  private async getRecommendationReasons(
+    habit: Habits,
+    userId: number,
+  ): Promise<string[]> {
+    const user = await this.userRepository.findOne({
+      where: { UID: userId },
+      relations: ['RiskAssessment'],
+    });
+
+    const reasons: string[] = [];
+
+    // Add goal-based reason
+    switch (user.USER_GOAL) {
+      case USER_GOAL.BUILD_MUSCLE:
+        if (
+          habit.CATEGORY === HabitCategories.Exercise &&
+          habit.EXERCISE_TYPE === ExerciseType.Strength
+        ) {
+          reasons.push('Aligns with your muscle building goal');
+        }
+        break;
+      case USER_GOAL.LOSE_WEIGHT:
+        if (
+          habit.CATEGORY === HabitCategories.Exercise ||
+          habit.CATEGORY === HabitCategories.Diet
+        ) {
+          reasons.push('Supports your weight loss journey');
+        }
+        break;
+      case USER_GOAL.STAY_HEALTHY:
+        reasons.push('Contributes to your overall health maintenance');
+        break;
+    }
+
+    // Add risk-based reason
+    if (user.RiskAssessment) {
+      const riskLevel = RiskCalculator.calculateOverallRiskLevel({
+        diabetes: user.RiskAssessment.DIABETES ?? 0,
+        hypertension: user.RiskAssessment.HYPERTENSION ?? 0,
+        dyslipidemia: user.RiskAssessment.DYSLIPIDEMIA ?? 0,
+        obesity: user.RiskAssessment.OBESITY ?? 0,
+      });
+
+      if (riskLevel !== RiskLevel.LOW) {
+        reasons.push('Suitable for your health profile');
+      }
+    }
+
+    return reasons;
   }
 
   async startChallenge(

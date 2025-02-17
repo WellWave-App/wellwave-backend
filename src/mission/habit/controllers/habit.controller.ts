@@ -98,7 +98,7 @@ export class HabitController {
   getHabits(
     @Request() req,
     @Query('filter') filter?: HabitListFilter,
-    @Query('category') category?: HabitCategories,
+    @Query('category') category?: HabitCategories | 'rec',
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('pagination') pagination?: boolean,
@@ -107,8 +107,8 @@ export class HabitController {
       req.user.UID,
       filter,
       category,
-      page,
-      limit,
+      page || 1,
+      limit || 10,
       pagination,
     );
   }
