@@ -39,7 +39,7 @@ export class NotificationHistory {
   @Column('enum', { name: 'APP_ROUTE', nullable: true, enum: APP_ROUTE })
   APP_ROUTE?: APP_ROUTE;
 
-  @CreateDateColumn({ type: 'date', name: 'createAt' })
+  @CreateDateColumn({ type: 'timestamp', name: 'createAt' })
   createAt: Date;
 
   @ManyToOne(() => User, (u) => u.notfications)
