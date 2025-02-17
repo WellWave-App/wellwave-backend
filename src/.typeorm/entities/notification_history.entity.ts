@@ -1,4 +1,5 @@
 import { User } from '@/.typeorm/entities/users.entity';
+import { Achievement } from './achievement.entity';
 import {
   Column,
   CreateDateColumn,
@@ -8,6 +9,12 @@ import {
   PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+
+export enum APP_ROUTE {
+  Achievement = 'achievement',
+  Friend = 'friend',
+  Leaderboard = 'leaderboard',
+}
 
 @Entity('NOTIFICATION_HISTORYS')
 export class NotificationHistory {
@@ -28,6 +35,9 @@ export class NotificationHistory {
 
   @Column('varchar', { name: 'TO', nullable: true })
   TO?: string;
+
+  @Column('enum', { name: 'APP_ROUTE', nullable: true, enum: APP_ROUTE })
+  APP_ROUTE?: APP_ROUTE;
 
   @CreateDateColumn({ type: 'date', name: 'createAt' })
   createAt: Date;
