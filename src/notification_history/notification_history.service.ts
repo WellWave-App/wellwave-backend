@@ -9,6 +9,7 @@ import { IsOptional, IsString, IsBoolean } from 'class-validator';
 import { NotificationQueryDto } from './dto/notficaiton-query.dto';
 import { PaginatedResponse } from '@/response/response.interface';
 import { ImageService } from '@/image/image.service';
+import { DateService } from '@/helpers/date/date.services';
 
 @Injectable()
 export class NotificationHistoryService {
@@ -16,6 +17,7 @@ export class NotificationHistoryService {
     @InjectRepository(NotificationHistory)
     private notificationRepo: Repository<NotificationHistory>,
     private imageService: ImageService,
+    private dateService: DateService,
   ) {}
 
   async create(
@@ -25,7 +27,10 @@ export class NotificationHistoryService {
     if (file) {
       dto.IMAGE_URL = this.imageService.getImageUrl(file.filename);
     }
-    const notification = this.notificationRepo.create(dto);
+    const notification = this.notificationRepo.create({
+      ...dto,
+      createAt: new Date(this.dateService.getCurrentDate().timestamp),
+    });
     return await this.notificationRepo.save(notification);
   }
 

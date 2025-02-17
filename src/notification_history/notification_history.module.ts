@@ -6,6 +6,7 @@ import { NotificationHistory } from '../.typeorm/entities/notification_history.e
 import { ImageModule } from '@/image/image.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { HelperModule } from '@/helpers/helper.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { diskStorage } from 'multer';
     }),
     TypeOrmModule.forFeature([NotificationHistory]),
     ImageModule,
+    HelperModule,
   ],
   controllers: [NotificationHistoryController],
   providers: [NotificationHistoryService],
