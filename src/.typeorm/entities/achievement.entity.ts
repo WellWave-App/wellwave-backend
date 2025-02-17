@@ -100,7 +100,6 @@ export class Achievement {
   };
 
   @OneToMany(() => AchievementLevel, (level) => level.achievement, {
-    onDelete: 'CASCADE',
     eager: true,
   })
   levels?: AchievementLevel[];
