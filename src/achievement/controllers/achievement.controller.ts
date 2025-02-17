@@ -193,4 +193,15 @@ export class AchievementController {
       ),
     });
   }
+
+  @Patch('/mark-as-read/:uid/:achId/:level')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  maskAsRead(
+    @Request() req,
+    @Param('uid') uid: number,
+    @Param('achId') achId: string,
+    @Param('level') level: number,
+  ) {
+    return this.achievementService.markAsRead(uid, achId, level);
+  }
 }

@@ -624,4 +624,16 @@ export class AchievementService {
       },
     };
   }
+
+  async markAsRead(uid: number, ach_id: string, level: number) {
+    const userAchieved = await this.userAchieved.findOne({
+      where: {
+        ACH_ID: ach_id,
+        UID: uid,
+        LEVEL: level,
+      },
+    });
+    userAchieved.IS_READ = true;
+    return await this.userAchieved.save(userAchieved);
+  }
 }
