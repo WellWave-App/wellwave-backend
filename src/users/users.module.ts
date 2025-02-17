@@ -17,6 +17,7 @@ import { CheckinChallengeModule } from '@/checkin-challenge/checkin-challenge.mo
 import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HelperModule } from '@/helpers/helper.module';
+import { AchievementModule } from '@/achievement/achievement.module';
 
 @Module({
   imports: [
@@ -35,7 +36,6 @@ import { HelperModule } from '@/helpers/helper.module';
       UserHabits,
       UserQuests,
       DailyHabitTrack,
-      HelperModule,
     ]),
     forwardRef(() => RecommendationModule),
     LogsModule,
@@ -43,6 +43,7 @@ import { HelperModule } from '@/helpers/helper.module';
     ImageModule,
     CheckinChallengeModule,
     HelperModule,
+    AchievementModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],
