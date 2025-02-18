@@ -33,7 +33,7 @@ export class UserAchieved {
   @JoinColumn({ name: 'UID' })
   user: User;
 
-  @ManyToOne(() => Achievement, { eager: true })
+  @ManyToOne(() => Achievement, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'ACH_ID' })
   achievement: Achievement;
 }
