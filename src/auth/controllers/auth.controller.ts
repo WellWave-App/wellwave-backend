@@ -146,9 +146,9 @@ export class AuthController {
   }
 
   @Post('/forgot-password')
-  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  async forgotPassword(@Body() body: { EMAIL: string }, @Request() req) {
+  // @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  // @UseGuards(JwtAuthGuard, RoleGuard)
+  async forgotPassword(@Body() body: { EMAIL: string }) {
     try {
       const user = await this.usersService.getByEmail(body.EMAIL);
       // const user = await this.usersService.getById(req.user.UID);
@@ -169,14 +169,12 @@ export class AuthController {
   }
 
   @Post('/reset-password')
-  async resetPassword(
-    @Body() body: { EMAIL: string; OTP: string; NEW_PASSWORD: string },
-  ) {
+  async resetPassword(@Body() body: { EMAIL: string; NEW_PASSWORD: string }) {
     const user = await this.usersService.getByEmail(body.EMAIL);
     if (!user) throw new NotFoundException('User not found');
 
     // Verify OTP
-    await this.otpService.verifyOTP(user.UID, body.OTP);
+    // await this.otpService.verifyOTP(user.UID, body.OTP);
 
     // Reset password
     const data = await this.usersService.updatePassword(
@@ -185,5 +183,14 @@ export class AuthController {
     );
 
     return { message: 'Password updated successfully', data };
+  }
+
+  @Post('/verify-otp')
+  async verifyOTP(@Body() body: { EMAIL: string; OTP: string }) {
+    const user = await this.usersService.getByEmail(body.EMAIL);
+    if (!user) throw new NotFoundException('User not found');
+
+    // Verify OTP
+    return await this.otpService.verifyOTP(user.UID, body.OTP);
   }
 }
