@@ -130,15 +130,17 @@ export class AchievementService {
     const queryBuilder = this.achievement
       .createQueryBuilder('ach')
       .leftJoinAndSelect('ach.levels', 'levels')
-      .select([
-        'ach.ACH_ID',
-        'ach.TITLE',
-        'ach.DESCRIPTION',
-        'ach.ACHIEVEMENTS_TYPE',
-        'ach.REQUIREMENT',
-        'levels.LEVEL',
-        'levels.REWARDS',
-      ])
+      // .select([
+      //   'ach.ACH_ID',
+      //   'ach.TITLE',
+      //   'ach.DESCRIPTION',
+      //   'ach.ACHIEVEMENTS_TYPE',
+      //   'ach.REQUIREMENT',
+      //   'levels.LEVEL',
+      //   'levels.REWARDS',
+      //   'levels.TARGET_VALUE',
+
+      // ])
       .orderBy({
         'ach.TITLE': 'ASC',
         'levels.LEVEL': 'ASC',
