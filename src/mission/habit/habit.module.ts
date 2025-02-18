@@ -17,6 +17,7 @@ import { UsersModule } from '@/users/users.module';
 import { HelperModule } from '@/helpers/helper.module';
 import { User } from '@/.typeorm/entities/users.entity';
 import { RecommendationModule } from '@/recommendation/recommendation.module';
+import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
 
 @Module({
   imports: [
@@ -29,13 +30,19 @@ import { RecommendationModule } from '@/recommendation/recommendation.module';
         },
       }),
     }),
-    TypeOrmModule.forFeature([Habits, UserHabits, DailyHabitTrack, User]),
+    TypeOrmModule.forFeature([
+      Habits,
+      UserHabits,
+      DailyHabitTrack,
+      User,
+      UserQuests,
+    ]),
     ImageModule,
     QuestModule,
     LogsModule,
     UsersModule,
     HelperModule,
-    RecommendationModule
+    RecommendationModule,
   ],
   controllers: [HabitController],
   providers: [HabitService, ExerciseCalculator],

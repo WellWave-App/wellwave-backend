@@ -13,14 +13,16 @@ import {
   TrackingType,
 } from '@/.typeorm/entities/habit.entity';
 import { PaginatedResponse } from '@/response/response.interface';
-import {
-  HabitStatus,
-  UserHabits,
-} from '@/.typeorm/entities/user-habits.entity';
+import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
 import { StartHabitChallengeDto } from '../dto/user-habit.dto';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {
+  LessThanOrEqual,
+  MoreThan,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HabitListFilter } from '../interfaces/habits.interfaces';
 import { QuestService } from '../../quest/services/quest.service';
@@ -32,10 +34,12 @@ import { ExerciseCalculator } from '../utils/exercise-calculator.util';
 import { UsersService } from '@/users/services/users.service';
 import { HabitRecommendService } from '@/recommendation/services/habits-recommendation.service';
 import { User, USER_GOAL } from '@/.typeorm/entities/users.entity';
+import { UserHabits } from '../../../.typeorm/entities/user-habits.entity';
 import {
   RiskCalculator,
   RiskLevel,
 } from '@/recommendation/utils/risk-calculator.util';
+import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
 
 @Injectable()
 export class HabitService {
@@ -48,12 +52,13 @@ export class HabitService {
     private dailyTrackRepository: Repository<DailyHabitTrack>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(UserQuests)
+    private userQuestRepository: Repository<UserQuests>,
     private readonly imageService: ImageService,
     private readonly questService: QuestService,
     private readonly logService: LogsService,
     private readonly userService: UsersService,
     private readonly dateService: DateService,
-    private readonly habitRecService: HabitRecommendService,
   ) {}
 
   async createHabit(
@@ -81,9 +86,9 @@ export class HabitService {
     const formatResponse = (h: UserHabits) => ({
       CHALLENGE_ID: h.CHALLENGE_ID,
       HID: h.HID,
-      TITLE: h.habits.TITLE,
-      THUMBNAIL_URL: h.habits.THUMBNAIL_URL,
-      EXP_REWARD: h.habits.EXP_REWARD,
+      TITLE: h.habits?.TITLE,
+      THUMBNAIL_URL: h.habits?.THUMBNAIL_URL,
+      EXP_REWARD: h.habits?.EXP_REWARD,
     });
 
     const userDailyHabits = await this.getUserHabits(
@@ -97,12 +102,7 @@ export class HabitService {
 
     const filterTodayDailyHabits = userDailyHabits.data.filter((uh) => {
       const startDate = new Date(uh.START_DATE);
-      return (
-        startDate.getDate() === today.getDate() &&
-        startDate.getMonth() === today.getMonth() &&
-        startDate.getFullYear() === today.getFullYear() &&
-        uh.habits.IS_DAILY
-      );
+      return uh.habits.IS_DAILY && this.dateService.isSameDay(startDate, today);
     });
 
     if (filterTodayDailyHabits.length > 0) {
@@ -120,13 +120,22 @@ export class HabitService {
       .limit(4)
       .getMany();
 
-    const data = await Promise.all(
+    await Promise.all(
       randomHabits.map((h) =>
         this.startChallenge(uid, { UID: uid, HID: h.HID }),
       ),
     );
 
-    const formatted = data.map((uh) => formatResponse(uh));
+    const uhToday = await this.userHabitsRepository.find({
+      where: {
+        UID: uid,
+        habits: { IS_DAILY: true },
+        START_DATE: today,
+        // END_DATE: new Date(today.getDate() + 1),
+      },
+    });
+
+    const formatted = uhToday.map((uh) => formatResponse(uh));
     return {
       data: formatted,
       meta: { total: formatted.length },
@@ -433,6 +442,8 @@ export class HabitService {
         Friday: false,
         Saturday: false,
       },
+      habits: { HID: startDto.HID },
+      user: { UID: userId },
     });
 
     // Calculate end date
@@ -847,4 +858,103 @@ export class HabitService {
   //     }
   //   }
   // }
+
+  async getMissionHistory(uid: number, date: Date) {
+    /**
+     * expected response
+     *
+     * data : {
+     *  daily_habits: {
+     *    title: string,
+     *    image_url: string,
+     *    status: boolean
+     * }[]
+     *  habits:
+     *  quests:
+     * }
+     *
+     */
+    const startOfDay = this.dateService.getStartOfDay(date);
+    const endOfDay = this.dateService.getEndOfDay(date);
+
+    const [userHabits, userQuests] = await Promise.all([
+      this.userHabitsRepository.find({
+        where: {
+          UID: uid,
+          START_DATE: LessThanOrEqual(startOfDay),
+          END_DATE: MoreThanOrEqual(endOfDay),
+        },
+        relations: ['habits', 'dailyTracks'],
+        select: {
+          habits: {
+            TITLE: true,
+            THUMBNAIL_URL: true,
+            IS_DAILY: true,
+          },
+          dailyTracks: {
+            TRACK_DATE: true,
+            COMPLETED: true,
+          },
+          STATUS: true,
+        },
+      }),
+      this.userQuestRepository.find({
+        where: {
+          UID: uid,
+          START_DATE: LessThanOrEqual(startOfDay),
+          END_DATE: MoreThanOrEqual(endOfDay),
+        },
+        relations: ['quest'],
+        select: {
+          quest: {
+            TITLE: true,
+            IMG_URL: true,
+          },
+          STATUS: true,
+        },
+      }),
+    ]);
+
+    const formatHabits = (habits: UserHabits[], isDaily: boolean) => {
+      return habits
+        .filter((uh) => uh.habits.IS_DAILY === isDaily)
+        .map((uh) => {
+          const tracks = uh.dailyTracks.filter((track) =>
+            this.dateService.isSameDay(track.TRACK_DATE, date),
+          );
+
+          return {
+            TITLE: uh.habits.TITLE,
+            THUMBNAIL_URL: uh.habits.THUMBNAIL_URL,
+            STATUS: {
+              HABIT_STATUS: uh.STATUS,
+              DAILY_TRACK: tracks[0]?.COMPLETED || false,
+            },
+          };
+        });
+    };
+
+    const dailyFormatted = formatHabits(userHabits, true);
+    const habitsFormatted = formatHabits(userHabits, false);
+    const questsFormatted = userQuests.map((uq) => ({
+      TITLE: uq.quest.TITLE,
+      THUMBNAIL_URL: uq.quest.IMG_URL,
+      STATUS: uq.STATUS,
+    }));
+
+    return {
+      data: {
+        daily_habits: dailyFormatted,
+        habits: habitsFormatted,
+        quests: questsFormatted,
+      },
+      meta: {
+        date: startOfDay.toISOString() || null,
+        total:
+          dailyFormatted.length +
+            habitsFormatted.length +
+            questsFormatted.length || 0,
+      },
+    };
+  }
 }

@@ -94,7 +94,7 @@ export class CreateQuestDto {
   @Transform(({ value }: TransformFnParams) =>
     value === '' ? undefined : value,
   )
-  TARGET_VALUE: number;
+  RQ_TARGET_VALUE: number;
 
   // @IsOptional()
   // @Transform(({ value }: TransformFnParams) =>
