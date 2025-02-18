@@ -12,12 +12,12 @@ import { MailerModule } from '@nestjs-modules/mailer';
       transport: {
         service: 'gmail',
         auth: {
-          user: process.env.GMAIL_USER || 'your-email@kmitlgmail.com',
-          pass: process.env.GMAIL_APP_PASSWORD || 'your-appw-password',
+          user: process.env.GMAIL_USER || 'wellwave2025.official@gmail.com',
+          pass: process.env.GMAIL_APP_PASSWORD || 'axgl ltfk clqm azzg',
         },
       },
       defaults: {
-        from: '"Wellwave" <your-email@kmitlgmail.com>',
+        from: '"Wellwave" <wellwave2025.official@gmail.com>',
       },
     }),
   ],
