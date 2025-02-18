@@ -27,10 +27,13 @@ export class NotificationHistoryService {
     if (file) {
       dto.IMAGE_URL = this.imageService.getImageUrl(file.filename);
     }
+
     const notification = this.notificationRepo.create({
       ...dto,
+      user: { UID: dto.UID },
       createAt: new Date(this.dateService.getCurrentDate().timestamp),
     });
+
     return await this.notificationRepo.save(notification);
   }
 
@@ -47,7 +50,7 @@ export class NotificationHistoryService {
     if (uid) {
       queryBuilder.andWhere('notification.UID = :uid', { uid });
     }
-    
+
     if (search) {
       queryBuilder.andWhere(
         '(notification.MESSAGE LIKE :search OR notification.FROM LIKE :search)',
