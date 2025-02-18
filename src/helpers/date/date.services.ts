@@ -293,4 +293,23 @@ export class DateService {
       }),
     ).getDay();
   }
+
+  getStartOfDay = (date: Date): Date => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  };
+
+  getEndOfDay = (date: Date): Date => {
+    const normalized = new Date(date);
+    normalized.setHours(23, 59, 59, 999);
+    return normalized;
+  };
+
+  isSameDay(date1: Date, date2: Date) {
+    return (
+      this.getStartOfDay(date1).getTime() ===
+      this.getStartOfDay(date2).getTime()
+    );
+  }
 }

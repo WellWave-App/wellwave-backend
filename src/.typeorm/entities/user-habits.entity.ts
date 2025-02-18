@@ -72,13 +72,13 @@ export class UserHabits {
 
   @Column({ type: 'time', nullable: true })
   NOTI_TIME: Date;
-  
+
   // relations
-  @ManyToOne(() => Habits, { eager: true })
+  @ManyToOne(() => Habits, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'HID' }) // Relation with QUEST
   habits: Habits;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'UID' }) // Relation with USERS
   user: User;
 
