@@ -35,7 +35,8 @@ export class NotificationHistoryService {
   }
 
   async findAll(
-    query: NotificationQueryDto,
+    uid?: number,
+    query?: NotificationQueryDto,
   ): Promise<PaginatedResponse<NotificationHistory>> {
     const { search, page = 1, limit = 7, IS_READ } = query;
     const skip = (page - 1) * limit;
@@ -43,7 +44,10 @@ export class NotificationHistoryService {
     const queryBuilder =
       this.notificationRepo.createQueryBuilder('notification');
     // .leftJoinAndSelect('notification.user', 'user');
-
+    if (uid) {
+      queryBuilder.andWhere('notification.UID = :uid', { uid });
+    }
+    
     if (search) {
       queryBuilder.andWhere(
         '(notification.MESSAGE LIKE :search OR notification.FROM LIKE :search)',

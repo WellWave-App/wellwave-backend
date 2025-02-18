@@ -82,9 +82,22 @@ export class NotificationHistoryController {
   })
   @ApiResponse({ status: 200, type: NotificationHistory, isArray: true })
   findAll(
+    @Query() query?: NotificationQueryDto,
+  ): Promise<PaginatedResponse<NotificationHistory>> {
+    return this.notificationService.findAll(null, query);
+  }
+
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  @Get('/user')
+  @ApiOperation({
+    summary: 'Get all notifications with pagination and filters',
+  })
+  @ApiResponse({ status: 200, type: NotificationHistory, isArray: true })
+  findAllofUser(
+    @Request() req,
     @Query() query: NotificationQueryDto,
   ): Promise<PaginatedResponse<NotificationHistory>> {
-    return this.notificationService.findAll(query);
+    return this.notificationService.findAll(req.user.UID, query);
   }
 
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
