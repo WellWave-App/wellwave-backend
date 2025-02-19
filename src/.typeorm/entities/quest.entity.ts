@@ -2,9 +2,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -14,8 +11,8 @@ export enum QuestType {
   NORMAL = 'normal', // Regular tracking quests (minutes, distance, etc.)
   STREAK_BASED = 'streak_based', // Streak achievement quests
   COMPLETION_BASED = 'completion_based', // Challenge completion quests
-  START_BASED = 'start_based', // Starting new habits quests
   DAILY_COMPLETION = 'daily_completion', // Daily habit completion quests
+  // START_BASED = 'start_based', // Starting new habits quests
 }
 
 @Entity({ name: 'QUEST' })

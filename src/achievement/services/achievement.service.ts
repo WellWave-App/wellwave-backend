@@ -17,14 +17,14 @@ import {
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { ImageService } from '../../image/image.service';
 import { AchievementLevel } from '@/.typeorm/entities/achievement_level.entity';
-import { UserAchievementProgress } from '../../.typeorm/entities/user_achievement_progress.entity';
+import { UserAchievementProgress } from '../../.typeorm/entities/user-achievement-progress.entity';
 import { AchievementBodyDTO } from '../dto/achievement/create_ach.dto';
 import { UpdateAchievementBodyDTO } from '../dto/achievement/update_ach.dto';
 import { LeagueType } from '@/leagues/enum/lagues.enum';
 import { User } from '@/.typeorm/entities/users.entity';
 import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
 import { QuestStatus } from '@/.typeorm/entities/user-quests.entity';
-import { UserAchieved } from '@/.typeorm/entities/user_achieved.entity';
+import { UserAchieved } from '@/.typeorm/entities/user-achieved.entity';
 import { NotificationHistoryService } from '@/notification_history/notification_history.service';
 import { PaginatedResponse } from '@/response/response.interface';
 

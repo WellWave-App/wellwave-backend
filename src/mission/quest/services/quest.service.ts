@@ -319,18 +319,18 @@ export class QuestService {
             quest.TRACKING_TYPE === TrackingType.Count &&
             quest.QUEST_TYPE === QuestType.COMPLETION_BASED
           );
-        case 'start':
-          return (
-            categoryMatch &&
-            quest.TRACKING_TYPE === TrackingType.Count &&
-            quest.QUEST_TYPE === QuestType.START_BASED
-          );
         case 'daily_completion':
           return (
             categoryMatch &&
             quest.TRACKING_TYPE === TrackingType.Count &&
             quest.QUEST_TYPE === QuestType.DAILY_COMPLETION
           );
+        // case 'start':
+        //   return (
+        //     categoryMatch &&
+        //     quest.TRACKING_TYPE === TrackingType.Count &&
+        //     quest.QUEST_TYPE === QuestType.START_BASED
+        //   );
         default:
           return (
             categoryMatch &&
@@ -395,9 +395,9 @@ export class QuestService {
       case QuestType.COMPLETION_BASED:
         // TODO: Implement completion-based quest progress sync.
         break;
-      case QuestType.START_BASED:
-        // TODO: Implement start-based quest progress sync.
-        break;
+      // case QuestType.START_BASED:
+      //   // TODO: Implement start-based quest progress sync.
+      //   break;
       // Other quest types...
     }
   }
@@ -529,6 +529,28 @@ export class QuestService {
             (1000 * 60 * 60 * 24),
         ),
       ),
+    };
+  }
+
+  async remove(qid: number) {
+    const quest = await this.questRepository.findOneBy({
+      QID: qid,
+    });
+
+    if (!quest) {
+      throw new NotFoundException(`Quest with ID ${qid} not found`);
+    }
+
+    const iconUrls = quest.IMG_URL;
+
+    await this.questRepository.remove(quest);
+
+    // Clean up associated images
+    await this.imageService.deleteImageByUrl(iconUrls);
+
+    return {
+      message: `Quest ${quest.TITLE} has been successfully deleted`,
+      qid: qid,
     };
   }
 }

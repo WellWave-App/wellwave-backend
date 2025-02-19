@@ -17,12 +17,7 @@ import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
 import { StartHabitChallengeDto } from '../dto/user-habit.dto';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  LessThanOrEqual,
-  MoreThan,
-  MoreThanOrEqual,
-  Repository,
-} from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HabitListFilter } from '../interfaces/habits.interfaces';
 import { QuestService } from '../../quest/services/quest.service';
@@ -30,7 +25,6 @@ import { updateHabitNotiDto } from '../dto/noti-update.dto';
 import { LogsService } from '@/user-logs/services/logs.service';
 import { DateService } from '@/helpers/date/date.services';
 import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
-import { ExerciseCalculator } from '../utils/exercise-calculator.util';
 import { UsersService } from '@/users/services/users.service';
 import { HabitRecommendService } from '@/recommendation/services/habits-recommendation.service';
 import { User, USER_GOAL } from '@/.typeorm/entities/users.entity';
@@ -955,6 +949,28 @@ export class HabitService {
             habitsFormatted.length +
             questsFormatted.length || 0,
       },
+    };
+  }
+
+  async remove(hid: number) {
+    const habit = await this.habitsRepository.findOneBy({
+      HID: hid,
+    });
+
+    if (!habit) {
+      throw new NotFoundException(`Habit with ID ${hid} not found`);
+    }
+
+    const iconUrls = habit.THUMBNAIL_URL;
+
+    await this.habitsRepository.remove(habit);
+
+    // Clean up associated images
+    await this.imageService.deleteImageByUrl(iconUrls);
+
+    return {
+      message: `Habit ${habit.TITLE} has been successfully deleted`,
+      hid: hid,
     };
   }
 }
