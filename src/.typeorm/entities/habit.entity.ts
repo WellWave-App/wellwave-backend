@@ -101,6 +101,7 @@ export class Habits {
 
   @Column({ name: 'IS_DAILY', type: 'bool', default: false })
   IS_DAILY: boolean;
+
   // @Column({
   //   name: 'DIFFICULTY_LEVEL',
   //   type: 'enum',
