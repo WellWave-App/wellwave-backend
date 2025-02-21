@@ -94,7 +94,9 @@ export class DailyHabitTrack {
   })
   MOOD_FEEDBACK: Moods; // Mood options
 
-  @ManyToOne(() => UserHabits, (userHabits) => userHabits.dailyTracks)
+  @ManyToOne(() => UserHabits, (userHabits) => userHabits.dailyTracks, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'CHALLENGE_ID' })
   UserHabits: UserHabits;
 }
