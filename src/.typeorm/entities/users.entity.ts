@@ -19,6 +19,7 @@ import { UserQuests } from './user-quests.entity';
 import { Role } from '@/auth/roles/roles.enum';
 import { UserAchieved } from './user-achieved.entity';
 import { NotificationHistory } from './notification_history.entity';
+import { UserLeaderboard } from './user-leaderboard.entity';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -145,4 +146,7 @@ export class User {
 
   @OneToMany(() => NotificationHistory, (noti) => noti.user)
   notfications: NotificationHistory[];
+
+  @OneToOne(() => UserLeaderboard, (l) => l.user)
+  league: UserLeaderboard;
 }
