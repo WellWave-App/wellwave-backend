@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
@@ -12,11 +11,7 @@ import {
   ForbiddenException,
   UseInterceptors,
   UploadedFile,
-  ParseFilePipe,
-  FileTypeValidator,
-  MaxFileSizeValidator,
   BadRequestException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,20 +22,19 @@ import {
   ApiBody,
   ApiConsumes,
   ApiBearerAuth,
-  ApiProperty,
 } from '@nestjs/swagger';
 import { UsersService } from '../services/users.service';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { RegisterUserDto } from '../dto/register.dto';
 import { order, userSortList } from '../interfaces/user-list.interface';
 import { RoleGuard } from '@/auth/guard/role.guard';
 import { Roles } from '@/auth/roles/roles.decorator';
 import { Role } from '@/auth/roles/roles.enum';
 import { imageFileValidator } from '@/image/imageFileValidator';
 import { DateService } from '@/helpers/date/date.services';
+import { LeaderboardService } from '@/leagues/services/leagues.service';
 
 @ApiTags('Users')
 @Controller('users')
@@ -50,7 +44,17 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly dateService: DateService,
+    private readonly leaderboardService: LeaderboardService,
   ) {}
+
+  @Get('/leaderboard')
+  @Roles(Role.MODERATOR, Role.ADMIN, Role.USER)
+  async getLeaderboard(@Request() req, @Query('uid') uid?: number) {
+    if (!uid) {
+      uid = req.user.UID;
+    }
+    return await this.usersService.getUserLeaderboard(uid);
+  }
 
   @ApiOperation({ summary: 'Get users list with search and sorting options' })
   @ApiQuery({

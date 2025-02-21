@@ -8,6 +8,7 @@ import { User, USER_GOAL } from '@/.typeorm/entities/users.entity';
 import { HabitRecommendService } from '../habits-recommendation.service';
 import { LoginStreakEntity } from '@/.typeorm/entities/login-streak.entity';
 import { Role } from '@/auth/roles/roles.enum';
+import { UserLeaderboard } from '@/.typeorm/entities/user-leaderboard.entity';
 
 // Sample Habits Data
 export const testHabits: Habits[] = [
@@ -271,6 +272,7 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
+    league: new UserLeaderboard
   },
   {
     // Middle-aged user with high health risks
@@ -318,6 +320,7 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
+    league: new UserLeaderboard
   },
   {
     // Young user with moderate risks focusing on general health
@@ -365,6 +368,7 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
+    league: new UserLeaderboard
   },
   {
     // Elderly user with multiple health conditions
@@ -412,6 +416,7 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
+    league: new UserLeaderboard
   },
   {
     // Athletic young user with low risks
@@ -459,6 +464,7 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
+    league: new UserLeaderboard
   },
 ];
 

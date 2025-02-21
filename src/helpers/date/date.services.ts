@@ -312,4 +312,11 @@ export class DateService {
       this.getStartOfDay(date2).getTime()
     );
   }
+
+  dayLeft(from: Date, to: Date): number {
+    const diffTime = to.getTime() - from.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  }
+  
 }

@@ -3,6 +3,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,6 +36,8 @@ import { Role } from '@/auth/roles/roles.enum';
 import { DateService } from '@/helpers/date/date.services';
 import { UserAchieved } from '@/.typeorm/entities/user_achieved.entity';
 import { AchievementService } from '@/achievement/services/achievement.service';
+import { LeaderboardService } from '@/leagues/services/leagues.service';
+import { LeagueType } from '@/leagues/enum/lagues.enum';
 
 interface MissionHistoryRecord {
   date: string;
@@ -63,6 +66,7 @@ export class UsersService {
     private dailyHabitTrackRepository: Repository<DailyHabitTrack>,
     private dateService: DateService,
     private achievementService: AchievementService,
+    private leaderboardService: LeaderboardService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -84,7 +88,16 @@ export class UsersService {
       Object.assign(user, createUserDto);
     }
 
-    return await this.usersRepository.save(user);
+    const data = await this.usersRepository.save(user);
+
+    if (createUserDto.ROLE === Role.USER) {
+      await this.leaderboardService.create(data, {
+        UID: data.UID,
+        CURRENT_LEAGUE: LeagueType.NONE,
+      });
+    }
+
+    return data;
   }
 
   async getByEmail(email: string): Promise<User> {
@@ -902,5 +915,20 @@ export class UsersService {
         habits,
       },
     };
+  }
+
+  async getUserLeaderboard(uid: number) {
+    try {
+      const user = await this.usersRepository.findOne({
+        where: { UID: uid },
+        relations: ['league'],
+      });
+
+      return await this.leaderboardService.getUsersLeaderboards(user);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `${error.message || 'Internal Server Error'}`,
+      );
+    }
   }
 }
