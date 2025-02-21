@@ -34,7 +34,6 @@ import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { Role } from '@/auth/roles/roles.enum';
 import { DateService } from '@/helpers/date/date.services';
-import { UserAchieved } from '@/.typeorm/entities/user_achieved.entity';
 import { AchievementService } from '@/achievement/services/achievement.service';
 import { LeaderboardService } from '@/leagues/services/leagues.service';
 import { LeagueType } from '@/leagues/enum/lagues.enum';
@@ -199,7 +198,10 @@ export class UsersService {
 
   async getProfile(uid: number) {
     //userInfo
-    const user = await this.getById(uid);
+    const user = await this.usersRepository.findOne({
+      where: { UID: uid },
+      relations: ['league'],
+    });
 
     if (!user) {
       throw new NotFoundException('user not found, please re-login');
@@ -223,6 +225,7 @@ export class UsersService {
       page: 1,
       limit: 4,
     });
+
     const formatUA =
       userAchieved?.data.map((ua) => ({
         imgPath: ua.achievement.levels[ua.LEVEL - 1].ICON_URL,
@@ -231,15 +234,9 @@ export class UsersService {
       })) || [];
     // log
     const weeklyGoal = await this.getWeeklyMissionProgress(uid);
-
     return {
       userInfo: user,
-      userLeague: {
-        LB_ID: 2,
-        LEAGUE_NAME: 'Silver',
-        MIN_EXP: 1000,
-        MAX_EXP: 2499,
-      },
+      userLeague: user.league,
       weeklyGoal,
       loginStats,
       usersAchievement: formatUA,
