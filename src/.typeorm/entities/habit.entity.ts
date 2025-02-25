@@ -46,7 +46,7 @@ export interface Conditions {
 @Entity('HABIT')
 export class Habits {
   @PrimaryGeneratedColumn({ name: 'HID', type: 'int' })
-  HID: number;
+  HID: number; // HABIT_ID
 
   @Column({ name: 'HABIT_TITLE', type: 'varchar', length: 255 })
   TITLE: string;
