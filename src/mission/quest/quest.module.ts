@@ -9,6 +9,8 @@ import { ImageModule } from '@/image/image.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
+import { UserHabits } from '@/.typeorm/entities/user-habits.entity';
+import { HelperModule } from '@/helpers/helper.module';
 
 @Module({
   imports: [
@@ -17,8 +19,8 @@ import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
       UserQuests,
       QuestProgress,
       DailyHabitTrack,
+      UserHabits,
     ]),
-    ImageModule,
     MulterModule.register({
       storage: diskStorage({
         destination: './assets/images',
@@ -28,6 +30,8 @@ import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
         },
       }),
     }),
+    ImageModule,
+    HelperModule,
   ],
   controllers: [QuestController],
   providers: [
