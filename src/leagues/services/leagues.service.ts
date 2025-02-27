@@ -45,6 +45,7 @@ export class LeaderboardService {
   }
 
   async updateGroupAssignments(league: LeagueType): Promise<void> {
+    if (league === LeagueType.NONE) return;
     // Get all users in the specified league, ordered by exp
     const users = await this.leaderboardRepo.find({
       where: { CURRENT_LEAGUE: league },
@@ -121,7 +122,7 @@ export class LeaderboardService {
 
       if (CURRENT_LEAGUE === LeagueType.NONE) {
         // todo: check if user have completed habits reached 5 ornot
-        await Promise.all([
+        await Promise.all(
           usersInLeague.map((ul) => {
             const userCompletedCount =
               ul.user?.habits?.filter((h) => h.STATUS === HabitStatus.Completed)
@@ -141,7 +142,7 @@ export class LeaderboardService {
               );
             }
           }),
-        ]);
+        );
 
         continue;
       }
@@ -208,12 +209,19 @@ export class LeaderboardService {
       }
     }
 
+    return await this.resetLeague();
+  }
+
+  private async resetLeague() {
+    const leagues = await this.leaderboardRepo
+      .createQueryBuilder('lb')
+      .select('DISTINCT lb.CURRENT_LEAGUE')
+      .orderBy('lb.CURRENT_LEAGUE', 'ASC')
+      .getRawMany();
+
     for (const { CURRENT_LEAGUE } of leagues) {
-      if (CURRENT_LEAGUE === LeagueType.NONE) continue;
-      // Update rankings for remaining users
-      // await this.updateRankings(CURRENT_LEAGUE);
+      // Check if any users exist in this league before processing
       await this.updateResetExp(CURRENT_LEAGUE);
-      // Reassign groups after promotions/demotions
       await this.updateGroupAssignments(CURRENT_LEAGUE);
     }
 
@@ -224,6 +232,8 @@ export class LeaderboardService {
   }
 
   private async updateResetExp(league: LeagueType) {
+    if (league === LeagueType.NONE) return;
+
     const users = await this.leaderboardRepo.find({
       where: { CURRENT_LEAGUE: league },
       order: { CURRENT_EXP: 'DESC' },
