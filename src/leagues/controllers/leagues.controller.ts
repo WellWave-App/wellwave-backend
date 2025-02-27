@@ -29,6 +29,12 @@ export class LeaderboardController {
   }
 
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  @Get('/group-assign/:league')
+  assignGroup(@Param('league') league: LeagueType) {
+    return this.leaguesService.updateGroupAssignments(league);
+  }
+
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   @Post()
   create(@Body() dto: CreateUserLeagderboardDto) {
     return this.leaguesService.create(null, dto);
