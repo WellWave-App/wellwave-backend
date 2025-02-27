@@ -4,11 +4,11 @@ import { AchievementController } from './controllers/achievement.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Achievement } from '../.typeorm/entities/achievement.entity';
 import { AchievementLevel } from '../.typeorm/entities/achievement_level.entity';
-import { UserAchievementProgress } from '../.typeorm/entities/user_achievement_progress.entity';
+import { UserAchievementProgress } from '../.typeorm/entities/user-achievement-progress.entity';
 import { ImageModule } from '@/image/image.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { UserAchieved } from '../.typeorm/entities/user_achieved.entity';
+import { UserAchieved } from '../.typeorm/entities/user-achieved.entity';
 import { User } from '@/.typeorm/entities/users.entity';
 import { NotificationHistoryModule } from '@/notification_history/notification_history.module';
 

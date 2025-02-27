@@ -21,11 +21,13 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
 import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.module';
 import { AchievementModule } from './achievement/achievement.module';
-import { LeaguesModule } from './leagues/leagues.module';
+import { LeaderboardModule } from './leagues/leagues.module';
 import { OtpModule } from './otp/otp.module';
 import { NotificationHistoryModule } from './notification_history/notification_history.module';
 import { HelperModule } from './helpers/helper.module';
 import { TestingModule } from '@nestjs/testing';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksModule } from './scheduler/tasks.module';
 
 @Module({
   imports: [
@@ -69,11 +71,13 @@ import { TestingModule } from '@nestjs/testing';
     HabitModule,
     CheckinChallengeModule,
     AchievementModule,
-    LeaguesModule,
+    LeaderboardModule,
     OtpModule,
     NotificationHistoryModule,
     HelperModule,
     TestingModule,
+    ScheduleModule.forRoot(),
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [

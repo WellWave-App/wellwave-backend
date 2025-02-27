@@ -344,4 +344,14 @@ export class HabitController {
   ) {
     return this.habitService.updateUserHabitsNotification(req.user.UID, dto);
   }
+
+  @Get('/history')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  getMissionHistory(
+    @Request() req,
+    @Query('date') date?: string, // YYYY-MM-DD
+  ) {
+    const dateFormat = new Date(date);
+    return this.habitService.getMissionHistory(req.user.UID, dateFormat);
+  }
 }

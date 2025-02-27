@@ -34,9 +34,13 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
+import { RoleGuard } from '@/auth/guard/role.guard';
+import { Roles } from '@/auth/roles/roles.decorator';
+import { Role } from '@/auth/roles/roles.enum';
 
 @ApiTags('Quest')
 @Controller('quest')
+@UseGuards(JwtAuthGuard, RoleGuard)
 export class QuestController {
   constructor(private readonly questService: QuestService) {}
 
@@ -49,7 +53,7 @@ export class QuestController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiBody({ type: CreateQuestDto })
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   @UseInterceptors(FileInterceptor('file'))
   createQuest(
     @Body() createQuestDto: CreateQuestDto,
@@ -63,7 +67,7 @@ export class QuestController {
   @ApiQuery({ name: 'category', enum: HabitCategories, required: false })
   @ApiResponse({ status: 200, description: 'Retrieved quests successfully' })
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getQuests(
     @Request() req,
     @Query('filter') filter: QuestListFilter = QuestListFilter.ALL,
@@ -82,7 +86,7 @@ export class QuestController {
   @ApiResponse({ status: 404, description: 'Quest not found' })
   @ApiResponse({ status: 409, description: 'Quest already active' })
   @Post('/start/:questId')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   startQuest(
     @Request() req,
     @Param('questId') questId: number,
@@ -99,7 +103,7 @@ export class QuestController {
   })
   @ApiResponse({ status: 404, description: 'Active quest not found' })
   @Post('/track')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   trackProgress(
     @Request() req,
     @Body() trackDto: TrackQuestDto,
@@ -118,11 +122,17 @@ export class QuestController {
   })
   @ApiResponse({ status: 404, description: 'Quest not found' })
   @Get('/stats/:questId')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getQuestStats(
     @Request() req,
     @Param('questId') questId: number,
   ): Promise<any> {
     return this.questService.getQuestStats(req.user.UID, questId);
+  }
+
+  @Delete('/:qid')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  deleteQuest(@Param('qid') qid: number) {
+    return this.questService.remove(qid);
   }
 }

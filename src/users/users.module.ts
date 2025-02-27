@@ -18,6 +18,7 @@ import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HelperModule } from '@/helpers/helper.module';
 import { AchievementModule } from '@/achievement/achievement.module';
+import { LeaderboardModule } from '@/leagues/leagues.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AchievementModule } from '@/achievement/achievement.module';
     CheckinChallengeModule,
     HelperModule,
     AchievementModule,
+    LeaderboardModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

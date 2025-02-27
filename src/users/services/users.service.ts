@@ -3,6 +3,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -33,8 +34,9 @@ import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { Role } from '@/auth/roles/roles.enum';
 import { DateService } from '@/helpers/date/date.services';
-import { UserAchieved } from '@/.typeorm/entities/user_achieved.entity';
 import { AchievementService } from '@/achievement/services/achievement.service';
+import { LeaderboardService } from '@/leagues/services/leagues.service';
+import { LeagueType } from '@/leagues/enum/lagues.enum';
 
 interface MissionHistoryRecord {
   date: string;
@@ -63,6 +65,7 @@ export class UsersService {
     private dailyHabitTrackRepository: Repository<DailyHabitTrack>,
     private dateService: DateService,
     private achievementService: AchievementService,
+    private leaderboardService: LeaderboardService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -84,7 +87,16 @@ export class UsersService {
       Object.assign(user, createUserDto);
     }
 
-    return await this.usersRepository.save(user);
+    const data = await this.usersRepository.save(user);
+
+    if (createUserDto.ROLE === Role.USER) {
+      await this.leaderboardService.create(data, {
+        UID: data.UID,
+        CURRENT_LEAGUE: LeagueType.NONE,
+      });
+    }
+
+    return data;
   }
 
   async getByEmail(email: string): Promise<User> {
@@ -186,7 +198,10 @@ export class UsersService {
 
   async getProfile(uid: number) {
     //userInfo
-    const user = await this.getById(uid);
+    const user = await this.usersRepository.findOne({
+      where: { UID: uid },
+      relations: ['league'],
+    });
 
     if (!user) {
       throw new NotFoundException('user not found, please re-login');
@@ -210,6 +225,7 @@ export class UsersService {
       page: 1,
       limit: 4,
     });
+
     const formatUA =
       userAchieved?.data.map((ua) => ({
         imgPath: ua.achievement.levels[ua.LEVEL - 1].ICON_URL,
@@ -218,15 +234,9 @@ export class UsersService {
       })) || [];
     // log
     const weeklyGoal = await this.getWeeklyMissionProgress(uid);
-
     return {
       userInfo: user,
-      userLeague: {
-        LB_ID: 2,
-        LEAGUE_NAME: 'Silver',
-        MIN_EXP: 1000,
-        MAX_EXP: 2499,
-      },
+      userLeague: user.league,
       weeklyGoal,
       loginStats,
       usersAchievement: formatUA,
@@ -902,5 +912,20 @@ export class UsersService {
         habits,
       },
     };
+  }
+
+  async getUserLeaderboard(uid: number) {
+    try {
+      const user = await this.usersRepository.findOne({
+        where: { UID: uid },
+        relations: ['league'],
+      });
+
+      return await this.leaderboardService.getUsersLeaderboards(user);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `${error.message || 'Internal Server Error'}`,
+      );
+    }
   }
 }
