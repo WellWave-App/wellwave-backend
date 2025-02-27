@@ -91,4 +91,30 @@ export class ExerciseCalculator {
       Math.min(220, Math.round(maxHR * exerciseIntensity * intensity)),
     );
   }
+
+  static calculateEstimateKM(
+    duration: number,
+    exerciseType: ExerciseType,
+    user: User,
+  ): number {
+    if (!duration || duration < 0) return 0;
+
+    // Average speed in km/h for different exercise types
+    const speedByExerciseType = {
+      [ExerciseType.Walking]: 5.0, // 5 km/h average walking speed
+      [ExerciseType.Running]: 9.0, // 9 km/h average jogging/running speed
+      [ExerciseType.Cycling]: 15.0, // 15 km/h average cycling speed
+      [ExerciseType.Swimming]: 2.0, // 2 km/h average swimming speed
+      [ExerciseType.Strength]: 0.0, // Stationary exercise
+      [ExerciseType.HIIT]: 1.0, // Minimal distance covered
+      [ExerciseType.Yoga]: 0.0, // Stationary exercise
+      [ExerciseType.Other]: 3.0, // Default moderate movement
+    };
+
+    // Calculate distance in km based on duration (minutes) and speed (km/h)
+    const distanceKM = (duration / 60) * speedByExerciseType[exerciseType];
+
+    // Round to 2 decimal places and ensure non-negative
+    return Math.max(0, Math.round(distanceKM * 100) / 100);
+  }
 }
