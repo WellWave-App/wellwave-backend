@@ -9,6 +9,14 @@ import { DiseaseTypesSeeder } from './.typeorm/seeders/disease-types.seeder';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  //open access
+  app.enableCors({
+    origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+  
 
   // set up swagger
   const options = new DocumentBuilder()
