@@ -8,12 +8,25 @@ import {
 import { ExerciseType, HabitCategories, TrackingType } from './habit.entity';
 
 export enum QuestType {
-  NORMAL = 'normal', // Regular tracking quests (minutes, distance, etc.)
+  NORMAL = 'normal', // Regular tracking quests (minutes, distance, etc.) aka. milestone
   STREAK_BASED = 'streak_based', // Streak achievement quests
   COMPLETION_BASED = 'completion_based', // Challenge completion quests
-  DAILY_COMPLETION = 'daily_completion', // Daily habit completion quests
-  // START_BASED = 'start_based', // Starting new habits quests
+  DAILY_COMPLETION_BASED = 'daily_completion_based', // Daily habit completion quests
 }
+/**
+ * quest patterns examples
+ * (milstone)
+ * (exercises) for (x) minutes in a (n) days/weeks/months
+ * (walk) (x) steps in a (n) days/weeks/months
+ * (walk/run/cycling) (x) km in a (n) days/weeks/months
+ * complete (x) daily tracking habits in a (n) days/weeks/months
+ * complete (x) (diet/exercise/sleep) habit challenge for a (n) days/weeks/months
+ *
+ * (streak)
+ * complete (x) streaks daily tracking habits in a (n) days/weeks/months
+ * complete (x) streaks (diet/exercise/sleep) daily tracking challenge for a (n) days/weeks/months
+ * exercise (x) minutes per days/weeks/month in a row
+ */
 
 @Entity({ name: 'QUEST' })
 export class Quest {

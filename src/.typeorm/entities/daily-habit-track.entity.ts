@@ -33,7 +33,7 @@ export class DailyHabitTrack {
   @Column({ name: 'CHALLENGE_ID', type: 'int' })
   CHALLENGE_ID: number; // PK [ref: > USER_HABITS_CHALLENGE.CHALLENGE_ID]
 
-  @Column({ name: 'TRACK_DATE', type: 'date', default: new Date() })
+  @Column({ name: 'TRACK_DATE', type: 'timestamp', default: new Date() })
   TRACK_DATE: Date; // PK
 
   // @Column({
@@ -83,6 +83,12 @@ export class DailyHabitTrack {
         habit.EXERCISE_TYPE,
         user,
         0.7, // default intensity at 70%
+      );
+
+      this.DISTANCE_KM = ExerciseCalculator.calculateEstimateKM(
+        this.DURATION_MINUTES,
+        habit.EXERCISE_TYPE,
+        user,
       );
     }
   }
