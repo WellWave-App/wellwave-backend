@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, Not, Repository } from 'typeorm';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../../.typeorm/entities/users.entity';
 import { LoginStreakService } from '@/login-streak/services/login-streak.service';
@@ -154,6 +154,42 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     file?: Express.Multer.File,
   ): Promise<User> {
+    if (updateUserDto.EMAIL) {
+      const exist = await this.usersRepository.findOne({
+        where: {
+          EMAIL: updateUserDto.EMAIL,
+          UID: Not(uid),
+        },
+      });
+
+      if (exist) {
+        throw new ConflictException('This Email has been used');
+      }
+    }
+
+    if (updateUserDto.USERNAME) {
+      const exist = await this.usersRepository.findOne({
+        where: {
+          USERNAME: updateUserDto.USERNAME,
+          UID: Not(uid),
+        },
+      });
+
+      if (exist) {
+        throw new ConflictException('This Username has been used');
+      }
+    }
+
+    if (updateUserDto.USERNAME) {
+      const exist = await this.usersRepository.findOne({
+        where: { USERNAME: updateUserDto.USERNAME },
+      });
+
+      if (exist) {
+        throw new ConflictException('This Username has been used');
+      }
+    }
+
     const user = await this.getById(uid);
 
     if (file) {
