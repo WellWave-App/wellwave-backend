@@ -298,7 +298,15 @@ export class HabitService {
     );
 
     return {
-      data: mappedHabits,
+      data: mappedHabits.sort((a, b) => {
+        if (b.scoreInfo !== null && a.scoreInfo !== null) {
+          return b.scoreInfo.score - a.scoreInfo.score;
+        } else {
+          // if (a.isActive && !b.isActive) return -1;
+          // if (!a.isActive && b.isActive) return 1;
+          // return 0;
+        }
+      }),
       meta: {
         total,
         ...(pagination && {
@@ -481,7 +489,7 @@ export class HabitService {
         CHALLENGE_ID: trackDto.CHALLENGE_ID,
         TRACK_DATE: trackDate,
       },
-      // relations: ['UserHabits'],
+      relations: ['UserHabits'],
     });
 
     if (!dailyTrack) {
@@ -556,7 +564,28 @@ export class HabitService {
       value: trackingValue,
       date: new Date(trackDto.TRACK_DATE),
     });
-    // Update streak and check completion
+    // * update related quests with calculated metrics (if available)
+    if (savedTrack.STEPS_CALCULATED) {
+      await this.questService.updateQuestProgress(userId, {
+        category: userHabit.habits.CATEGORY,
+        exerciseType: userHabit.habits.EXERCISE_TYPE,
+        trackingType: TrackingType.Count,
+        value: savedTrack.STEPS_CALCULATED,
+        date: new Date(trackDto.TRACK_DATE),
+      });
+    }
+
+    if (savedTrack.DISTANCE_KM) {
+      await this.questService.updateQuestProgress(userId, {
+        category: userHabit.habits.CATEGORY,
+        exerciseType: userHabit.habits.EXERCISE_TYPE,
+        trackingType: TrackingType.Distance,
+        value: savedTrack.DISTANCE_KM,
+        date: new Date(trackDto.TRACK_DATE),
+      });
+    }
+
+    // *Update streak and check completion
     await this.updateStreakCount(userHabit.CHALLENGE_ID);
     await this.checkChallengeCompletion(userHabit.CHALLENGE_ID);
 

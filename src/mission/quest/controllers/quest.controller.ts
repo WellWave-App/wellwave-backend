@@ -94,22 +94,22 @@ export class QuestController {
     return this.questService.startQuest(req.user.UID, questId);
   }
 
-  @ApiOperation({ summary: 'Track progress for a quest' })
-  @ApiBody({ type: TrackQuestDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Progress tracked successfully',
-    type: QuestProgress,
-  })
-  @ApiResponse({ status: 404, description: 'Active quest not found' })
-  @Post('/track')
-  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
-  trackProgress(
-    @Request() req,
-    @Body() trackDto: TrackQuestDto,
-  ): Promise<QuestProgress> {
-    return this.questService.trackProgress(req.user.UID, trackDto);
-  }
+  // @ApiOperation({ summary: 'Track progress for a quest' })
+  // @ApiBody({ type: TrackQuestDto })
+  // @ApiResponse({
+  //   status: 201,
+  //   description: 'Progress tracked successfully',
+  //   type: QuestProgress,
+  // })
+  // @ApiResponse({ status: 404, description: 'Active quest not found' })
+  // @Post('/track')
+  // @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  // trackProgress(
+  //   @Request() req,
+  //   @Body() trackDto: TrackQuestDto,
+  // ): Promise<QuestProgress> {
+  //   return this.questService.trackProgress(req.user.UID, trackDto);
+  // }
 
   @ApiOperation({ summary: 'Get statistics for a specific quest' })
   @ApiParam({

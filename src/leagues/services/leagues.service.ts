@@ -45,6 +45,7 @@ export class LeaderboardService {
   }
 
   async updateGroupAssignments(league: LeagueType): Promise<void> {
+    if (league === LeagueType.NONE) return;
     // Get all users in the specified league, ordered by exp
     const users = await this.leaderboardRepo.find({
       where: { CURRENT_LEAGUE: league },
@@ -110,6 +111,7 @@ export class LeaderboardService {
       .orderBy('lb.CURRENT_LEAGUE', 'ASC')
       .getRawMany();
 
+    // return { message: '', leagues: groups };
     // Process each league
     for (const { CURRENT_LEAGUE } of leagues) {
       // Get users in current league ordered by exp
@@ -120,7 +122,7 @@ export class LeaderboardService {
 
       if (CURRENT_LEAGUE === LeagueType.NONE) {
         // todo: check if user have completed habits reached 5 ornot
-        await Promise.all([
+        await Promise.all(
           usersInLeague.map((ul) => {
             const userCompletedCount =
               ul.user?.habits?.filter((h) => h.STATUS === HabitStatus.Completed)
@@ -134,61 +136,92 @@ export class LeaderboardService {
                   PREVIOUS_RANK: null,
                   CURRENT_LEAGUE: LeagueType.BRONZE,
                   CURRENT_EXP: 0,
-                  CURRENT_RANK: null, // Will be recalculated
+                  CURRENT_RANK: null, // Will be recalculated,
+                  GROUP_NUMBER: null, // Will be reassigned in next league
                 },
               );
             }
           }),
-        ]);
+        );
 
         continue;
       }
 
       // Identify users for promotion and demotion
-      // const promotions = usersInLeague.slice(0, 3); // Top 3
-      const promotions = usersInLeague.filter((ul) => ul.CURRENT_RANK >= 3);
-      const demotions = usersInLeague.slice(-2); // Bottom 2
-      
-      // const demotions = usersInLeague.filter((ul) => ul.CURRENT_RANK >= (ul.CURRENT_LEAGUE)); // Bottom 2
+      const groups = await this.leaderboardRepo
+        .createQueryBuilder('lb')
+        .select('DISTINCT lb.GROUP_NUMBER')
+        .andWhere('lb.CURRENT_LEAGUE = :league', { league: CURRENT_LEAGUE })
+        .orderBy('lb.GROUP_NUMBER', 'ASC')
+        .getRawMany();
 
-      // Process promotions
-      for (const user of promotions) {
-        const nextLeague = this.getNextLeague(user.CURRENT_LEAGUE);
-        if (nextLeague) {
-          await this.leaderboardRepo.update(
-            { UID: user.UID },
-            {
-              PREVIOUS_LEAGUE: user.CURRENT_LEAGUE,
-              PREVIOUS_RANK: user.CURRENT_RANK,
-              CURRENT_LEAGUE: nextLeague,
-              CURRENT_EXP: 0,
-              CURRENT_RANK: null, // Will be recalculated
-            },
-          );
+      for (const { GROUP_NUMBER } of groups) {
+        const usersInGroups = await this.leaderboardRepo.find({
+          where: { CURRENT_LEAGUE, GROUP_NUMBER },
+          order: { CURRENT_EXP: 'DESC' },
+        });
+        const promotionUsers =
+          usersInGroups.length > 10
+            ? usersInGroups.slice(0, 3)
+            : usersInGroups.slice(0, 2); // Top 3
+        const demotionUsers =
+          usersInGroups.length > 10
+            ? usersInGroups.slice(-2)
+            : usersInGroups.slice(-1); // Bottom 2
+
+        // Process promotions
+        for (const user of promotionUsers) {
+          const nextLeague = this.getNextLeague(user.CURRENT_LEAGUE);
+          if (nextLeague) {
+            await this.leaderboardRepo.update(
+              { UID: user.UID },
+              {
+                PREVIOUS_LEAGUE: user.CURRENT_LEAGUE,
+                PREVIOUS_RANK: user.CURRENT_RANK,
+                CURRENT_LEAGUE: nextLeague,
+                CURRENT_EXP: 0,
+                CURRENT_RANK: null, // Will be recalculated,
+                GROUP_NUMBER: null, // Will be reassigned in next league
+              },
+            );
+          }
+        }
+
+        // Process demotions
+        if (usersInGroups.length > 5) {
+          for (const user of demotionUsers) {
+            const previousLeague = this.getPreviousLeague(user.CURRENT_LEAGUE);
+            if (previousLeague && previousLeague !== LeagueType.NONE) {
+              await this.leaderboardRepo.update(
+                { UID: user.UID },
+                {
+                  PREVIOUS_LEAGUE: user.CURRENT_LEAGUE,
+                  PREVIOUS_RANK: user.CURRENT_RANK,
+                  CURRENT_LEAGUE: previousLeague,
+                  CURRENT_EXP: 0,
+                  CURRENT_RANK: null, // Will be recalculated,
+                  GROUP_NUMBER: null, // Will be reassigned in next league
+                },
+              );
+            }
+          }
         }
       }
+    }
 
-      // Process demotions
-      for (const user of demotions) {
-        const previousLeague = this.getPreviousLeague(user.CURRENT_LEAGUE);
-        if (previousLeague && previousLeague !== LeagueType.NONE) {
-          await this.leaderboardRepo.update(
-            { UID: user.UID },
-            {
-              PREVIOUS_LEAGUE: user.CURRENT_LEAGUE,
-              PREVIOUS_RANK: user.CURRENT_RANK,
-              CURRENT_LEAGUE: previousLeague,
-              CURRENT_EXP: 0,
-              CURRENT_RANK: null, // Will be recalculated
-            },
-          );
-        }
-      }
+    return await this.resetLeague();
+  }
 
-      // Update rankings for remaining users
-      // await this.updateRankings(CURRENT_LEAGUE);
+  private async resetLeague() {
+    const leagues = await this.leaderboardRepo
+      .createQueryBuilder('lb')
+      .select('DISTINCT lb.CURRENT_LEAGUE')
+      .orderBy('lb.CURRENT_LEAGUE', 'ASC')
+      .getRawMany();
+
+    for (const { CURRENT_LEAGUE } of leagues) {
+      // Check if any users exist in this league before processing
       await this.updateResetExp(CURRENT_LEAGUE);
-      // Reassign groups after promotions/demotions
       await this.updateGroupAssignments(CURRENT_LEAGUE);
     }
 
@@ -199,6 +232,8 @@ export class LeaderboardService {
   }
 
   private async updateResetExp(league: LeagueType) {
+    if (league === LeagueType.NONE) return;
+
     const users = await this.leaderboardRepo.find({
       where: { CURRENT_LEAGUE: league },
       order: { CURRENT_EXP: 'DESC' },
@@ -208,7 +243,7 @@ export class LeaderboardService {
       users.map((user, index) =>
         this.leaderboardRepo.update(
           { UID: user.UID },
-          { CURRENT_EXP: 0, CURRENT_RANK: index + 1 },
+          { CURRENT_EXP: 0, CURRENT_RANK: null, GROUP_NUMBER: null },
         ),
       ),
     );
