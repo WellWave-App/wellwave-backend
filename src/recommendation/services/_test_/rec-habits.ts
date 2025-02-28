@@ -272,7 +272,8 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
-    league: new UserLeaderboard
+    league: new UserLeaderboard,
+    userItems: []
   },
   {
     // Middle-aged user with high health risks
@@ -320,7 +321,8 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
-    league: new UserLeaderboard
+    league: new UserLeaderboard,
+    userItems: []
   },
   {
     // Young user with moderate risks focusing on general health
@@ -368,7 +370,8 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
-    league: new UserLeaderboard
+    league: new UserLeaderboard,
+    userItems: []
   },
   {
     // Elderly user with multiple health conditions
@@ -416,7 +419,8 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
-    league: new UserLeaderboard
+    league: new UserLeaderboard,
+    userItems: []
   },
   {
     // Athletic young user with low risks
@@ -464,7 +468,8 @@ export const testUsers: User[] = [
     quests: [],
     userAchieveds: [],
     notfications: [],
-    league: new UserLeaderboard
+    league: new UserLeaderboard,
+    userItems: []
   },
 ];
 
