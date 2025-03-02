@@ -554,6 +554,12 @@ export class ShopService {
         IS_ACTIVE: false,
       });
 
+      if (item.ITEM_TYPE === ShopItemType.GEM_EXCHANGE) {
+        await this.rewardService.rewardUser(uid, {
+          gem: item.gemExchange.GEM_REWARD,
+        });
+      }
+
       const saved = await this.userItemsRepository.save(userItem);
 
       return await this.userItemsRepository.findOne({
@@ -562,6 +568,58 @@ export class ShopService {
         },
         relations: ['item'],
       });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `${error.status}: ${error.message}`,
+      );
+    }
+  }
+
+  async buyItem(uid: number, itemId: number) {
+    try {
+      const item = await this.shopItemRepository.findOne({
+        where: {
+          ITEM_ID: itemId,
+        },
+        relations: ['expBooster', 'gemExchange'],
+      });
+
+      if (!item) {
+        throw new NotFoundException(`Item with ID ${itemId} not found`);
+      }
+
+      const today = new Date(this.dateService.getCurrentDate().timestamp);
+
+      const price = item.PRICE_GEM > 0 ? item.PRICE_GEM : item.PRICE_EXP;
+      const userMoney = item.PRICE_GEM > 0 ? 'gem' : 'exp';
+      const pay = await this.rewardService.pay(uid, {
+        [userMoney]: price,
+      });
+
+      if (pay.status === 200) {
+        const userItem = this.userItemsRepository.create({
+          UID: uid,
+          ITEM_ID: itemId,
+          PURCHASE_DATE: today,
+          EXPIRE_DATE: null,
+          IS_ACTIVE: false,
+        });
+
+        const saved = await this.userItemsRepository.save(userItem);
+
+        if (item.ITEM_TYPE === ShopItemType.GEM_EXCHANGE) {
+          await this.rewardService.rewardUser(uid, {
+            gem: item.gemExchange.GEM_REWARD,
+          });
+        }
+
+        return await this.userItemsRepository.findOne({
+          where: {
+            USER_ITEM_ID: saved.USER_ITEM_ID,
+          },
+          relations: ['item'],
+        });
+      }
     } catch (error) {
       throw new InternalServerErrorException(
         `${error.status}: ${error.message}`,

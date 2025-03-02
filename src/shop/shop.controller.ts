@@ -35,6 +35,21 @@ import {
 export class ShopController {
   constructor(private readonly shopService: ShopService) {}
 
+  @Post('/buy-item/:itemId')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  userBuyItem(
+    @Req() req,
+    @Param('itemId') itemId: number,
+    @Query('uid') uid?: number,
+  ) {
+    uid = uid || req.user.UID;
+    if (typeof itemId === 'string') {
+      itemId = parseInt(itemId, 10);
+    }
+
+    return this.shopService.buyItem(+uid, +itemId);
+  }
+
   @Post('/items')
   @UseInterceptors(FileInterceptor('file'))
   @Roles(Role.ADMIN, Role.MODERATOR)
