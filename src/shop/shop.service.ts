@@ -19,13 +19,13 @@ import { DataSource } from 'typeorm';
 import { ImageService } from '@/image/image.service';
 import { Rarity } from './enum/rarity.enum';
 import { ShopItemType } from './enum/item-type.enum';
-import { query } from '../achievement/dto/userAchieved/all-query.dto';
-import { PaginatedResponse } from '@/response/response.interface';
-import {
-  UpdateShopItemDto,
-  UpdateExpBoosterDto,
-  UpdateGemExchangeDto,
-} from './dto/update-items.dto';
+import { MysteryBox } from '@/.typeorm/entities/mystery-box.entity';
+import { RewardService } from '../users/services/reward.service';
+import { DateService } from '@/helpers/date/date.services';
+
+export interface ShopItemWithCustomRarity extends ShopItem {
+  RARITY_WEIGHT: number; // Custom rarity weight for each item
+}
 
 @Injectable()
 export class ShopService {
@@ -39,8 +39,86 @@ export class ShopService {
     private expBoosterRepository: Repository<ExpBooster>,
     @InjectRepository(GemExchange)
     private gemExchangeRepository: Repository<GemExchange>,
+    @InjectRepository(MysteryBox)
+    private mysteryBoxRepository: Repository<MysteryBox>,
     private imageService: ImageService,
+    private rewardService: RewardService,
+    private dateService: DateService,
   ) {}
+
+  async remove(id: number) {
+    try {
+      return this.dataSource.transaction(async (manager) => {
+        // Find the item with relations to ensure it exists
+        const item = await manager.findOne(ShopItem, {
+          where: { ITEM_ID: id },
+          relations: ['expBooster', 'gemExchange', 'userItems'],
+        });
+
+        if (!item) {
+          throw new NotFoundException(`Item with ID ${id} not found`);
+        }
+
+        // Check if the item is being used by any users
+        if (item.userItems && item.userItems.length > 0) {
+          throw new BadRequestException(
+            `Cannot delete item with ID ${id} because it's currently in use by users`,
+          );
+        }
+
+        // Delete associated records based on item type
+        if (item.ITEM_TYPE === ShopItemType.EXP_BOOST && item.expBooster) {
+          await manager.delete(ExpBooster, { ITEM_ID: id });
+        } else if (
+          item.ITEM_TYPE === ShopItemType.GEM_EXCHANGE &&
+          item.gemExchange
+        ) {
+          await manager.delete(GemExchange, { ITEM_ID: id });
+        }
+
+        // Delete the item from mystery boxes if it's part of any
+        // First, we need to find all mystery boxes that contain this item
+        const mysteryBoxes = await manager
+          .createQueryBuilder()
+          .select('mbi.BOX_NAME')
+          .from('MYSTERY_BOX_ITEMS', 'mbi')
+          .where('mbi.ITEM_ID = :itemId', { itemId: id })
+          .getRawMany();
+
+        // Remove the item from each mystery box
+        for (const box of mysteryBoxes) {
+          await manager
+            .createQueryBuilder()
+            .delete()
+            .from('MYSTERY_BOX_ITEMS')
+            .where('BOX_NAME = :boxName AND ITEM_ID = :itemId', {
+              boxName: box.BOX_NAME,
+              itemId: id,
+            })
+            .execute();
+        }
+
+        // Delete the image if it exists
+        if (item.IMAGE_URL) {
+          try {
+            await this.imageService.deleteImageByUrl(item.IMAGE_URL);
+          } catch (error) {
+            // Log error but continue with deletion
+            console.error(`Failed to delete image: ${error.message}`);
+          }
+        }
+
+        // Finally, delete the shop item
+        await manager.delete(ShopItem, { ITEM_ID: id });
+
+        return { message: `Item with ID ${id} has been successfully deleted` };
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to delete item: ${error.message}`,
+      );
+    }
+  }
 
   async createItems(dto: CreateShopItemDto, file: Express.Multer.File) {
     try {
@@ -56,7 +134,7 @@ export class ShopService {
         shopItem.PRICE_GEM = dto.PRICE_GEM;
         shopItem.PRICE_EXP = dto.PRICE_EXP;
         shopItem.IMAGE_URL = dto.IMAGE_URL || null;
-        shopItem.RARITY = dto.RARITY || Rarity.COMMON;
+        shopItem.RARITY = dto.RARITY;
         shopItem.IS_ACTIVE = dto.IS_ACTIVE !== undefined ? dto.IS_ACTIVE : true;
 
         const savedItem = await manager.save(shopItem);
@@ -123,17 +201,25 @@ export class ShopService {
   async getAllItems(query: {
     name?: string;
     type?: ShopItemType;
-    rarity?: Rarity;
     page?: number;
     limit?: number;
     pagination?: boolean;
+    filter?: 'all' | 'inBox' | 'notInBox';
   }) {
-    const { name, type, rarity, page = 1, limit = 10, pagination } = query;
+    const {
+      name,
+      type,
+      page = 1,
+      limit = 10,
+      pagination = false,
+      filter = 'all',
+    } = query;
 
     const queryBuilder = this.shopItemRepository
       .createQueryBuilder('shopItem')
       .leftJoinAndSelect('shopItem.expBooster', 'expBooster')
-      .leftJoinAndSelect('shopItem.gemExchange', 'gemExchange');
+      .leftJoinAndSelect('shopItem.gemExchange', 'gemExchange')
+      .leftJoinAndSelect('shopItem.mysteryBoxes', 'mysteryBoxes');
 
     if (name) {
       queryBuilder.where('shopItem.ITEM_NAME LIKE :name', {
@@ -145,12 +231,15 @@ export class ShopService {
       queryBuilder.skip((page - 1) * limit).limit(limit);
     }
 
-    if (rarity) {
-      queryBuilder.andWhere('shopItem.RARITY = :rarity', { rarity });
-    }
-
     if (type) {
       queryBuilder.andWhere('shopItem.ITEM_TYPE = :type', { type });
+    }
+
+    // Handle the filter properly
+    if (filter === 'inBox') {
+      queryBuilder.andWhere('mysteryBoxes.BOX_NAME IS NOT NULL');
+    } else if (filter === 'notInBox') {
+      queryBuilder.andWhere('mysteryBoxes.BOX_NAME IS NULL');
     }
 
     const [data, total] = await queryBuilder.getManyAndCount();
@@ -292,6 +381,190 @@ export class ShopService {
     } catch (error) {
       throw new InternalServerErrorException(
         `Failed to update item: ${error.message}`,
+      );
+    }
+  }
+
+  async createMysteryBox(dto: {
+    BOX_NAME: string;
+    BOX_DESCRIPTION?: string;
+    PRICE_GEM?: number;
+    PRICE_EXP?: number;
+    IMAGE_URL?: string;
+    IS_ACTIVE?: boolean;
+  }) {
+    try {
+      const exist = await this.mysteryBoxRepository.findOne({
+        where: {
+          BOX_NAME: dto.BOX_NAME,
+        },
+      });
+
+      if (exist !== null) {
+        throw new BadRequestException(
+          `Mystery box with name ${dto.BOX_NAME} already exists`,
+        );
+      }
+
+      const instance = this.mysteryBoxRepository.create({
+        BOX_NAME: dto.BOX_NAME,
+        BOX_DESCRIPTION: dto.BOX_DESCRIPTION || '',
+        PRICE_GEM: dto.PRICE_GEM || 30,
+        PRICE_EXP: dto.PRICE_EXP || 0,
+        IMAGE_URL: dto.IMAGE_URL || null,
+        IS_ACTIVE: dto.IS_ACTIVE !== undefined ? dto.IS_ACTIVE : true,
+        // shopItems: [],
+      });
+
+      return await this.mysteryBoxRepository.save(instance);
+    } catch (error) {
+      throw new InternalServerErrorException(`${error.message}`);
+    }
+  }
+
+  async createAndAddToMysteryBox(dto: CreateShopItemDto, boxName: string) {
+    try {
+      // First find the box
+      let box = await this.mysteryBoxRepository.findOne({
+        where: {
+          BOX_NAME: boxName,
+        },
+        relations: ['shopItems'],
+      });
+
+      // If box doesn't exist, create it
+      if (box === null) {
+        box = await this.createMysteryBox({ BOX_NAME: boxName });
+        // After creation, fetch it again with relations
+        box = await this.mysteryBoxRepository.findOne({
+          where: {
+            BOX_NAME: boxName,
+          },
+          relations: ['shopItems'],
+        });
+
+        // Initialize shopItems array if it's undefined
+        if (!box.shopItems) {
+          box.shopItems = [];
+        }
+      }
+
+      // Create the item
+      const item = await this.createItems(dto, null);
+
+      // Use the query builder to insert directly into the join table
+      await this.dataSource
+        .createQueryBuilder()
+        .insert()
+        .into('MYSTERY_BOX_ITEMS')
+        .values({
+          BOX_NAME: boxName,
+          ITEM_ID: item.ITEM_ID,
+        })
+        .execute();
+
+      // Return the updated box with its items
+      return await this.mysteryBoxRepository.findOne({
+        where: {
+          BOX_NAME: boxName,
+        },
+        relations: ['shopItems'],
+      });
+    } catch (error) {
+      console.error('Error in createAndAddToMysteryBox:', error);
+      throw new InternalServerErrorException(
+        `Error adding item to mystery box: ${error.message}`,
+      );
+    }
+  }
+
+  async getRandomItem(boxName: string) {
+    try {
+      const box = await this.mysteryBoxRepository.findOne({
+        where: {
+          BOX_NAME: boxName,
+        },
+        relations: ['shopItems'],
+      });
+
+      if (!box) {
+        throw new NotFoundException(`Mystery box ${boxName} not found`);
+      }
+      const total = box.shopItems.reduce((sum, item) => sum + item.RARITY, 0);
+
+      const randomNum = Math.random() * total;
+
+      let cumulativeWeight = 0;
+      for (const item of box.shopItems) {
+        cumulativeWeight += item.RARITY;
+        if (randomNum <= cumulativeWeight) {
+          return item;
+        }
+      }
+
+      return box.shopItems[0];
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `${error.status}: ${error.message}`,
+      );
+    }
+  }
+
+  async randomMystery(uid: number, boxName: string) {
+    /**
+     * todo: flow
+     * 1. user pay with box gem price
+     * 2. get random item from box
+     * 3. add item to user inventory
+     * 4. return item to user
+     *
+     * todo: expected response
+     * {
+     *  what item user get
+     * }
+     */
+    const today = new Date(this.dateService.getCurrentDate().timestamp);
+    try {
+      const box = await this.mysteryBoxRepository.findOne({
+        where: {
+          BOX_NAME: boxName,
+        },
+        relations: ['shopItems'],
+      });
+
+      const pay = await this.rewardService.pay(uid, {
+        gem: box.PRICE_GEM,
+      });
+
+      if (pay.status !== 200) {
+        throw new BadRequestException(pay.message);
+      }
+
+      const item = await this.getRandomItem(boxName);
+
+      if (!item) {
+        throw new NotFoundException('No items found in the mystery box');
+      }
+
+      const userItem = this.userItemsRepository.create({
+        UID: uid,
+        ITEM_ID: item.ITEM_ID,
+        PURCHASE_DATE: today,
+        EXPIRE_DATE: null,
+        IS_ACTIVE: false,
+      });
+
+      const saved = await this.userItemsRepository.save(userItem);
+
+      return await this.userItemsRepository.findOne({
+        where: {
+          USER_ITEM_ID: saved.USER_ITEM_ID,
+        },
+        relations: ['item'],
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `${error.status}: ${error.message}`,
       );
     }
   }

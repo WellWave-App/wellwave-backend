@@ -9,6 +9,9 @@ import { GemExchange } from '../.typeorm/entities/gem-exhange.entity';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { ImageModule } from '@/image/image.module';
+import { MysteryBox } from '../.typeorm/entities/mystery-box.entity';
+import { HelperModule } from '@/helpers/helper.module';
+import { UsersModule } from '@/users/users.module';
 
 @Module({
   imports: [
@@ -39,8 +42,16 @@ import { ImageModule } from '@/image/image.module';
         cb(null, true);
       },
     }),
-    TypeOrmModule.forFeature([ShopItem, UserItems, ExpBooster, GemExchange]),
+    TypeOrmModule.forFeature([
+      ShopItem,
+      UserItems,
+      ExpBooster,
+      GemExchange,
+      MysteryBox,
+    ]),
     ImageModule,
+    HelperModule,
+    UsersModule,
   ],
   controllers: [ShopController],
   providers: [ShopService],

@@ -3,6 +3,8 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   OneToOne,
@@ -12,6 +14,7 @@ import { UserItems } from './user-items.entity';
 import { ExpBooster } from './exp-booster.entity';
 import { GemExchange } from './gem-exhange.entity';
 import { Rarity } from '@/shop/enum/rarity.enum';
+import { MysteryBox } from './mystery-box.entity';
 
 @Entity('SHOP_ITEMS')
 export class ShopItem {
@@ -31,22 +34,20 @@ export class ShopItem {
   @Column({ name: 'DESCRIPTION', length: 255 })
   DESCRIPTION: string;
 
-  @Column({ name: 'PRICE_GEM', nullable: true })
+  @Column({ name: 'PRICE_GEM', nullable: true, default: 0 })
   PRICE_GEM: number;
 
-  @Column({ name: 'PRICE_EXP', nullable: true })
+  @Column({ name: 'PRICE_EXP', nullable: true, default: 0 })
   PRICE_EXP: number;
 
-  @Column({ name: 'IMAGE_URL', length: 255 })
+  @Column({ name: 'IMAGE_URL', length: 255, nullable: true })
   IMAGE_URL: string;
 
   @Column({
     name: 'RARITY',
-    enum: Rarity,
-    type: 'enum',
-    // default: Rarity.COMMON,
+    type: 'float',
   })
-  RARITY: Rarity;
+  RARITY: number;
 
   @Column({ name: 'IS_ACTIVE', default: true })
   IS_ACTIVE: boolean;
@@ -59,4 +60,18 @@ export class ShopItem {
 
   @OneToOne(() => GemExchange, (gemExchange) => gemExchange.item)
   gemExchange: GemExchange;
+
+  @ManyToMany(() => MysteryBox, (mysteryBox) => mysteryBox.shopItems)
+  @JoinTable({
+    name: 'MYSTERY_BOX_ITEMS',
+    joinColumn: {
+      name: 'ITEM_ID',
+      referencedColumnName: 'ITEM_ID',
+    },
+    inverseJoinColumn: {
+      name: 'BOX_NAME',
+      referencedColumnName: 'BOX_NAME',
+    },
+  })
+  mysteryBoxes: MysteryBox[];
 }

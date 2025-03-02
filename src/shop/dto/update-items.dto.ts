@@ -33,8 +33,7 @@ export class UpdateShopItemDto {
   IMAGE_URL?: string;
 
   @IsOptional()
-  @IsEnum(Rarity)
-  RARITY?: Rarity;
+  RARITY?: number;
 
   @IsOptional()
   @IsBoolean()
