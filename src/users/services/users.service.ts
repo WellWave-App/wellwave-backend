@@ -234,8 +234,9 @@ export class UsersService {
       })) || [];
     // log
     const weeklyGoal = await this.getWeeklyMissionProgress(uid);
+    const { league, ...userData } = user;
     return {
-      userInfo: user,
+      userInfo: userData,
       userLeague: user.league,
       weeklyGoal,
       loginStats,

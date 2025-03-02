@@ -19,6 +19,8 @@ import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HelperModule } from '@/helpers/helper.module';
 import { AchievementModule } from '@/achievement/achievement.module';
 import { LeaderboardModule } from '@/leagues/leagues.module';
+import { RewardService } from './services/reward.service';
+import { UserItems } from '@/.typeorm/entities/user-items.entity';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { LeaderboardModule } from '@/leagues/leagues.module';
       UserHabits,
       UserQuests,
       DailyHabitTrack,
+      UserItems,
     ]),
     forwardRef(() => RecommendationModule),
     LogsModule,
@@ -48,7 +51,7 @@ import { LeaderboardModule } from '@/leagues/leagues.module';
     LeaderboardModule,
   ],
   controllers: [UsersController],
-  providers: [UsersService],
-  exports: [UsersService],
+  providers: [UsersService, RewardService],
+  exports: [UsersService, RewardService],
 })
 export class UsersModule {}
