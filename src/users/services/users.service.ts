@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpException,
   HttpStatus,
@@ -7,7 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, MoreThan, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../../.typeorm/entities/users.entity';
 import { LoginStreakService } from '@/login-streak/services/login-streak.service';
@@ -37,6 +38,9 @@ import { DateService } from '@/helpers/date/date.services';
 import { AchievementService } from '@/achievement/services/achievement.service';
 import { LeaderboardService } from '@/leagues/services/leagues.service';
 import { LeagueType } from '@/leagues/enum/lagues.enum';
+import { ShopItemType } from '@/shop/enum/item-type.enum';
+import { UserItems } from '@/.typeorm/entities/user-items.entity';
+import { ShopItem } from '@/.typeorm/entities/shop-items.entity';
 
 interface MissionHistoryRecord {
   date: string;
@@ -66,6 +70,10 @@ export class UsersService {
     private dateService: DateService,
     private achievementService: AchievementService,
     private leaderboardService: LeaderboardService,
+    @InjectRepository(UserItems)
+    private userItemsRepository: Repository<UserItems>,
+    @InjectRepository(ShopItem)
+    private shopItemRepository: Repository<ShopItem>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -928,5 +936,136 @@ export class UsersService {
         `${error.message || 'Internal Server Error'}`,
       );
     }
+  }
+
+  async getUserItems(
+    uid: number,
+    filter: {
+      type?: ShopItemType;
+      isActive?: boolean;
+    },
+  ): Promise<PaginatedResponse<UserItems>> {
+    const { type, isActive } = filter;
+    const user = await this.usersRepository.findOne({
+      where: { UID: uid },
+      relations: ['userItems', 'userItems.item'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${uid} not found`);
+    }
+
+    // Apply filters after fetching
+    let filteredItems = user.userItems;
+
+    if (isActive !== undefined) {
+      filteredItems = filteredItems.filter(
+        (item) => item.IS_ACTIVE === isActive,
+      );
+    }
+
+    if (type !== undefined) {
+      filteredItems = filteredItems.filter(
+        (item) => item.item.ITEM_TYPE === type,
+      );
+    }
+
+    return { data: filteredItems, meta: { total: filteredItems.length } };
+  }
+
+  async activeItem(userId: number, userItemId: number) {
+    const today = new Date(this.dateService.getCurrentDate().timestamp);
+    // Find the specific user item directly
+    const userItem = await this.userItemsRepository.findOne({
+      where: {
+        UID: userId,
+        USER_ITEM_ID: userItemId,
+      },
+      relations: ['item', 'item.expBooster', 'item.gemExchange', 'user'],
+    });
+
+    if (!userItem) {
+      throw new NotFoundException(
+        `Item ${userItemId} not found for user ${userId}`,
+      );
+    }
+
+    // Check if the item is already expired
+    if (userItem.EXPIRE_DATE && today > userItem.EXPIRE_DATE) {
+      throw new BadRequestException(`Item has already expired`);
+    }
+
+    // Check if the item is already active
+    if (userItem.IS_ACTIVE) {
+      // Item is already active, nothing to do
+      return { message: 'Item is already active', item: userItem };
+    }
+
+    // Item type specific logic
+    switch (userItem.item.ITEM_TYPE) {
+      case ShopItemType.EXP_BOOST:
+        if (!userItem.item.expBooster) {
+          throw new BadRequestException('EXP booster details not found');
+        }
+
+        // Set expiration date based on boost days
+        const expiryDate = today;
+        expiryDate.setDate(
+          expiryDate.getDate() + userItem.item.expBooster.BOOST_DAYS,
+        );
+        userItem.EXPIRE_DATE = expiryDate;
+
+        // Deactivate other active boosters of the same type
+        const otherActiveExpBoosters = await this.userItemsRepository.find({
+          where: {
+            UID: userId,
+            IS_ACTIVE: true,
+            item: {
+              ITEM_TYPE: ShopItemType.EXP_BOOST,
+            },
+            USER_ITEM_ID: Not(userItem.USER_ITEM_ID), // Exclude current item
+          },
+          relations: ['item'],
+        });
+
+        for (const booster of otherActiveExpBoosters) {
+          booster.IS_ACTIVE = false;
+          await this.userItemsRepository.save(booster);
+        }
+        break;
+
+      case ShopItemType.GEM_EXCHANGE:
+        if (!userItem.item.gemExchange) {
+          throw new BadRequestException('Gem exchange details not found');
+        }
+
+        // Add gems to user account
+        userItem.user.GEM =
+          (userItem.user.GEM || 0) + userItem.item.gemExchange.GEM_REWARD;
+        await this.usersRepository.save(userItem.user);
+
+        // Gem exchanges are consumed immediately after use
+        userItem.IS_ACTIVE = false;
+        userItem.EXPIRE_DATE = today;
+        await this.userItemsRepository.save(userItem);
+
+        return {
+          message: `Successfully exchanged for ${userItem.item.gemExchange.GEM_REWARD} gems`,
+          gems: userItem.user.GEM,
+        };
+
+      default:
+        // For other item types, just activate them
+        break;
+    }
+
+    // Set the item as active
+    userItem.IS_ACTIVE = true;
+    await this.userItemsRepository.save(userItem);
+
+    return {
+      message: 'Item activated successfully',
+      item: userItem,
+    };
   }
 }

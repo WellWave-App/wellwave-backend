@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Post,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -35,6 +36,7 @@ import { Role } from '@/auth/roles/roles.enum';
 import { imageFileValidator } from '@/image/imageFileValidator';
 import { DateService } from '@/helpers/date/date.services';
 import { LeaderboardService } from '@/leagues/services/leagues.service';
+import { ShopItemType } from '@/shop/enum/item-type.enum';
 
 @ApiTags('Users')
 @Controller('users')
@@ -46,6 +48,38 @@ export class UsersController {
     private readonly dateService: DateService,
     private readonly leaderboardService: LeaderboardService,
   ) {}
+
+  @Get('/items')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  getUserItems(
+    @Request() req,
+    @Query('uid') uid?: number,
+    @Query('isActive') isActive?: boolean,
+    @Query('type') type?: ShopItemType,
+  ) {
+    if (!uid) {
+      uid = req.user.UID;
+    }
+
+    return this.usersService.getUserItems(req.user.UID, {
+      isActive,
+      type,
+    });
+  }
+
+  @Post('/active-item/:userItemId')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  activeItem(
+    @Request() req,
+    @Param('userItemId') userItemId: number,
+    @Query('uid') uid?: number,
+  ) {
+    if (!uid) {
+      uid = req.user.UID;
+    }
+
+    return this.usersService.activeItem(req.user.UID, userItemId);
+  }
 
   @Get('/leaderboard')
   @Roles(Role.MODERATOR, Role.ADMIN, Role.USER)

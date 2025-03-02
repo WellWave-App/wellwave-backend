@@ -21,6 +21,7 @@ import { AchievementModule } from '@/achievement/achievement.module';
 import { LeaderboardModule } from '@/leagues/leagues.module';
 import { RewardService } from './services/reward.service';
 import { UserItems } from '@/.typeorm/entities/user-items.entity';
+import { ShopItem } from '@/.typeorm/entities/shop-items.entity';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { UserItems } from '@/.typeorm/entities/user-items.entity';
       UserQuests,
       DailyHabitTrack,
       UserItems,
+      ShopItem,
     ]),
     forwardRef(() => RecommendationModule),
     LogsModule,
