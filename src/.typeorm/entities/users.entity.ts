@@ -20,6 +20,7 @@ import { Role } from '@/auth/roles/roles.enum';
 import { UserAchieved } from './user-achieved.entity';
 import { NotificationHistory } from './notification_history.entity';
 import { UserLeaderboard } from './user-leaderboard.entity';
+import { UserItems } from './user-items.entity';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -149,4 +150,7 @@ export class User {
 
   @OneToOne(() => UserLeaderboard, (l) => l.user)
   league: UserLeaderboard;
+
+  @OneToMany(() => UserItems, (userItem) => userItem.user)
+  userItems: UserItems[];
 }

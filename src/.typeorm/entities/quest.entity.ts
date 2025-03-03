@@ -31,16 +31,16 @@ export enum QuestType {
 @Entity({ name: 'QUEST' })
 export class Quest {
   @PrimaryGeneratedColumn({ type: 'int', name: 'QID' })
-  QID: number;
+  QID: number; //QUEST_ID
 
   @Column({ type: 'varchar', name: 'IMG_URL', nullable: true })
-  IMG_URL: string;
+  IMG_URL: string; //QUEST_IMG
 
   @Column({ type: 'varchar', name: 'TITLE' })
   TITLE: string;
 
   @Column({ type: 'float', name: 'DAY_DURATION' })
-  DAY_DURATION: number;
+  DAY_DURATION: number; // QUEST_DAY_DURATION
 
   @Column({ type: 'text', name: 'DESCRIPTION' })
   DESCRIPTION: string;

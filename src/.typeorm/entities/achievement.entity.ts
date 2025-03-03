@@ -63,10 +63,10 @@ export enum TrackableProperty {
 @Entity('ACHIEVEMENTS')
 export class Achievement {
   @PrimaryGeneratedColumn('uuid', { name: 'ACH_ID' })
-  ACH_ID: string;
+  ACH_ID: string; // ACHIEVEMENT_ID
 
   @Column({ name: 'TITLE', type: 'varchar', unique: true })
-  TITLE: string;
+  TITLE: string; // ACHIEVEMENT_TITLE
 
   @Column({ name: 'DESCRIPTION', type: 'text' })
   DESCRIPTION: string;
