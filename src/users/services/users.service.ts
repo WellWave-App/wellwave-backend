@@ -162,6 +162,42 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     file?: Express.Multer.File,
   ): Promise<User> {
+    if (updateUserDto.EMAIL) {
+      const exist = await this.usersRepository.findOne({
+        where: {
+          EMAIL: updateUserDto.EMAIL,
+          UID: Not(uid),
+        },
+      });
+
+      if (exist) {
+        throw new ConflictException('This Email has been used');
+      }
+    }
+
+    if (updateUserDto.USERNAME) {
+      const exist = await this.usersRepository.findOne({
+        where: {
+          USERNAME: updateUserDto.USERNAME,
+          UID: Not(uid),
+        },
+      });
+
+      if (exist) {
+        throw new ConflictException('This Username has been used');
+      }
+    }
+
+    if (updateUserDto.USERNAME) {
+      const exist = await this.usersRepository.findOne({
+        where: { USERNAME: updateUserDto.USERNAME },
+      });
+
+      if (exist) {
+        throw new ConflictException('This Username has been used');
+      }
+    }
+
     const user = await this.getById(uid);
 
     if (file) {
