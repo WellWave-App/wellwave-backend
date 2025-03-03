@@ -55,10 +55,12 @@ export class ShopItem {
   @OneToMany(() => UserItems, (userItem) => userItem.item)
   userItems: UserItems[];
 
-  @OneToOne(() => ExpBooster, (expBooster) => expBooster.item)
+  @OneToOne(() => ExpBooster, (expBooster) => expBooster.item, { eager: true })
   expBooster: ExpBooster;
 
-  @OneToOne(() => GemExchange, (gemExchange) => gemExchange.item)
+  @OneToOne(() => GemExchange, (gemExchange) => gemExchange.item, {
+    eager: true,
+  })
   gemExchange: GemExchange;
 
   @ManyToMany(() => MysteryBox, (mysteryBox) => mysteryBox.shopItems)

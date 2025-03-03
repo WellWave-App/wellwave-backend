@@ -484,7 +484,11 @@ export class ShopService {
         where: {
           BOX_NAME: boxName,
         },
-        relations: ['shopItems'],
+        relations: [
+          'shopItems',
+          'shopItems.expBooster',
+          'shopItems.gemExchange',
+        ],
       });
 
       if (!box) {
@@ -529,7 +533,11 @@ export class ShopService {
         where: {
           BOX_NAME: boxName,
         },
-        relations: ['shopItems'],
+        relations: [
+          'shopItems',
+          'shopItems.expBooster',
+          'shopItems.gemExchange',
+        ],
       });
 
       const pay = await this.rewardService.pay(uid, {
@@ -558,6 +566,7 @@ export class ShopService {
         await this.rewardService.rewardUser(uid, {
           gem: item.gemExchange.GEM_REWARD,
         });
+        EXPIRE_DATE: today;
       }
 
       const saved = await this.userItemsRepository.save(userItem);

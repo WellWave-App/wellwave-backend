@@ -35,6 +35,20 @@ import {
 export class ShopController {
   constructor(private readonly shopService: ShopService) {}
 
+  @Post('mystery-box/open/:boxName')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  useMysteryBox(
+    @Param('boxName') boxName: string,
+    @Req() req,
+    @Query('uid') uid?: number,
+  ) {
+    uid = uid || req.user.UID;
+
+    // for now we only use one box
+    // boxName = 'main';
+    return this.shopService.randomMystery(+uid, boxName);
+  }
+
   @Post('/buy-item/:itemId')
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   userBuyItem(
@@ -191,21 +205,5 @@ export class ShopController {
   @Get('/open-mystery-box/:boxName')
   getRandom(@Param('boxName') boxName: string) {
     return this.shopService.getRandomItem(boxName);
-  }
-
-  @Post('mystery-box/open/:boxName')
-  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
-  useMysteryBox(
-    @Param('boxName') boxName: string,
-    @Req() req,
-    @Query('uid', ParseIntPipe) uid: number,
-  ) {
-    if (uid === undefined) {
-      uid = req.user.UID;
-    }
-
-    // for now we only use one box
-    // boxName = 'main';
-    return this.shopService.randomMystery(uid, boxName);
   }
 }
