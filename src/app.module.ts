@@ -29,6 +29,7 @@ import { TestingModule } from '@nestjs/testing';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TasksModule } from './scheduler/tasks.module';
 import { ShopModule } from './shop/shop.module';
+import { FriendModule } from './friend/friend.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { ShopModule } from './shop/shop.module';
     ScheduleModule.forRoot(),
     TasksModule,
     ShopModule,
+    FriendModule,
   ],
   controllers: [AppController],
   providers: [

@@ -9,6 +9,7 @@ import { HabitRecommendService } from '../habits-recommendation.service';
 import { LoginStreakEntity } from '@/.typeorm/entities/login-streak.entity';
 import { Role } from '@/auth/roles/roles.enum';
 import { UserLeaderboard } from '@/.typeorm/entities/user-leaderboard.entity';
+import { PrivateSetting } from '@/.typeorm/entities/user-privacy.entity';
 
 // Sample Habits Data
 export const testHabits: Habits[] = [
@@ -273,7 +274,8 @@ export const testUsers: User[] = [
     userAchieveds: [],
     notfications: [],
     league: new UserLeaderboard,
-    userItems: []
+    userItems: [],
+    privacy: new PrivateSetting
   },
   {
     // Middle-aged user with high health risks
@@ -322,7 +324,8 @@ export const testUsers: User[] = [
     userAchieveds: [],
     notfications: [],
     league: new UserLeaderboard,
-    userItems: []
+    userItems: [],
+    privacy: new PrivateSetting
   },
   {
     // Young user with moderate risks focusing on general health
@@ -371,7 +374,8 @@ export const testUsers: User[] = [
     userAchieveds: [],
     notfications: [],
     league: new UserLeaderboard,
-    userItems: []
+    userItems: [],
+    privacy: new PrivateSetting
   },
   {
     // Elderly user with multiple health conditions
@@ -420,7 +424,8 @@ export const testUsers: User[] = [
     userAchieveds: [],
     notfications: [],
     league: new UserLeaderboard,
-    userItems: []
+    userItems: [],
+    privacy: new PrivateSetting
   },
   {
     // Athletic young user with low risks
@@ -469,7 +474,8 @@ export const testUsers: User[] = [
     userAchieveds: [],
     notfications: [],
     league: new UserLeaderboard,
-    userItems: []
+    userItems: [],
+    privacy: new PrivateSetting
   },
 ];
 
