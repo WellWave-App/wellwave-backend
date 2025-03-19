@@ -7,6 +7,7 @@ import { UsersModule } from '@/users/users.module';
 import { UserReadHistoryReposity } from './repositories/user-read-history.repository';
 import { ArticleModule } from '../article/article.module';
 import { AchievementModule } from '@/achievement/achievement.module';
+import { HelperModule } from '@/helpers/helper.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AchievementModule } from '@/achievement/achievement.module';
     forwardRef(() => UsersModule),
     forwardRef(() => ArticleModule),
     AchievementModule,
+    HelperModule,
   ],
   controllers: [UserReadHistoryController],
   providers: [UserReadHistoryService, UserReadHistoryReposity],

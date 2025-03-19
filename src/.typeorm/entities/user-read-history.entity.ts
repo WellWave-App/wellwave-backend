@@ -38,11 +38,11 @@ export class UserReadHistory {
   RATING: number; // optional: user rating (not used)
 
   @ApiProperty()
-  @CreateDateColumn({ type: 'date' })
+  @CreateDateColumn({ type: 'date', nullable: true })
   FIRST_READ_DATE: Date; // track when they read it
 
   @ApiProperty()
-  @Column({ type: 'date' })
+  @Column({ type: 'date', nullable: true })
   LASTED_READ_DATE: Date; // track when they read it
 
   // Relations
