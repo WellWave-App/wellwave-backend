@@ -25,7 +25,7 @@ export class UserReadHistory {
   @Column({ type: 'boolean', default: false })
   IS_READ: boolean;
 
-  @ApiProperty()
+@ApiProperty()
   @Column({ type: 'boolean', default: false })
   IS_BOOKMARK: boolean;
 
