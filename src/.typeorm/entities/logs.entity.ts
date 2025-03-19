@@ -40,7 +40,7 @@ export class LogEntity {
     description: 'Date of the log entry',
     example: '2024-12-22',
   })
-  @PrimaryColumn({ type: 'timestamp' })
+  @PrimaryColumn({ type: 'date' })
   DATE: Date;
 
   @ApiProperty({
