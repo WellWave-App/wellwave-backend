@@ -24,7 +24,7 @@ import { QuestService } from '../../quest/services/quest.service';
 import { updateHabitNotiDto } from '../dto/noti-update.dto';
 import { LogsService } from '@/user-logs/services/logs.service';
 import { DateService } from '@/helpers/date/date.services';
-import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
+import { LOG_NAME, LogEntity } from '@/.typeorm/entities/logs.entity';
 import { UsersService } from '@/users/services/users.service';
 import { HabitRecommendService } from '@/recommendation/services/habits-recommendation.service';
 import { User, USER_GOAL } from '@/.typeorm/entities/users.entity';
@@ -34,6 +34,7 @@ import {
   RiskLevel,
 } from '@/recommendation/utils/risk-calculator.util';
 import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
+import { CreateLogDto } from '@/user-logs/dto/create-log.dto';
 
 @Injectable()
 export class HabitService {
@@ -599,39 +600,70 @@ export class HabitService {
       },
       relations: ['UserHabits'],
     });
+
     if (!track) {
       throw new NotFoundException(`Not found trackId: ${dailyTrack.TRACK_ID}`);
     }
-    // Only create logs if we have calculated values
+
+    // Only create/update logs if we have calculated values
     if (track.UserHabits?.habits?.EXERCISE_TYPE) {
+      const trackDate = new Date(track.TRACK_DATE);
+
+      // Handle steps log
       if (track.STEPS_CALCULATED) {
-        await this.logService.create({
+        await this.createOrUpdateLog({
           UID: userId,
-          DATE: new Date(track.TRACK_DATE),
+          DATE: trackDate,
           LOG_NAME: LOG_NAME.STEP_LOG,
           VALUE: track.STEPS_CALCULATED,
         });
       }
 
-      // Log calories if calculated
+      // Handle calories log
       if (track.CALORIES_BURNED) {
-        await this.logService.create({
+        await this.createOrUpdateLog({
           UID: userId,
-          DATE: new Date(track.TRACK_DATE),
+          DATE: trackDate,
           LOG_NAME: LOG_NAME.CAL_BURN_LOG,
           VALUE: track.CALORIES_BURNED,
         });
       }
 
-      // Log heart rate if calculated
+      // Handle heart rate log
       if (track.HEART_RATE) {
-        await this.logService.create({
+        await this.createOrUpdateLog({
           UID: userId,
-          DATE: new Date(track.TRACK_DATE),
+          DATE: trackDate,
           LOG_NAME: LOG_NAME.HEART_RATE_LOG,
           VALUE: track.HEART_RATE,
         });
       }
+    }
+  }
+
+  // New helper method to create or update logs
+  private async createOrUpdateLog(logData: CreateLogDto): Promise<LogEntity> {
+    try {
+      // First try to create a new log
+      return await this.logService.create(logData);
+    } catch (error) {
+      // If there's a conflict (log already exists), update it instead
+      if (error instanceof ConflictException) {
+        const log = await this.logService.findOne(
+          logData.UID,
+          logData.LOG_NAME,
+          logData.DATE,
+        );
+
+        return await this.logService.update(
+          logData.UID,
+          logData.LOG_NAME,
+          logData.DATE,
+          { VALUE: log.VALUE + logData.VALUE },
+        );
+      }
+      // If it's another type of error, re-throw it
+      throw error;
     }
   }
 
