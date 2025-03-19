@@ -5,13 +5,11 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { FriendService } from './friend.service';
-import { CreateFriendDto } from './dto/create-friend.dto';
-import { UpdateFriendDto } from './dto/update-friend.dto';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { RoleGuard } from '@/auth/guard/role.guard';
 import { Role } from '@/auth/roles/roles.enum';
@@ -25,6 +23,15 @@ export class FriendController {
   constructor(private readonly friendService: FriendService) {}
 
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  @Get('/user-friends')
+  getUserFriends(@Req() req, @Query('uid') uid?: number) {
+    if (uid !== null) {
+      uid = req.user.UID;
+    }
+    return this.friendService.getUserFriends(+uid);
+  }
+
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   @Post('/add/:uid')
   add(@Req() req, @Param('uid') uid: number) {
     const fromId = req.user.UID;
@@ -33,8 +40,8 @@ export class FriendController {
   }
 
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
-  @Post('/search/:uid')
-  search(@Req() req, @Param('uid') uid: number) {
+  @Get('/search/:uid')
+  search(@Param('uid') uid: number) {
     return this.friendService.search(uid);
   }
 
@@ -46,42 +53,64 @@ export class FriendController {
     return this.friendService.unfriend(+fromId, +toId);
   }
 
-  @Get('/user-friend/:uid')
-  getUserFriends(@Param('uid') uid: number) {
-    return this.friendService.getUserFriends(uid);
-  }
-
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   @Get('/friend-profile/:uid')
-  getFriendProfle(@Param('uid') uid: number) {
-    return this.friendService.getFriendProfle(uid);
+  getFriendProfle(
+    @Req() req,
+    @Param('uid') uid: number,
+    @Query()
+    query?: {
+      stepFromDate?: string;
+      stepToDate?: string;
+      sleepFromDate?: string;
+      sleepToDate?: string;
+    },
+  ) {
+    return this.friendService.getFriendProfle(req.user.UID, uid, {
+      sleepFromDate: query?.sleepFromDate
+        ? new Date(query.sleepFromDate)
+        : null,
+      sleepToDate: query?.sleepToDate ? new Date(query.sleepToDate) : null,
+      stepFromDate: query?.stepFromDate ? new Date(query.stepFromDate) : null,
+      stepToDate: query?.stepToDate ? new Date(query.stepToDate) : null,
+    });
   }
 
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   @Post('/send-noti/:uid')
   sendNoti(
     @Req() req,
     @Param('uid') uid: number,
     @Body()
-    body: {
-      message: string;
+    body?: {
+      MESSAGE?: string;
     },
   ) {
     const fromId = req.user.UID;
     const toId = uid;
-    return this.friendService.sendNoti(+fromId, +toId, body.message);
+    return this.friendService.sendNoti(+fromId, +toId, body.MESSAGE || null);
   }
 
-  @Patch('privacy/:userId')
+  @Patch('/privacy')
   async updateUserPrivacySettings(
-    @Param('userId') userId: number,
+    @Req() req,
     @Body() updateDto: UpdatePrivacySettingsDto,
+    @Query('userId') userId?: number,
   ): Promise<PrivateSetting> {
+    if (userId !== null) {
+      userId = req.user.UID;
+    }
     return this.friendService.updatePrivacySettings(+userId, updateDto);
   }
 
-  @Get('privacy/:userId')
+  @Get('/privacy')
   async getUserPrivacySettings(
-    @Param('userId') userId: number,
+    @Req() req,
+    @Query('userId') userId?: number,
   ): Promise<PrivateSetting> {
+    if (userId !== null) {
+      userId = req.user.UID;
+    }
     return this.friendService.getPrivacySettings(userId);
   }
 }
