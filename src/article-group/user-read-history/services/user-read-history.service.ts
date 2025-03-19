@@ -11,12 +11,14 @@ import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
 import { PaginatedResponse } from '@/response/response.interface';
 import { UsersService } from '@/users/services/users.service';
 import { ArticleService } from '@/article-group/article/services/article.service';
+import { DateService } from '@/helpers/date/date.services';
 
 @Injectable()
 export class UserReadHistoryService {
   constructor(
     private readonly repository: UserReadHistoryReposity,
     private readonly usersService: UsersService,
+    private readonly dateService: DateService,
   ) {}
 
   async create(dto: CreateUserReadHistoryDto): Promise<UserReadHistory> {
@@ -49,7 +51,9 @@ export class UserReadHistoryService {
   }
 
   update(dto: UpdateUserReadHistoryDto): Promise<UserReadHistory> {
-    dto.LASTED_READ_DATE = new Date();
+    dto.LASTED_READ_DATE = new Date(
+      this.dateService.getCurrentDate().timestamp,
+    );
     return this.repository.update(dto);
   }
 
@@ -69,16 +73,27 @@ export class UserReadHistoryService {
     }
   }
 
-  updateBookmark(
-    uid: number,
-    aid: number,
-    is_bookmark: boolean,
+  async updateBookmark(
+    dto: CreateUserReadHistoryDto,
   ): Promise<UserReadHistory> {
-    return this.repository.update({
-      UID: uid,
-      AID: aid,
-      IS_BOOKMARK: is_bookmark,
-    });
+    try {
+      const exist = await this.repository.findById(dto.UID, dto.AID);
+
+      if (exist) {
+        return this.repository.update({
+          UID: dto.UID,
+          AID: dto.AID,
+          IS_BOOKMARK: dto.IS_BOOKMARK,
+        });
+      }
+
+      throw new NotFoundException();
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return await this.create(dto);
+      }
+      throw error;
+    }
   }
 
   async enterRead(dto: CreateUserReadHistoryDto): Promise<UserReadHistory> {
@@ -86,12 +101,18 @@ export class UserReadHistoryService {
       const exist = await this.repository.findById(dto.UID, dto.AID);
 
       if (exist) {
+        if( exist.FIRST_READ_DATE === null) {
+          
+        }
         return await this.update(dto);
       }
 
       throw new NotFoundException();
     } catch (error) {
       if (error instanceof NotFoundException) {
+        dto.FIRST_READ_DATE = new Date(
+          this.dateService.getCurrentDate().timestamp,
+        );
         return await this.create(dto);
       }
 

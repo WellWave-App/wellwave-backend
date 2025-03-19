@@ -62,23 +62,28 @@ export class UserReadHistoryController {
     return this.service.create(dto);
   }
 
-  @ApiOperation({ summary: 'Add an article to user’s bookmarks' })
-  @ApiParam({ name: 'uid', description: 'User ID', example: 1 })
-  @ApiParam({ name: 'aid', description: 'Article ID', example: 101 })
-  @Patch('/addBookmark/:uid/:aid')
-  addBookmark(@Param('uid') uid: number, @Param('aid') aid: number) {
-    return this.service.updateBookmark(uid, aid, true);
+  // @ApiOperation({ summary: 'Add an article to user’s bookmarks' })
+  // @ApiParam({ name: 'uid', description: 'User ID', example: 1 })
+  // @ApiParam({ name: 'aid', description: 'Article ID', example: 101 })
+  // @Patch('/addBookmark/:uid/:aid')
+  // addBookmark(@Param('uid') uid: number, @Param('aid') aid: number) {
+  //   return this.service.updateBookmark(uid, aid, true);
+  // }
+
+  // @ApiOperation({ summary: 'Remove an article from user’s bookmarks' })
+  // @ApiParam({ name: 'uid', description: 'User ID', example: 1 })
+  // @ApiParam({ name: 'aid', description: 'Article ID', example: 101 })
+  // @Patch('/removeBookmark/:uid/:aid')
+  // removeBookmark(@Param('uid') uid: number, @Param('aid') aid: number) {
+  //   return this.service.updateBookmark(uid, aid, false);
+  // }
+
+  @Patch('/updateBookmark')
+  updateBookmark(@Body() dto: CreateUserReadHistoryDto) {
+    return this.service.updateBookmark(dto);
   }
 
-  @ApiOperation({ summary: 'Remove an article from user’s bookmarks' })
-  @ApiParam({ name: 'uid', description: 'User ID', example: 1 })
-  @ApiParam({ name: 'aid', description: 'Article ID', example: 101 })
-  @Patch('/removeBookmark/:uid/:aid')
-  removeBookmark(@Param('uid') uid: number, @Param('aid') aid: number) {
-    return this.service.updateBookmark(uid, aid, false);
-  }
-
-  @Post('enterRead')
+  @Post('/enterRead')
   enterRead(@Body() dto: CreateUserReadHistoryDto) {
     return this.service.enterRead(dto);
   }
