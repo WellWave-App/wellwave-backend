@@ -566,7 +566,7 @@ export class ShopService {
         await this.rewardService.rewardUser(uid, {
           gem: item.gemExchange.GEM_REWARD,
         });
-        EXPIRE_DATE: today;
+        userItem.EXPIRE_DATE = today;
       }
 
       const saved = await this.userItemsRepository.save(userItem);
@@ -614,13 +614,14 @@ export class ShopService {
           IS_ACTIVE: false,
         });
 
-        const saved = await this.userItemsRepository.save(userItem);
-
         if (item.ITEM_TYPE === ShopItemType.GEM_EXCHANGE) {
           await this.rewardService.rewardUser(uid, {
             gem: item.gemExchange.GEM_REWARD,
           });
+          userItem.EXPIRE_DATE = today;
         }
+
+        const saved = await this.userItemsRepository.save(userItem);
 
         return await this.userItemsRepository.findOne({
           where: {

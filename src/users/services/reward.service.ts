@@ -47,6 +47,11 @@ export class RewardService {
     user.EXP += expReward || 0;
     user.GEM += gemReward || 0;
 
+    await this.userRepo.update(user.UID, {
+      EXP: user.EXP,
+      GEM: user.GEM,
+    });
+
     if (reward.exp > 0) {
       await this.achievementService.trackProgress({
         uid: user.UID,
