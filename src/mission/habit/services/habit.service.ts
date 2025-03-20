@@ -193,7 +193,7 @@ export class HabitService {
     const activeHabitIds = new Set(activeHabits.map((h) => h.HID));
     let filteredHabits;
     let recommendationScores = new Map();
-    const allHabits = await habitsQuery.getMany();
+    let allHabits = await habitsQuery.getMany();
 
     if (category === 'rec') {
       const user = await this.userRepository.findOne({
@@ -226,6 +226,7 @@ export class HabitService {
     } else {
       if (category) {
         habitsQuery.andWhere('habit.CATEGORY = :category', { category });
+        allHabits = await habitsQuery.getMany();
       }
     }
 
