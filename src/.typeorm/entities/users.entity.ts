@@ -21,6 +21,7 @@ import { UserAchieved } from './user-achieved.entity';
 import { NotificationHistory } from './notification_history.entity';
 import { UserLeaderboard } from './user-leaderboard.entity';
 import { UserItems } from './user-items.entity';
+import { PrivateSetting } from './user-privacy.entity';
 
 export enum USER_GOAL {
   BUILD_MUSCLE = 0,
@@ -153,4 +154,7 @@ export class User {
 
   @OneToMany(() => UserItems, (userItem) => userItem.user)
   userItems: UserItems[];
+
+  @OneToOne(() => PrivateSetting, (pv) => pv.user)
+  privacy: PrivateSetting;
 }
