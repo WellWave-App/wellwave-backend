@@ -61,26 +61,29 @@ export class CreateHabitDto {
   @Min(0)
   @IsOptional()
   @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : value,
+    value === '' ? undefined : Number(value),
   )
   EXP_REWARD?: number;
 
   @IsNumber()
   @Min(0)
   @IsOptional()
+  @Transform(({ value }: TransformFnParams) =>
+    value === '' ? undefined : Number(value),
+  )
   GEM_REWARD?: number;
 
   @IsInt()
   @IsOptional()
   @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : value,
+    value === '' ? undefined : Number(value),
   )
   DEFAULT_DAILY_MINUTE_GOAL?: number;
 
   @IsInt()
   @IsOptional()
   @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : value,
+    value === '' ? undefined : Number(value),
   )
   DEFAULT_DAYS_GOAL?: number;
 
