@@ -60,12 +60,13 @@ export class HabitService {
     createHabitDto: CreateHabitDto,
     file?: Express.Multer.File,
   ): Promise<Habits> {
-    const habit = this.habitsRepository.create(createHabitDto);
     if (file) {
       createHabitDto.THUMBNAIL_URL = this.imageService.getImageUrl(
         file.filename,
       );
     }
+
+    const habit = this.habitsRepository.create(createHabitDto);
 
     return await this.habitsRepository.save(habit);
   }
