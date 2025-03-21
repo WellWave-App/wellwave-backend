@@ -226,7 +226,7 @@ export class FriendService {
         } else {
           friendData = await this.getUserData(friend.USER1_ID);
         }
-
+        const friendPv = await this.getPrivacySettings(friendData.UID);
         const stepLog = await this.logService.getWeeklyLogsByUser(
           friendData.UID,
           null,
@@ -243,15 +243,15 @@ export class FriendService {
           USERNAME: friendData.USERNAME,
           IMAGE_URL: friendData.IMAGE_URL,
           LAST_LOGIN: friendData.loginStreak?.LAST_LOGIN_DATE || null,
-          STEPS: friendData.privacy.SHOW_STEPS
+          STEPS: friendPv.SHOW_STEPS
             ? stepLog.LOGS.reduce((acc, log) => acc + log.VALUE, 0)
             : null,
-          SLEEP_HOURS: friendData.privacy.SHOW_SLEEP_HOUR
+          SLEEP_HOURS: friendPv.SHOW_SLEEP_HOUR
             ? sleepLog.LOGS.reduce((acc, log) => acc + log.VALUE, 0)
             : null,
-          EXP: friendData.privacy.SHOW_EXP ? friendData.EXP : null,
-          GEM: friendData.privacy.SHOW_GEM ? friendData.GEM : null,
-          LEAGUE: friendData.privacy.SHOW_LEAGUE
+          EXP: friendPv.SHOW_EXP ? friendData.EXP : null,
+          GEM: friendPv.SHOW_GEM ? friendData.GEM : null,
+          LEAGUE: friendPv.SHOW_LEAGUE
             ? friendData.league.CURRENT_LEAGUE
             : null,
         };
@@ -283,7 +283,7 @@ export class FriendService {
     }
 
     const friend = await this.getUserData(fUid);
-
+    const friendPv = await this.getPrivacySettings(fUid);
     const today = new Date(this.dateService.getCurrentDate().timestamp);
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 7);
@@ -306,11 +306,11 @@ export class FriendService {
       USERNAME: friend.USERNAME,
       IMAGE_URL: friend.IMAGE_URL,
       LAST_LOGIN: friend.loginStreak?.LAST_LOGIN_DATE || null,
-      EXP: friend.privacy.SHOW_EXP ? friend.EXP : null,
-      GEM: friend.privacy.SHOW_GEM ? friend.GEM : null,
-      LEAGUE: friend.privacy.SHOW_LEAGUE ? friend.league.CURRENT_LEAGUE : null,
-      STEPS_LOG: friend.privacy.SHOW_STEPS ? stepLog.LOGS : null,
-      SLEEP_LOG: friend.privacy.SHOW_SLEEP_HOUR ? sleepLog.LOGS : null,
+      EXP: friendPv.SHOW_EXP ? friend.EXP : null,
+      GEM: friendPv.SHOW_GEM ? friend.GEM : null,
+      LEAGUE: friendPv.SHOW_LEAGUE ? friend.league.CURRENT_LEAGUE : null,
+      STEPS_LOG: friendPv.SHOW_STEPS ? stepLog.LOGS : null,
+      SLEEP_LOG: friendPv.SHOW_SLEEP_HOUR ? sleepLog.LOGS : null,
     };
 
     return data;
