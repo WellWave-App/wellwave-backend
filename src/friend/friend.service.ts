@@ -252,7 +252,7 @@ export class FriendService {
           EXP: friendPv.SHOW_EXP ? friendData.EXP : null,
           GEM: friendPv.SHOW_GEM ? friendData.GEM : null,
           LEAGUE: friendPv.SHOW_LEAGUE
-            ? friendData.league.CURRENT_LEAGUE
+            ? friendData.league?.CURRENT_LEAGUE || null
             : null,
         };
       }),
@@ -308,7 +308,9 @@ export class FriendService {
       LAST_LOGIN: friend.loginStreak?.LAST_LOGIN_DATE || null,
       EXP: friendPv.SHOW_EXP ? friend.EXP : null,
       GEM: friendPv.SHOW_GEM ? friend.GEM : null,
-      LEAGUE: friendPv.SHOW_LEAGUE ? friend.league.CURRENT_LEAGUE : null,
+      LEAGUE: friendPv.SHOW_LEAGUE
+        ? friend.league?.CURRENT_LEAGUE || null
+        : null,
       STEPS_LOG: friendPv.SHOW_STEPS ? stepLog.LOGS : null,
       SLEEP_LOG: friendPv.SHOW_SLEEP_HOUR ? sleepLog.LOGS : null,
     };
