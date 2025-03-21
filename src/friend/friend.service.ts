@@ -242,7 +242,7 @@ export class FriendService {
           UID: friendData.UID,
           USERNAME: friendData.USERNAME,
           IMAGE_URL: friendData.IMAGE_URL,
-          LAST_LOGIN: friendData.loginStreak.LAST_LOGIN_DATE,
+          LAST_LOGIN: friendData.loginStreak?.LAST_LOGIN_DATE || null,
           STEPS: friendData.privacy.SHOW_STEPS
             ? stepLog.LOGS.reduce((acc, log) => acc + log.VALUE, 0)
             : null,
@@ -305,7 +305,7 @@ export class FriendService {
       UID: friend.UID,
       USERNAME: friend.USERNAME,
       IMAGE_URL: friend.IMAGE_URL,
-      LAST_LOGIN: friend.loginStreak.LAST_LOGIN_DATE,
+      LAST_LOGIN: friend.loginStreak?.LAST_LOGIN_DATE || null,
       EXP: friend.privacy.SHOW_EXP ? friend.EXP : null,
       GEM: friend.privacy.SHOW_GEM ? friend.GEM : null,
       LEAGUE: friend.privacy.SHOW_LEAGUE ? friend.league.CURRENT_LEAGUE : null,
