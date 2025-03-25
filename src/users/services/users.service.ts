@@ -30,7 +30,6 @@ import { HabitCategories } from '@/.typeorm/entities/habit.entity';
 import { LogsService } from '@/user-logs/services/logs.service';
 import { THAI_MONTHS } from '../interfaces/date.formatter';
 import { CheckinChallengeService } from '@/checkin-challenge/services/checkin-challenge.service';
-import { table } from 'console';
 import { LOG_NAME } from '@/.typeorm/entities/logs.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { Role } from '@/auth/roles/roles.enum';

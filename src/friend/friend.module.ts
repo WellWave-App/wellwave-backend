@@ -9,6 +9,7 @@ import { UsersModule } from '@/users/users.module';
 import { User } from '@/.typeorm/entities/users.entity';
 import { LogsModule } from '@/user-logs/logs.module';
 import { HelperModule } from '@/helpers/helper.module';
+import { AchievementModule } from '@/achievement/achievement.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { HelperModule } from '@/helpers/helper.module';
     UsersModule,
     LogsModule,
     HelperModule,
+    AchievementModule
   ],
   controllers: [FriendController],
   providers: [FriendService],

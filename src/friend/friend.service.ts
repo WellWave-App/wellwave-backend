@@ -22,6 +22,12 @@ import { LOG_NAME, LogEntity } from '@/.typeorm/entities/logs.entity';
 import { DateService } from '@/helpers/date/date.services';
 import { LeagueType } from '@/leagues/enum/lagues.enum';
 import { UpdatePrivacySettingsDto } from './dto/update-pv.dto';
+import { achievementSeeds } from '../.typeorm/seeds/base-achievements.seed';
+import { AchievementService } from '../achievement/services/achievement.service';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
 
 export interface friendInfo {
   UID: number;
@@ -50,6 +56,7 @@ export class FriendService {
     private readonly userService: UsersService,
     private readonly logService: LogsService,
     private readonly dateService: DateService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   private phrases = {
@@ -164,6 +171,14 @@ export class FriendService {
         IMAGE_URL: user1.IMAGE_URL,
         APP_ROUTE: APP_ROUTE.Friend,
         UID: toId,
+      });
+
+      await this.achievementService.trackProgress({
+        uid: fromId,
+        entity: RequirementEntity.USER_FOLLOWS,
+        property: TrackableProperty.FOLLOWING_COUNT,
+        value: 1,
+        date: new Date(this.dateService.getCurrentDate().timestamp),
       });
 
       return {
@@ -331,6 +346,14 @@ export class FriendService {
       IMAGE_URL: user1.IMAGE_URL,
       APP_ROUTE: APP_ROUTE.Friend,
       UID: toId,
+    });
+
+    await this.achievementService.trackProgress({
+      uid: fromId,
+      entity: RequirementEntity.USER_REACTIONS,
+      property: TrackableProperty.TOTAL_REACTIONS,
+      value: 1,
+      date: new Date(this.dateService.getCurrentDate().timestamp),
     });
     return {
       success: true,

@@ -45,7 +45,7 @@ export const dropdownData = {
       trackingType: RequirementTrackingType.CUMULATIVE,
     },
     {
-      property: TrackableProperty.CONSECUTIVE_WEEKS,
+      property: TrackableProperty.CONSECUTIVE_DAYS,
       trackingType: RequirementTrackingType.STREAK,
     },
   ],

@@ -13,6 +13,10 @@ import { ContextUtils } from '@nestjs/core/helpers/context-utils';
 import { User } from '@/.typeorm/entities/users.entity';
 import { DateService } from '@/helpers/date/date.services';
 import { AchievementService } from '@/achievement/services/achievement.service';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
 
 @Injectable()
 export class LeaderboardService {
@@ -169,6 +173,24 @@ export class LeaderboardService {
             ? usersInGroups.slice(-2)
             : usersInGroups.slice(-1); // Bottom 2
 
+        //* track league mvp
+        if (CURRENT_LEAGUE !== LeagueType.DIAMOND) {
+          await this.achievementService.trackProgress({
+            uid: promotionUsers[0].UID,
+            value: 1,
+            entity: RequirementEntity.USER_LEADERBOARD,
+            property: TrackableProperty.CURRENT_RANK,
+            date: new Date(this.dateService.getCurrentDate().timestamp),
+          });
+        } else {
+          await this.achievementService.trackProgress({
+            uid: promotionUsers[0].UID,
+            value: 1,
+            entity: RequirementEntity.USER_LEADERBOARD,
+            property: TrackableProperty.CURRENT_RANK,
+            date: new Date(this.dateService.getCurrentDate().timestamp),
+          });
+        }
         // Process promotions
         for (const user of promotionUsers) {
           const nextLeague = this.getNextLeague(user.CURRENT_LEAGUE);

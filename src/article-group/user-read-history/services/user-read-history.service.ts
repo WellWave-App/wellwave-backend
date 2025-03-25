@@ -12,6 +12,11 @@ import { PaginatedResponse } from '@/response/response.interface';
 import { UsersService } from '@/users/services/users.service';
 import { ArticleService } from '@/article-group/article/services/article.service';
 import { DateService } from '@/helpers/date/date.services';
+import { AchievementService } from '@/achievement/services/achievement.service';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
 
 @Injectable()
 export class UserReadHistoryService {
@@ -19,6 +24,7 @@ export class UserReadHistoryService {
     private readonly repository: UserReadHistoryReposity,
     private readonly usersService: UsersService,
     private readonly dateService: DateService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   async create(dto: CreateUserReadHistoryDto): Promise<UserReadHistory> {
@@ -97,22 +103,31 @@ export class UserReadHistoryService {
   }
 
   async enterRead(dto: CreateUserReadHistoryDto): Promise<UserReadHistory> {
+    const today = new Date(this.dateService.getCurrentDate().timestamp);
     try {
       const exist = await this.repository.findById(dto.UID, dto.AID);
-
       if (exist) {
-        if( exist.FIRST_READ_DATE === null) {
-          
-        }
+        await this.achievementService.trackProgress({
+          uid: dto.UID,
+          entity: RequirementEntity.USER_READ_HISTORY,
+          property: TrackableProperty.TOTAL_READ,
+          value: 1,
+          date: new Date(today),
+        });
         return await this.update(dto);
       }
 
       throw new NotFoundException();
     } catch (error) {
       if (error instanceof NotFoundException) {
-        dto.FIRST_READ_DATE = new Date(
-          this.dateService.getCurrentDate().timestamp,
-        );
+        dto.FIRST_READ_DATE = new Date(today);
+        await this.achievementService.trackProgress({
+          uid: dto.UID,
+          entity: RequirementEntity.USER_READ_HISTORY,
+          property: TrackableProperty.TOTAL_READ,
+          value: 1,
+          date: new Date(today),
+        });
         return await this.create(dto);
       }
 

@@ -57,6 +57,7 @@ export enum TrackableProperty {
   CONSECUTIVE_WEEKS = 'consecutive_weeks',
   TOTAL_EXERCISE_MINUTE = 'total_exercise_minute',
   LEAGUE_REACHED = 'league_reached',
+  CONSECUTIVE_DAYS = 'consecutive_days',
 }
 
 @Entity('ACHIEVEMENTS')
