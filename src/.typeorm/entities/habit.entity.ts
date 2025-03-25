@@ -1,7 +1,9 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 export enum HabitCategories {
@@ -119,4 +121,10 @@ export class Habits {
     },
   })
   CONDITIONS: Conditions;
+
+  @CreateDateColumn({ name: 'CREATED_AT', type: 'date' })
+  CREATED_AT: Date;
+
+  @UpdateDateColumn({ name: 'UPDATED_AT', type: 'date' })
+  UPDATED_AT: Date;
 }
