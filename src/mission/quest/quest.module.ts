@@ -11,6 +11,8 @@ import { diskStorage } from 'multer';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { UserHabits } from '@/.typeorm/entities/user-habits.entity';
 import { HelperModule } from '@/helpers/helper.module';
+import { UsersModule } from '@/users/users.module';
+import { AchievementModule } from '@/achievement/achievement.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { HelperModule } from '@/helpers/helper.module';
     }),
     ImageModule,
     HelperModule,
+    UsersModule,
+    AchievementModule,
   ],
   controllers: [QuestController],
   providers: [

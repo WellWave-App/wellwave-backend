@@ -32,6 +32,12 @@ import {
   HabitStatus,
 } from '@/.typeorm/entities/user-habits.entity';
 import { DateService } from '@/helpers/date/date.services';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
+import { AchievementService } from '@/achievement/services/achievement.service';
+import { RewardService } from '@/users/services/reward.service';
 
 @Injectable()
 export class QuestService {
@@ -48,6 +54,8 @@ export class QuestService {
     private dailyHabitTrackRepository: Repository<DailyHabitTrack>,
     private readonly imageService: ImageService,
     private readonly dateService: DateService,
+    private readonly rewardService: RewardService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   async createQuest(
@@ -233,8 +241,16 @@ export class QuestService {
     // Check if quest is completed
     if (userQuest.PROGRESS_PERCENTAGE >= 100) {
       userQuest.STATUS = QuestStatus.Completed;
-      // TODO: Implement reward system
-      // await this.rewardService.awardQuestCompletion(userQuest);
+      await this.achievementService.trackProgress({
+        uid: userQuest.user.UID,
+        entity: RequirementEntity.USER_MISSIONS,
+        property: TrackableProperty.COMPLETED_MISSION,
+        value: 1,
+        date: new Date(this.dateService.getCurrentDate().timestamp),
+      });
+      await this.rewardService.rewardUser(userId, {
+        gem: userQuest.quest.GEM_REWARDS,
+      });
     }
 
     await this.userQuestsRepository.save(userQuest);

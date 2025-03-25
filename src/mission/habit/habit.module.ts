@@ -18,6 +18,7 @@ import { HelperModule } from '@/helpers/helper.module';
 import { User } from '@/.typeorm/entities/users.entity';
 import { RecommendationModule } from '@/recommendation/recommendation.module';
 import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
+import { AchievementModule } from '@/achievement/achievement.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
     UsersModule,
     HelperModule,
     RecommendationModule,
+    AchievementModule
   ],
   controllers: [HabitController],
   providers: [HabitService, ExerciseCalculator],

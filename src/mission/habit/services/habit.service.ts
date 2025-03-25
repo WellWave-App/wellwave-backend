@@ -35,6 +35,12 @@ import {
 } from '@/recommendation/utils/risk-calculator.util';
 import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
 import { CreateLogDto } from '@/user-logs/dto/create-log.dto';
+import { RewardService } from '@/users/services/reward.service';
+import { AchievementService } from '@/achievement/services/achievement.service';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
 
 @Injectable()
 export class HabitService {
@@ -54,6 +60,8 @@ export class HabitService {
     private readonly logService: LogsService,
     private readonly userService: UsersService,
     private readonly dateService: DateService,
+    private readonly rewardService: RewardService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   async createHabit(
@@ -72,11 +80,11 @@ export class HabitService {
   }
 
   async getDailyHabit(uid: number): Promise<PaginatedResponse<any>> {
-    const today = new Date(this.dateService.getCurrentDate().date);
-    today.setHours(0, 0, 0, 0);
-
     // * updated outdate daily habit
     await this.updateOutdatedHabits(uid);
+
+    const today = new Date(this.dateService.getCurrentDate().date);
+    today.setHours(0, 0, 0, 0);
 
     // * helper format function
     const formatResponse = (h: UserHabits) => ({
@@ -183,7 +191,9 @@ export class HabitService {
     // Start with habits query
     await this.updateOutdatedHabits(userId);
 
-    const habitsQuery = this.habitsRepository.createQueryBuilder('habit');
+    const habitsQuery = this.habitsRepository
+      .createQueryBuilder('habit')
+      .where('habit.IS_DAILY = false');
     const activeHabits = await this.userHabitsRepository
       .createQueryBuilder('userHabit')
       .where('userHabit.UID = :userId', { userId })
@@ -423,7 +433,7 @@ export class HabitService {
       },
     });
 
-    if (activeChallenge) {
+    if (activeChallenge !== null) {
       throw new ConflictException(
         'Active challenge already exists for this habit',
       );
@@ -588,6 +598,24 @@ export class HabitService {
       });
     }
 
+    if (savedTrack.COMPLETED) {
+      await this.rewardService.rewardUser(userId, {
+        exp: userHabit.habits.EXP_REWARD,
+      });
+    }
+
+    if (
+      trackDto.DURATION_MINUTES &&
+      userHabit.habits.CATEGORY === HabitCategories.Exercise
+    ) {
+      await this.achievementService.trackProgress({
+        uid: userHabit.user.UID,
+        entity: RequirementEntity.USER_HABIT_CHALLENGES,
+        property: TrackableProperty.TOTAL_EXERCISE_MINUTE,
+        value: trackDto.DURATION_MINUTES,
+        date: new Date(this.dateService.getCurrentDate().timestamp),
+      });
+    }
     // *Update streak and check completion
     await this.updateStreakCount(userHabit.CHALLENGE_ID);
     await this.checkChallengeCompletion(userHabit.CHALLENGE_ID);
@@ -709,7 +737,7 @@ export class HabitService {
   private async checkChallengeCompletion(challengeId: number): Promise<void> {
     const userHabit = await this.userHabitsRepository.findOne({
       where: { CHALLENGE_ID: challengeId },
-      relations: ['dailyTracks', 'habits'],
+      relations: ['dailyTracks', 'habits', 'user'],
     });
 
     const today = new Date(this.dateService.getCurrentDate().date);
@@ -730,6 +758,14 @@ export class HabitService {
         });
         // TODO: Implement reward system
         // await this.rewardService.awardHabitCompletion(userHabit);
+        // * update acheivement progress
+        await this.achievementService.trackProgress({
+          uid: userHabit.user.UID,
+          entity: RequirementEntity.USER_MISSIONS,
+          property: TrackableProperty.COMPLETED_MISSION,
+          value: 1,
+          date: new Date(this.dateService.getCurrentDate().timestamp),
+        });
       } else {
         userHabit.STATUS = HabitStatus.Failed;
       }
@@ -750,8 +786,8 @@ export class HabitService {
       .createQueryBuilder('userHabit')
       .leftJoinAndSelect('userHabit.habits', 'habit')
       .leftJoinAndSelect('userHabit.dailyTracks', 'tracks')
-      .where('userHabit.UID = :userId', { userId })
-      .andWhere('habit.IS_DAILY = :isDaily', { isDaily: isDaily });
+      .where('userHabit.UID = :userId', { userId });
+    // .andWhere('habit.IS_DAILY = :isDaily', { isDaily: isDaily });
 
     if (status) {
       queryBuilder.andWhere('userHabit.STATUS = :status', { status });
