@@ -30,6 +30,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TasksModule } from './scheduler/tasks.module';
 import { ShopModule } from './shop/shop.module';
 import { FriendModule } from './friend/friend.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { FriendModule } from './friend/friend.module';
     TasksModule,
     ShopModule,
     FriendModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

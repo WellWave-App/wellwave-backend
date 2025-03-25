@@ -33,6 +33,8 @@ export const testHabits: Habits[] = [
       DYSLIPIDEMIA_CONDITION: false,
       HYPERTENSION_CONDITION: false,
     },
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 2,
@@ -54,6 +56,8 @@ export const testHabits: Habits[] = [
       DYSLIPIDEMIA_CONDITION: false,
       HYPERTENSION_CONDITION: false,
     },
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 3,
@@ -75,6 +79,8 @@ export const testHabits: Habits[] = [
     EXERCISE_TYPE: ExerciseType.Walking,
     DEFAULT_DAILY_MINUTE_GOAL: 0,
     DEFAULT_DAYS_GOAL: 0,
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 4,
@@ -96,6 +102,8 @@ export const testHabits: Habits[] = [
     EXERCISE_TYPE: ExerciseType.Walking,
     DEFAULT_DAILY_MINUTE_GOAL: 0,
     DEFAULT_DAYS_GOAL: 0,
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 5,
@@ -117,6 +125,8 @@ export const testHabits: Habits[] = [
       DYSLIPIDEMIA_CONDITION: false,
       HYPERTENSION_CONDITION: false,
     },
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 6,
@@ -138,6 +148,8 @@ export const testHabits: Habits[] = [
       DYSLIPIDEMIA_CONDITION: false,
       HYPERTENSION_CONDITION: false,
     },
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 7,
@@ -159,6 +171,8 @@ export const testHabits: Habits[] = [
       DYSLIPIDEMIA_CONDITION: false,
       HYPERTENSION_CONDITION: false,
     },
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 8,
@@ -180,6 +194,8 @@ export const testHabits: Habits[] = [
     EXERCISE_TYPE: ExerciseType.Walking,
     DEFAULT_DAILY_MINUTE_GOAL: 0,
     DEFAULT_DAYS_GOAL: 0,
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 9,
@@ -201,6 +217,8 @@ export const testHabits: Habits[] = [
       DYSLIPIDEMIA_CONDITION: false,
       HYPERTENSION_CONDITION: false,
     },
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
   {
     HID: 10,
@@ -222,6 +240,8 @@ export const testHabits: Habits[] = [
     EXERCISE_TYPE: ExerciseType.Walking,
     DEFAULT_DAILY_MINUTE_GOAL: 0,
     DEFAULT_DAYS_GOAL: 0,
+    CREATED_AT: undefined,
+    UPDATED_AT: undefined
   },
 ];
 
