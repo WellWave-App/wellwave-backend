@@ -51,7 +51,6 @@ export enum TrackableProperty {
   TOTAL_COMPLETED_HABIT = 'total_completed_habit',
   TOTAL_EXP = 'total_exp',
   TOTAL_GEMS_SPENT = 'total_gems_spent',
-  COMPLETED_MISSIONS = 'completed_missions',
   COMPLETED_MISSION = 'completed_mission',
   CURRENT_RANK = 'current_rank',
   CURRENT_LEAGUE = 'current_league',
