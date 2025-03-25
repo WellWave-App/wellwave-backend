@@ -126,7 +126,7 @@ export class HabitService {
 
     await Promise.all(
       randomHabits.map((h) =>
-        this.startChallenge(uid, { UID: uid, HID: h.HID }),
+        this.startChallenge(uid, { UID: uid, HID: h.HID, DAYS_GOAL: 1 }),
       ),
     );
 
@@ -162,7 +162,7 @@ export class HabitService {
     const outdatedHabits = userHabits.filter((habit) => {
       const endDate = new Date(habit.END_DATE);
       endDate.setHours(0, 0, 0, 0);
-      return endDate < today;
+      return endDate <= today;
     });
 
     if (outdatedHabits.length === 0) {
