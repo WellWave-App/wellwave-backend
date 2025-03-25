@@ -604,6 +604,7 @@ export class HabitService {
       });
     }
 
+    // * track achievement progress
     if (
       trackDto.DURATION_MINUTES &&
       userHabit.habits.CATEGORY === HabitCategories.Exercise
@@ -616,6 +617,15 @@ export class HabitService {
         date: new Date(this.dateService.getCurrentDate().timestamp),
       });
     }
+
+    await this.achievementService.trackProgress({
+      uid: userHabit.user.UID,
+      entity: RequirementEntity.USER_HABIT_CHALLENGES,
+      property: TrackableProperty.CONSECUTIVE_DAYS,
+      value: 1,
+      date: new Date(this.dateService.getCurrentDate().timestamp),
+    });
+
     // *Update streak and check completion
     await this.updateStreakCount(userHabit.CHALLENGE_ID);
     await this.checkChallengeCompletion(userHabit.CHALLENGE_ID);
@@ -756,16 +766,24 @@ export class HabitService {
           date: new Date(this.dateService.getCurrentDate().date),
           progressType: 'completion',
         });
-        // TODO: Implement reward system
-        // await this.rewardService.awardHabitCompletion(userHabit);
         // * update acheivement progress
-        await this.achievementService.trackProgress({
-          uid: userHabit.user.UID,
-          entity: RequirementEntity.USER_MISSIONS,
-          property: TrackableProperty.COMPLETED_MISSION,
-          value: 1,
-          date: new Date(this.dateService.getCurrentDate().timestamp),
-        });
+        await Promise.all([
+          this.achievementService.trackProgress({
+            uid: userHabit.user.UID,
+            entity: RequirementEntity.USER_MISSIONS,
+            property: TrackableProperty.COMPLETED_MISSION,
+            value: 1,
+            date: new Date(this.dateService.getCurrentDate().timestamp),
+          }),
+
+          this.achievementService.trackProgress({
+            uid: userHabit.user.UID,
+            entity: RequirementEntity.USER_MISSIONS,
+            property: TrackableProperty.COMPLETED_MISSION,
+            value: 1,
+            date: new Date(this.dateService.getCurrentDate().timestamp),
+          }),
+        ]);
       } else {
         userHabit.STATUS = HabitStatus.Failed;
       }
@@ -780,14 +798,17 @@ export class HabitService {
     pagination: boolean = false,
     page: number = 1,
     limit: number = 10,
-    isDaily: boolean = false,
+    isDaily?: boolean,
   ): Promise<PaginatedResponse<UserHabits>> {
     const queryBuilder = this.userHabitsRepository
       .createQueryBuilder('userHabit')
       .leftJoinAndSelect('userHabit.habits', 'habit')
       .leftJoinAndSelect('userHabit.dailyTracks', 'tracks')
       .where('userHabit.UID = :userId', { userId });
-    // .andWhere('habit.IS_DAILY = :isDaily', { isDaily: isDaily });
+
+    if (isDaily) {
+      queryBuilder.andWhere('habit.IS_DAILY = :isDaily', { isDaily: isDaily });
+    }
 
     if (status) {
       queryBuilder.andWhere('userHabit.STATUS = :status', { status });

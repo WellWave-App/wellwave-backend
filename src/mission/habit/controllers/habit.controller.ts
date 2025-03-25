@@ -253,6 +253,7 @@ export class HabitController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('pagination') pagination?: boolean,
+    @Query('isDaily') isDaily?: boolean,
   ) {
     return this.habitService.getUserHabits(
       req.user.UID,
@@ -260,6 +261,7 @@ export class HabitController {
       pagination,
       page,
       limit,
+      isDaily,
     );
   }
 
