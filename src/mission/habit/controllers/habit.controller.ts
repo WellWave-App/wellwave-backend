@@ -254,6 +254,8 @@ export class HabitController {
     @Query('limit') limit?: number,
     @Query('pagination') pagination?: boolean,
     @Query('isDaily') isDaily?: boolean,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     return this.habitService.getUserHabits(
       req.user.UID,
@@ -262,6 +264,8 @@ export class HabitController {
       page,
       limit,
       isDaily,
+      startDate,
+      endDate,
     );
   }
 

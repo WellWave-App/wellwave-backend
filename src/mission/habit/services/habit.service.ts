@@ -799,6 +799,8 @@ export class HabitService {
     page: number = 1,
     limit: number = 10,
     isDaily?: boolean,
+    startDate?: string,
+    endDate?: string,
   ): Promise<PaginatedResponse<UserHabits>> {
     const queryBuilder = this.userHabitsRepository
       .createQueryBuilder('userHabit')
@@ -814,6 +816,15 @@ export class HabitService {
       queryBuilder.andWhere('userHabit.STATUS = :status', { status });
     }
 
+    if (startDate) {
+      queryBuilder.andWhere('userHabit.START_DATE >= :startDate', {
+        startDate,
+      });
+    }
+
+    if (endDate) {
+      queryBuilder.andWhere('userHabit.END_DATE <= :endDate', { endDate });
+    }
     if (pagination) {
       if (page < 1) page = 1;
       if (limit < 1) limit = 10;
