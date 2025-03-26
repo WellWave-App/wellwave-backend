@@ -44,13 +44,13 @@ export class CreateShopItemDto {
   @IsEnum(ShopItemType)
   ITEM_TYPE: ShopItemType;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @Transform(({ value }) => handleEmpty(value))
   ITEM_NAME: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @Transform(({ value }) => handleEmpty(value))
   DESCRIPTION: string;
 

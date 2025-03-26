@@ -28,10 +28,10 @@ export class ShopItem {
   })
   ITEM_TYPE: ShopItemType;
 
-  @Column({ name: 'ITEM_NAME', length: 100 })
+  @Column({ name: 'ITEM_NAME', length: 100, nullable: true })
   ITEM_NAME: string;
 
-  @Column({ name: 'DESCRIPTION', length: 255 })
+  @Column({ name: 'DESCRIPTION', length: 255, nullable: true })
   DESCRIPTION: string;
 
   @Column({ name: 'PRICE_GEM', nullable: true, default: 0 })
