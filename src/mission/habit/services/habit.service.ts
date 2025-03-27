@@ -751,45 +751,46 @@ export class HabitService {
     });
 
     const today = new Date(this.dateService.getCurrentDate().date);
-    if (today > userHabit.END_DATE) {
-      const completedDays = userHabit.dailyTracks.filter(
-        (track) => track.COMPLETED,
-      ).length;
+    // if (today > userHabit.END_DATE) {
+    const completedDays = userHabit.dailyTracks.filter(
+      (track) => track.COMPLETED,
+    ).length;
 
-      if (completedDays >= userHabit.DAYS_GOAL) {
-        userHabit.STATUS = HabitStatus.Completed;
-        await this.questService.updateQuestProgress(userHabit.UID, {
-          category: userHabit.habits.CATEGORY,
-          exerciseType: userHabit.habits.EXERCISE_TYPE,
-          trackingType: TrackingType.Count,
-          value: 1, // One completion
-          date: new Date(this.dateService.getCurrentDate().date),
-          progressType: 'completion',
-        });
-        // * update acheivement progress
-        await Promise.all([
-          this.achievementService.trackProgress({
-            uid: userHabit.user.UID,
-            entity: RequirementEntity.USER_MISSIONS,
-            property: TrackableProperty.COMPLETED_MISSION,
-            value: 1,
-            date: new Date(this.dateService.getCurrentDate().timestamp),
-          }),
+    if (completedDays >= userHabit.DAYS_GOAL) {
+      userHabit.STATUS = HabitStatus.Completed;
 
-          this.achievementService.trackProgress({
-            uid: userHabit.user.UID,
-            entity: RequirementEntity.USER_MISSIONS,
-            property: TrackableProperty.COMPLETED_MISSION,
-            value: 1,
-            date: new Date(this.dateService.getCurrentDate().timestamp),
-          }),
-        ]);
-      } else {
-        userHabit.STATUS = HabitStatus.Failed;
-      }
+      await this.questService.updateQuestProgress(userHabit.UID, {
+        category: userHabit.habits.CATEGORY,
+        exerciseType: userHabit.habits.EXERCISE_TYPE,
+        trackingType: TrackingType.Count,
+        value: 1, // One completion
+        date: new Date(this.dateService.getCurrentDate().date),
+        progressType: 'completion',
+      });
+      // * update acheivement progress
+      await Promise.all([
+        this.achievementService.trackProgress({
+          uid: userHabit.user.UID,
+          entity: RequirementEntity.USER_MISSIONS,
+          property: TrackableProperty.COMPLETED_MISSION,
+          value: 1,
+          date: new Date(this.dateService.getCurrentDate().timestamp),
+        }),
 
-      await this.userHabitsRepository.save(userHabit);
+        this.achievementService.trackProgress({
+          uid: userHabit.user.UID,
+          entity: RequirementEntity.USER_MISSIONS,
+          property: TrackableProperty.COMPLETED_MISSION,
+          value: 1,
+          date: new Date(this.dateService.getCurrentDate().timestamp),
+        }),
+      ]);
+    } else {
+      userHabit.STATUS = HabitStatus.Failed;
     }
+
+    await this.userHabitsRepository.save(userHabit);
+    // }
   }
 
   async getUserHabits(
