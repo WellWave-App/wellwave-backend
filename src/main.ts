@@ -11,19 +11,18 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   //open access
   app.enableCors({
-    origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
   
-
   // set up swagger
   const options = new DocumentBuilder()
     .setTitle('Your API Title')
     .setDescription('Your API description')
     .setVersion('1.0')
-    .addServer('http://localhost:3000/', 'Local environment')
+    .addServer('http://localhost:3000/', 'API Server')
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api-docs', app, document);
