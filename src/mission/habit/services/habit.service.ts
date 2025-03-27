@@ -751,7 +751,6 @@ export class HabitService {
     });
 
     const today = new Date(this.dateService.getCurrentDate().date);
-    // if (today > userHabit.END_DATE) {
     const completedDays = userHabit.dailyTracks.filter(
       (track) => track.COMPLETED,
     ).length;
@@ -785,12 +784,11 @@ export class HabitService {
           date: new Date(this.dateService.getCurrentDate().timestamp),
         }),
       ]);
-    } else {
+    } else if (today >= new Date(userHabit.END_DATE)) {
       userHabit.STATUS = HabitStatus.Failed;
     }
 
     await this.userHabitsRepository.save(userHabit);
-    // }
   }
 
   async getUserHabits(
