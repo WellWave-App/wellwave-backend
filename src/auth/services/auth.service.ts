@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from 'src/users/services/users.service';
-import * as bcrypt from 'bcrypt';
+import * as bcryptjs from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 // import { RegisterUserDto } from 'src/users/dto/register.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
@@ -16,15 +16,15 @@ export class AuthService {
     private userService: UsersService,
     private jwtService: JwtService,
   ) {}
-  
+
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userService.getByEmail(email);
-    if (user && (await bcrypt.compare(password, user.PASSWORD))) {
+    if (user && (await bcryptjs.compare(password, user.PASSWORD))) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { PASSWORD, ...result } = user;
       return {
         ...result,
-        ROLE: user.ROLE || Role.USER
+        ROLE: user.ROLE || Role.USER,
       };
     }
     return null;

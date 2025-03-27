@@ -8,7 +8,7 @@ import {
   Unique,
   OneToOne,
 } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcryptjs from 'bcryptjs';
 import { RiskAssessmentEntity } from './assessment.entity';
 import { LogEntity } from './logs.entity';
 import { LoginStreakEntity } from './login-streak.entity';
@@ -53,7 +53,7 @@ export class User {
   async hashPassword() {
     // Only hash if the password was actually changed
     if (this.tempPassword) {
-      this.PASSWORD = await bcrypt.hash(this.tempPassword, 10);
+      this.PASSWORD = await bcryptjs.hash(this.tempPassword, 10);
       this.tempPassword = undefined;
     }
   }
