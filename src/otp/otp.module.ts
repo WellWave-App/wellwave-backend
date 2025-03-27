@@ -13,7 +13,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
         service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER || 'wellwave2025.official@gmail.com',
-          pass: process.env.GMAIL_APP_PASSWORD || 'axgl ltfk clqm azzg',
+          pass: process.env.GMAIL_APP_PASSWORD,
         },
       },
       defaults: {
