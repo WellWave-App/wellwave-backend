@@ -32,7 +32,7 @@ export class ArticleService {
     return await this.articleRepository.create(dto);
   }
 
-  async search(query?: ArticleParams): Promise<PaginatedResponse<Article>> {
+  async search(query?: ArticleParams): Promise<PaginatedResponse<Article & { TOTAL_BOOKMARKS: number}>> {
     return await this.articleRepository.findAll(query);
   }
 

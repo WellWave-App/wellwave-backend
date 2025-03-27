@@ -13,6 +13,7 @@ import { NotFoundError } from 'rxjs';
 import { DiseaseTypesService } from '@/disease-types/services/disease-types.service';
 import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
 import { PaginatedResponse } from '@/response/response.interface';
+import { UserReadHistory } from '@/.typeorm/entities/user-read-history.entity';
 
 export interface ArticleParams {
   page?: number;
@@ -26,8 +27,10 @@ export class ArticleRepository {
   constructor(
     @InjectRepository(Article)
     private readonly repository: Repository<Article>,
-    @InjectRepository(DiseaseType)
-    private readonly diseaseRepository: Repository<DiseaseType>,
+    @InjectRepository(UserReadHistory)
+    private readonly userReadHistoryRepository: Repository<UserReadHistory>,
+    // @InjectRepository(DiseaseType)
+    // private readonly diseaseRepository: Repository<DiseaseType>,
     private readonly diseaseTypesService: DiseaseTypesService,
   ) {}
 
@@ -89,7 +92,9 @@ export class ArticleRepository {
     return article;
   }
 
-  async findAll(params: ArticleParams): Promise<PaginatedResponse<Article>> {
+  async findAll(
+    params: ArticleParams,
+  ): Promise<PaginatedResponse<Article & { TOTAL_BOOKMARKS: number }>> {
     const { page = 1, limit = 10, search, diseaseIds } = params;
     const queryBuilder = this.repository
       .createQueryBuilder('article')
@@ -134,8 +139,19 @@ export class ArticleRepository {
 
     const data = await queryBuilder.getMany();
 
+    const dataWithTotalBookmarks = await Promise.all(
+      data.map(async (article) => {
+        const userBookmarks = await this.userReadHistoryRepository.findAndCount(
+          {
+            where: { AID: article.AID, IS_BOOKMARK: true },
+          },
+        );
+        return { ...article, TOTAL_BOOKMARKS: userBookmarks[1] || 0 };
+      }),
+    );
+
     return {
-      data,
+      data: dataWithTotalBookmarks,
       meta: {
         total,
         page,

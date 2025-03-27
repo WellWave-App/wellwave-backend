@@ -14,6 +14,14 @@ import { UserHabits } from '@/.typeorm/entities/user-habits.entity';
 import { HabitModule } from '@/mission/habit/habit.module';
 import { RecommendationModule } from '@/recommendation/recommendation.module';
 import { CheckinChallengeModule } from '@/checkin-challenge/checkin-challenge.module';
+import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
+import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
+import { HelperModule } from '@/helpers/helper.module';
+import { AchievementModule } from '@/achievement/achievement.module';
+import { LeaderboardModule } from '@/leagues/leagues.module';
+import { RewardService } from './services/reward.service';
+import { UserItems } from '@/.typeorm/entities/user-items.entity';
+import { ShopItem } from '@/.typeorm/entities/shop-items.entity';
 
 @Module({
   imports: [
@@ -26,15 +34,26 @@ import { CheckinChallengeModule } from '@/checkin-challenge/checkin-challenge.mo
         },
       }),
     }),
-    TypeOrmModule.forFeature([User, UserReadHistory, UserHabits]),
+    TypeOrmModule.forFeature([
+      User,
+      UserReadHistory,
+      UserHabits,
+      UserQuests,
+      DailyHabitTrack,
+      UserItems,
+      ShopItem,
+    ]),
+    forwardRef(() => RecommendationModule),
     LogsModule,
     LoginStreakModule,
     ImageModule,
     CheckinChallengeModule,
-    forwardRef(() => RecommendationModule),
+    HelperModule,
+    AchievementModule,
+    LeaderboardModule,
   ],
   controllers: [UsersController],
-  providers: [UsersService],
-  exports: [UsersService],
+  providers: [UsersService, RewardService],
+  exports: [UsersService, RewardService],
 })
 export class UsersModule {}

@@ -11,6 +11,14 @@ import { diskStorage } from 'multer';
 // import { UserHabitRepository } from './repositories/user-habit.repository';
 import { HabitService } from './services/habit.service';
 import { QuestModule } from '../quest/quest.module';
+import { LogsModule } from '@/user-logs/logs.module';
+import { ExerciseCalculator } from './utils/exercise-calculator.util';
+import { UsersModule } from '@/users/users.module';
+import { HelperModule } from '@/helpers/helper.module';
+import { User } from '@/.typeorm/entities/users.entity';
+import { RecommendationModule } from '@/recommendation/recommendation.module';
+import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
+import { AchievementModule } from '@/achievement/achievement.module';
 
 @Module({
   imports: [
@@ -23,14 +31,23 @@ import { QuestModule } from '../quest/quest.module';
         },
       }),
     }),
-    TypeOrmModule.forFeature([Habits, UserHabits, DailyHabitTrack]),
+    TypeOrmModule.forFeature([
+      Habits,
+      UserHabits,
+      DailyHabitTrack,
+      User,
+      UserQuests,
+    ]),
     ImageModule,
     QuestModule,
+    LogsModule,
+    UsersModule,
+    HelperModule,
+    RecommendationModule,
+    AchievementModule
   ],
   controllers: [HabitController],
-  providers: [
-    HabitService,
-    // HabitRepository, UserHabitRepository,
-  ],
+  providers: [HabitService, ExerciseCalculator],
+  exports: [HabitService, ExerciseCalculator],
 })
 export class HabitModule {}

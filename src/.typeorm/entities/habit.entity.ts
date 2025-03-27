@@ -1,9 +1,9 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 export enum HabitCategories {
@@ -46,7 +46,7 @@ export interface Conditions {
 @Entity('HABIT')
 export class Habits {
   @PrimaryGeneratedColumn({ name: 'HID', type: 'int' })
-  HID: number;
+  HID: number; // HABIT_ID
 
   @Column({ name: 'HABIT_TITLE', type: 'varchar', length: 255 })
   TITLE: string;
@@ -82,20 +82,26 @@ export class Habits {
   @Column({ name: 'EXP_REWARD', type: 'int' })
   EXP_REWARD: number;
 
-  @Column({ name: 'GEM_REWARD', type: 'int' })
+  @Column({ name: 'GEM_REWARD', type: 'int', nullable: true })
   GEM_REWARD: number;
 
-  @Column({ name: 'DEFAULT_DURATION_MINUTES', type: 'int', nullable: true })
+  @Column({ name: 'DEFAULT_DAILY_MINUTE_GOAL', type: 'int', nullable: true })
   DEFAULT_DAILY_MINUTE_GOAL: number;
 
   @Column({ name: 'DEFAULT_DAYS_GOAL', type: 'int', nullable: true })
   DEFAULT_DAYS_GOAL: number;
 
-  @Column({ type: 'varchar', length: 2048, nullable: true })
+  @Column({
+    name: 'THUMBNAIL_URL',
+    type: 'varchar',
+    length: 2048,
+    nullable: true,
+  })
   THUMBNAIL_URL: string;
 
-  @Column({ type: 'bool', default: false })
+  @Column({ name: 'IS_DAILY', type: 'bool', default: false })
   IS_DAILY: boolean;
+
   // @Column({
   //   name: 'DIFFICULTY_LEVEL',
   //   type: 'enum',
@@ -115,4 +121,10 @@ export class Habits {
     },
   })
   CONDITIONS: Conditions;
+
+  @CreateDateColumn({ name: 'CREATED_AT', type: 'date' })
+  CREATED_AT: Date;
+
+  @UpdateDateColumn({ name: 'UPDATED_AT', type: 'date' })
+  UPDATED_AT: Date;
 }

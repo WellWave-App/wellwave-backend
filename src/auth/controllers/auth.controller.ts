@@ -4,6 +4,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  NotFoundException,
   Post,
   Request,
   Res,
@@ -24,6 +25,10 @@ import { CreateUserDto } from '@/users/dto/create-user.dto';
 import { RegisterUserDto } from '@/users/dto/register.dto';
 import { UsersService } from '@/users/services/users.service';
 import { Role } from '../roles/roles.enum';
+import { OtpService } from '@/otp/otp.service';
+import { Roles } from '../roles/roles.decorator';
+import { JwtAuthGuard } from '../guard/jwt-auth.guard';
+import { RoleGuard } from '../guard/role.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -31,6 +36,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
+    private readonly otpService: OtpService,
   ) {}
 
   @ApiOperation({ summary: 'Login with email/password' })
@@ -137,5 +143,54 @@ export class AuthController {
       httpOnly: true,
     });
     return res.json({ message: 'Successfully logged out' });
+  }
+
+  @Post('/forgot-password')
+  // @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  // @UseGuards(JwtAuthGuard, RoleGuard)
+  async forgotPassword(@Body() body: { EMAIL: string }) {
+    try {
+      const user = await this.usersService.getByEmail(body.EMAIL);
+      // const user = await this.usersService.getById(req.user.UID);
+
+      if (!user) throw new NotFoundException('User not found');
+
+      const otp = await this.otpService.generateOTP(user);
+      // Send OTP via email
+      await this.otpService.sendOtp(body.EMAIL, otp);
+
+      return { message: 'OTP sent to your email' };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to process request',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('/reset-password')
+  async resetPassword(@Body() body: { EMAIL: string; NEW_PASSWORD: string }) {
+    const user = await this.usersService.getByEmail(body.EMAIL);
+    if (!user) throw new NotFoundException('User not found');
+
+    // Verify OTP
+    // await this.otpService.verifyOTP(user.UID, body.OTP);
+
+    // Reset password
+    const data = await this.usersService.updatePassword(
+      user.UID,
+      body.NEW_PASSWORD,
+    );
+
+    return { message: 'Password updated successfully', data };
+  }
+
+  @Post('/verify-otp')
+  async verifyOTP(@Body() body: { EMAIL: string; OTP: string }) {
+    const user = await this.usersService.getByEmail(body.EMAIL);
+    if (!user) throw new NotFoundException('User not found');
+
+    // Verify OTP
+    return await this.otpService.verifyOTP(user.UID, body.OTP);
   }
 }

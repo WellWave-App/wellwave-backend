@@ -5,7 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {
+  Repository,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+  And,
+  Not,
+} from 'typeorm';
 import { QuestListFilter } from '../interfaces/quests.interfaces';
 import {
   QuestStatus,
@@ -21,6 +27,17 @@ import {
 import { TrackQuestDto } from '../dtos/track-quest.dto';
 import { ImageService } from '@/image/image.service';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
+import {
+  UserHabits,
+  HabitStatus,
+} from '@/.typeorm/entities/user-habits.entity';
+import { DateService } from '@/helpers/date/date.services';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
+import { AchievementService } from '@/achievement/services/achievement.service';
+import { RewardService } from '@/users/services/reward.service';
 
 @Injectable()
 export class QuestService {
@@ -31,9 +48,14 @@ export class QuestService {
     private userQuestsRepository: Repository<UserQuests>,
     @InjectRepository(QuestProgress)
     private questProgressRepository: Repository<QuestProgress>,
-    private readonly imageService: ImageService,
+    @InjectRepository(UserHabits)
+    private userHabitsRepository: Repository<UserHabits>,
     @InjectRepository(DailyHabitTrack)
     private dailyHabitTrackRepository: Repository<DailyHabitTrack>,
+    private readonly imageService: ImageService,
+    private readonly dateService: DateService,
+    private readonly rewardService: RewardService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   async createQuest(
@@ -69,7 +91,7 @@ export class QuestService {
     const activeQuests = await this.userQuestsRepository
       .createQueryBuilder('userQuest')
       .where('userQuest.UID = :userId', { userId })
-      .andWhere('userQuest.STATUS = :status', { status: QuestStatus.Active })
+      .andWhere('userQuest.STATUS != :status', { status: QuestStatus.Failed })
       .leftJoinAndSelect('userQuest.quest', 'quest')
       .getMany();
 
@@ -103,12 +125,11 @@ export class QuestService {
         let progressInfo = null;
 
         if (isActive) {
-          // const userQuest = activeQuests.find((uq) => uq.QID === quest.QID);
           const userQuest = await this.userQuestsRepository.findOne({
             where: {
               QID: quest.QID,
               UID: userId,
-              STATUS: QuestStatus.Active,
+              STATUS: Not(QuestStatus.Failed),
             },
             relations: ['quest'],
           });
@@ -150,17 +171,18 @@ export class QuestService {
       throw new ConflictException('Quest already active');
     }
 
+    const currentTimestamp = this.dateService.getCurrentDate().timestamp;
     // Create new user quest
     const userQuest = this.userQuestsRepository.create({
       QID: questId,
       UID: userId,
-      START_DATE: new Date(),
+      START_DATE: new Date(currentTimestamp),
       STATUS: QuestStatus.Active,
       PROGRESS_PERCENTAGE: 0,
     });
 
     // Calculate end date based on quest duration
-    const endDate = new Date();
+    const endDate = new Date(currentTimestamp);
     endDate.setDate(endDate.getDate() + quest.DAY_DURATION);
     userQuest.END_DATE = endDate;
 
@@ -183,15 +205,19 @@ export class QuestService {
     if (!userQuest) {
       throw new NotFoundException('Active quest not found');
     }
+    const currentTimestamp = this.dateService.getCurrentDate().timestamp;
 
     // Create progress entry
     const progress = this.questProgressRepository.create({
       QID: trackDto.QID,
       UID: userId,
-      TRACK_DATE: new Date(),
+      TRACK_DATE: new Date(currentTimestamp),
       VALUE_COMPLETED: trackDto.value,
     });
 
+    if (progress.VALUE_COMPLETED <= 0) {
+      return;
+    }
     await this.questProgressRepository.save(progress);
 
     // Update total progress
@@ -215,8 +241,16 @@ export class QuestService {
     // Check if quest is completed
     if (userQuest.PROGRESS_PERCENTAGE >= 100) {
       userQuest.STATUS = QuestStatus.Completed;
-      // TODO: Implement reward system
-      // await this.rewardService.awardQuestCompletion(userQuest);
+      await this.achievementService.trackProgress({
+        uid: userQuest.user.UID,
+        entity: RequirementEntity.USER_MISSIONS,
+        property: TrackableProperty.COMPLETED_MISSION,
+        value: 1,
+        date: new Date(this.dateService.getCurrentDate().timestamp),
+      });
+      await this.rewardService.rewardUser(userId, {
+        gem: userQuest.quest.GEM_REWARDS,
+      });
     }
 
     await this.userQuestsRepository.save(userQuest);
@@ -252,6 +286,7 @@ export class QuestService {
       0,
     );
 
+    const currentTimestamp = this.dateService.getCurrentDate().timestamp;
     return {
       startDate: userQuest.START_DATE,
       endDate: userQuest.END_DATE,
@@ -263,7 +298,8 @@ export class QuestService {
       daysLeft: Math.max(
         0,
         Math.ceil(
-          (new Date(userQuest.END_DATE).getTime() - new Date().getTime()) /
+          (new Date(userQuest.END_DATE).getTime() -
+            new Date(currentTimestamp).getTime()) /
             (1000 * 60 * 60 * 24),
         ),
       ),
@@ -278,12 +314,7 @@ export class QuestService {
       trackingType: TrackingType;
       value: number;
       date: Date;
-      progressType?:
-        | 'normal'
-        | 'streak'
-        | 'completion'
-        | 'start'
-        | 'daily_completion';
+      progressType?: 'normal' | 'streak' | 'completion' | 'daily_completion';
     },
   ): Promise<void> {
     const activeQuests = await this.userQuestsRepository.find({
@@ -308,28 +339,15 @@ export class QuestService {
       // Special handling for different progress types
       switch (trackingData.progressType) {
         case 'streak':
-          return (
-            categoryMatch &&
-            quest.TRACKING_TYPE === TrackingType.Count &&
-            quest.QUEST_TYPE === QuestType.STREAK_BASED
-          );
+          return categoryMatch && quest.QUEST_TYPE === QuestType.STREAK_BASED;
         case 'completion':
           return (
-            categoryMatch &&
-            quest.TRACKING_TYPE === TrackingType.Count &&
-            quest.QUEST_TYPE === QuestType.COMPLETION_BASED
-          );
-        case 'start':
-          return (
-            categoryMatch &&
-            quest.TRACKING_TYPE === TrackingType.Count &&
-            quest.QUEST_TYPE === QuestType.START_BASED
+            categoryMatch && quest.QUEST_TYPE === QuestType.COMPLETION_BASED
           );
         case 'daily_completion':
           return (
             categoryMatch &&
-            quest.TRACKING_TYPE === TrackingType.Count &&
-            quest.QUEST_TYPE === QuestType.DAILY_COMPLETION
+            quest.QUEST_TYPE === QuestType.DAILY_COMPLETION_BASED
           );
         default:
           return (
@@ -368,12 +386,19 @@ export class QuestService {
       .andWhere('habit.CATEGORY = :category', {
         category: quest.RELATED_HABIT_CATEGORY,
       })
-      .andWhere('track.COMPLETED = :completed', { completed: true })
       .getMany();
+
+    // Filter by exercise type if specified
+    const filteredTracks = quest.EXERCISE_TYPE
+      ? habitTracks.filter(
+          (track) =>
+            track.UserHabits.habits.EXERCISE_TYPE === quest.EXERCISE_TYPE,
+        )
+      : habitTracks;
 
     // Group tracks by date for processing
     const tracksByDate = new Map<string, DailyHabitTrack[]>();
-    for (const track of habitTracks) {
+    for (const track of filteredTracks) {
       const dateKey = new Date(track.TRACK_DATE).toISOString().split('T')[0];
       if (!tracksByDate.has(dateKey)) {
         tracksByDate.set(dateKey, []);
@@ -384,21 +409,17 @@ export class QuestService {
     // Process tracks based on quest type
     switch (quest.QUEST_TYPE) {
       case QuestType.NORMAL:
-        await this.syncNormalQuestProgress(userId, userQuest, habitTracks);
+        await this.syncNormalQuestProgress(userId, userQuest, filteredTracks);
         break;
       case QuestType.STREAK_BASED:
         await this.syncStreakQuestProgress(userId, userQuest, tracksByDate);
         break;
-      case QuestType.DAILY_COMPLETION:
+      case QuestType.DAILY_COMPLETION_BASED:
         await this.syncDailyCompletionProgress(userId, userQuest, tracksByDate);
         break;
       case QuestType.COMPLETION_BASED:
-        // TODO: Implement completion-based quest progress sync.
+        await this.syncCompletionBasedProgress(userId, userQuest);
         break;
-      case QuestType.START_BASED:
-        // TODO: Implement start-based quest progress sync.
-        break;
-      // Other quest types...
     }
   }
 
@@ -420,6 +441,9 @@ export class QuestService {
         case TrackingType.Count:
           totalValue += track.COUNT_VALUE || 0;
           break;
+        case TrackingType.Boolean:
+          totalValue += track.COMPLETED ? 1 : 0;
+          break;
       }
     }
 
@@ -436,6 +460,8 @@ export class QuestService {
       0,
     );
 
+    const currentTimestamp = this.dateService.getCurrentDate().timestamp;
+
     if (totalValue > trackedTotal) {
       const unTrackedValue = totalValue - trackedTotal;
       await this.updateQuestProgress(userId, {
@@ -443,7 +469,7 @@ export class QuestService {
         exerciseType: userQuest.quest.EXERCISE_TYPE,
         trackingType: userQuest.quest.TRACKING_TYPE,
         value: unTrackedValue,
-        date: new Date(),
+        date: new Date(currentTimestamp),
         progressType: 'normal',
       });
     }
@@ -454,25 +480,90 @@ export class QuestService {
     userQuest: UserQuests,
     tracksByDate: Map<string, DailyHabitTrack[]>,
   ): Promise<void> {
-    // Calculate current streak
+    const quest = userQuest.quest;
     const dates = Array.from(tracksByDate.keys()).sort();
-    let currentStreak = 0;
 
-    for (let i = dates.length - 1; i >= 0; i--) {
-      const tracks = tracksByDate.get(dates[i]);
-      if (tracks.some((track) => track.COMPLETED)) {
+    if (dates.length === 0) return;
+
+    let currentStreak = 0;
+    let longestStreak = 0;
+
+    // Define threshold for quantity-based streaks
+    const dailyThreshold = this.getDailyThreshold(quest);
+
+    // Temporary storage for date validation
+    let lastDate: Date | null = null;
+
+    // Process dates in chronological order
+    for (let i = 0; i < dates.length; i++) {
+      const dateKey = dates[i];
+      const tracks = tracksByDate.get(dateKey);
+      const currentDate = new Date(dateKey);
+
+      // Check if we have a streak break due to missing days
+      if (lastDate !== null) {
+        const daysDiff = Math.floor(
+          (currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        // If more than 1 day apart, streak is broken
+        if (daysDiff > 1) {
+          longestStreak = Math.max(longestStreak, currentStreak);
+          currentStreak = 0;
+        }
+      }
+
+      // Check if this day meets the threshold
+      let totalForDay = 0;
+      let meetsThreshold = false;
+
+      for (const track of tracks) {
+        switch (quest.TRACKING_TYPE) {
+          case TrackingType.Duration:
+            totalForDay += track.DURATION_MINUTES || 0;
+            break;
+          case TrackingType.Distance:
+            totalForDay += track.DISTANCE_KM || 0;
+            break;
+          case TrackingType.Count:
+            totalForDay += track.COUNT_VALUE || 0;
+            break;
+          case TrackingType.Boolean:
+            // For boolean tracking, simply check if any are completed
+            if (track.COMPLETED) {
+              meetsThreshold = true;
+            }
+            break;
+        }
+      }
+
+      // Check against threshold for non-boolean types
+      if (quest.TRACKING_TYPE !== TrackingType.Boolean) {
+        meetsThreshold = totalForDay >= dailyThreshold;
+      }
+
+      if (meetsThreshold) {
         currentStreak++;
+        lastDate = currentDate;
       } else {
-        break;
+        // Day doesn't meet threshold, streak is broken
+        longestStreak = Math.max(longestStreak, currentStreak);
+        currentStreak = 0;
+        lastDate = null;
       }
     }
 
-    // Update streak progress if necessary
+    // Final check for longest streak
+    longestStreak = Math.max(longestStreak, currentStreak);
+
+    const currentTimestamp = this.dateService.getCurrentDate().timestamp;
+
+    // Update streak progress
     await this.updateQuestProgress(userId, {
       category: userQuest.quest.RELATED_HABIT_CATEGORY,
       trackingType: TrackingType.Count,
-      value: currentStreak,
-      date: new Date(),
+      value: longestStreak,
+      date: new Date(currentTimestamp),
       progressType: 'streak',
     });
   }
@@ -482,19 +573,119 @@ export class QuestService {
     userQuest: UserQuests,
     tracksByDate: Map<string, DailyHabitTrack[]>,
   ): Promise<void> {
+    const quest = userQuest.quest;
+
+    // Define threshold for quantity-based daily completion
+    const dailyThreshold = this.getDailyThreshold(quest);
+
     // Count days with completed habits
-    const completedDays = Array.from(tracksByDate.values()).filter((tracks) =>
-      tracks.some((track) => track.COMPLETED),
-    ).length;
+    let completedDaysCount = 0;
+
+    for (const [dateKey, tracks] of tracksByDate.entries()) {
+      let totalForDay = 0;
+      let dayCompleted = false;
+
+      // For boolean tracking, check if any habit is completed
+      if (quest.TRACKING_TYPE === TrackingType.Boolean) {
+        dayCompleted = tracks.some((track) => track.COMPLETED);
+      } else {
+        // For other tracking types, sum up values
+        for (const track of tracks) {
+          switch (quest.TRACKING_TYPE) {
+            case TrackingType.Duration:
+              totalForDay += track.DURATION_MINUTES || 0;
+              break;
+            case TrackingType.Distance:
+              totalForDay += track.DISTANCE_KM || 0;
+              break;
+            case TrackingType.Count:
+              totalForDay += track.COUNT_VALUE || 0;
+              break;
+          }
+        }
+
+        // Check if day meets threshold
+        dayCompleted = totalForDay >= dailyThreshold;
+      }
+
+      if (dayCompleted) {
+        completedDaysCount++;
+      }
+    }
+
+    const currentTimestamp = this.dateService.getCurrentDate().timestamp;
 
     // Update daily completion progress
     await this.updateQuestProgress(userId, {
       category: userQuest.quest.RELATED_HABIT_CATEGORY,
       trackingType: TrackingType.Count,
-      value: completedDays,
-      date: new Date(),
+      value: completedDaysCount,
+      date: new Date(currentTimestamp),
       progressType: 'daily_completion',
     });
+  }
+
+  private async syncCompletionBasedProgress(
+    userId: number,
+    userQuest: UserQuests,
+  ): Promise<void> {
+    const quest = userQuest.quest;
+
+    // Get all completed habit challenges for this user in the relevant category
+    const completedChallenges = await this.userHabitsRepository.count({
+      where: {
+        UID: userId,
+        STATUS: HabitStatus.Completed,
+        habits: {
+          CATEGORY: quest.RELATED_HABIT_CATEGORY,
+          ...(quest.EXERCISE_TYPE && { EXERCISE_TYPE: quest.EXERCISE_TYPE }),
+        },
+        START_DATE: MoreThanOrEqual(userQuest.START_DATE),
+        END_DATE: LessThanOrEqual(userQuest.END_DATE),
+      },
+    });
+    const currentTimestamp = this.dateService.getCurrentDate().timestamp;
+
+    // Update completion-based progress
+    await this.updateQuestProgress(userId, {
+      category: quest.RELATED_HABIT_CATEGORY,
+      exerciseType: quest.EXERCISE_TYPE,
+      trackingType: TrackingType.Count,
+      value: completedChallenges,
+      date: new Date(currentTimestamp),
+      progressType: 'completion',
+    });
+  }
+
+  private getDailyThreshold(quest: Quest): number {
+    // For milestone quests, calculate daily threshold based on target value and duration
+    if (
+      quest.QUEST_TYPE === QuestType.NORMAL &&
+      quest.RQ_TARGET_VALUE > 0 &&
+      quest.DAY_DURATION > 0
+    ) {
+      return quest.RQ_TARGET_VALUE / quest.DAY_DURATION;
+    }
+
+    // For streak quests, daily threshold can be set directly via RQ_TARGET_VALUE
+    // (e.g., exercise at least 30 minutes every day)
+    if (
+      quest.QUEST_TYPE === QuestType.STREAK_BASED &&
+      quest.RQ_TARGET_VALUE > 0
+    ) {
+      return quest.RQ_TARGET_VALUE;
+    }
+
+    // For daily completion quests, can also use RQ_TARGET_VALUE as threshold
+    if (
+      quest.QUEST_TYPE === QuestType.DAILY_COMPLETION_BASED &&
+      quest.RQ_TARGET_VALUE > 0
+    ) {
+      return quest.RQ_TARGET_VALUE;
+    }
+
+    // Default threshold (1 for boolean completion)
+    return 1;
   }
 
   private async getQuestProgressInfo(userQuest: UserQuests): Promise<any> {
@@ -509,7 +700,8 @@ export class QuestService {
       (sum, entry) => sum + entry.VALUE_COMPLETED,
       0,
     );
-    // return { data: userQuest.quest.RQ_TARGET_VALUE };
+    const currentTimestamp = this.dateService.getCurrentDate().timestamp;
+
     return {
       startDate: userQuest.START_DATE,
       endDate: userQuest.END_DATE,
@@ -521,153 +713,41 @@ export class QuestService {
           100,
         ).toFixed(2),
       ),
-
       daysLeft: Math.max(
         0,
         Math.ceil(
-          (new Date(userQuest.END_DATE).getTime() - new Date().getTime()) /
+          (new Date(userQuest.END_DATE).getTime() -
+            new Date(currentTimestamp).getTime()) /
             (1000 * 60 * 60 * 24),
         ),
       ),
     };
   }
+
+  async remove(qid: number) {
+    const quest = await this.questRepository.findOneBy({
+      QID: qid,
+    });
+
+    if (!quest) {
+      throw new NotFoundException(`Quest with ID ${qid} not found`);
+    }
+
+    const iconUrls = quest.IMG_URL;
+
+    await this.questRepository.remove(quest);
+
+    // Clean up associated images
+    await this.imageService.deleteImageByUrl(iconUrls);
+
+    return {
+      message: `Quest ${quest.TITLE} has been successfully deleted`,
+      qid: qid,
+    };
+  }
 }
-
-// @Injectable()
-// export class QuestService {
-//   constructor(
-//     @InjectRepository(Quest)
-//     private readonly questRepo: Repository<Quest>,
-//     @InjectRepository(UserQuests)
-//     private readonly userQuestRepo: Repository<UserQuests>,
-//     private readonly quest: QuestRepository,
-//     private readonly userQuest: UserQuestRepository,
-//   ) {}
-
-//   async searchQuests(params: QuestParams): Promise<PaginatedResponse<Quest>> {
-//     const { data, total } = await this.quest.findAll(params);
-//     const { page = 1, limit = 10 } = params;
-
-//     // const userActive = awiat this.userQuest.findAll(),
-//     return {
-//       data,
-//       meta: {
-//         total,
-//         page,
-//         limit,
-//         totalPages: Math.ceil(total / limit),
-//       },
-//     };
-//   }
-
-//   async getAvailableQuest(params: {
-//     uid: number;
-//     filterType: 'all' | 'active' | 'non-active';
-//     query: string;
-//   }): Promise<{
-//     data: {
-//       quest: Quest;
-//       progress: UserQuests | null;
-//     }[];
-//     meta: {
-//       total?: number;
-//       page?: number;
-//       limit?: number;
-//       total_pages?: number;
-//     };
-//   }> {
-//     const { uid, filterType = 'all', query } = params;
-
-//     const userActiveQuests = await this.userQuestRepo.find({
-//       where: { UID: uid, STATUS: QuestStatus.Active },
-//       select: ['QID', 'UID', 'PROGRESS_PERCENTAGE', 'quest'],
-//     });
-
-//     const excludeIds = userActiveQuests.map((q) => q.QID);
-
-//     const nonActiveQuests = await this.questRepo.find({
-//       where: { QID: Not(In(excludeIds)) },
-//     });
-
-//     const nonActiveQuestsData = nonActiveQuests.map((q) => ({
-//       quest: q,
-//       progress: null,
-//     }));
-
-//     const activeQuestsData = userActiveQuests.map((uq) => ({
-//       quest: uq.quest,
-//       progress: uq,
-//     }));
-
-//     // fetch habit to update quest percentage
-
-//     if (filterType === 'active') {
-//       return {
-//         data: activeQuestsData,
-//         meta: {
-//           total: activeQuestsData.length,
-//         },
-//       };
-//     } else if (filterType === 'non-active') {
-//       return {
-//         data: nonActiveQuestsData,
-//         meta: {
-//           total: nonActiveQuestsData.length,
-//         },
-//       };
-//     }
-
-//     return {
-//       data: [...activeQuestsData, ...nonActiveQuestsData].sort((a, b) => {
-//         if (a.progress && !b.progress) return -1; // a is active, b is not
-//         if (!a.progress && b.progress) return 1; // b is active, a is not
-
-//         if (a.progress && b.progress) {
-//           return (
-//             b.progress.PROGRESS_PERCENTAGE - a.progress.PROGRESS_PERCENTAGE
-//           );
-//         }
-
-//         return 0;
-//       }),
-//       meta: {
-//         total: activeQuestsData.length + nonActiveQuests.length,
-//       },
-//     };
-//   }
-
-//   async getUserActiveQuest(uid: number) {
-//     //tasks
-//     //1. get all user active
-//     //2. update each one progress
-//     //3. return with updated progresss
-//     const userQuest = await this.userQuestRepo.find({
-//       where: { UID: uid, STATUS: QuestStatus.Active },
-//     });
-
-//     // //then update progress
-//     // const updatedUserQuests = await this.updatedQuestProgress(
-//     //   userQuest.map((uq) => ({ qid: uq.QID, uid: uq.UID })),
-//     // );
-//   }
-
-//   async updatedQuestProgress(qid: number, uid: number) {
-//     const userQuest = await this.userQuestRepo.findOne({
-//       where: { QID: qid, UID: uid },
-//       // relations: ['quest'],
-//     });
-
-//     if(userQuest.quest.RQ_TARGET_COUNT > 0) {
-//       // fetch habits related with count-based categories
-//     }
-//     if(userQuest.quest.RQ_TARGET_DAYS_STREAK > 0) {
-//       // fetch habits related with count-based categories
-//     }
-//     if(userQuest.quest.RQ_TARGET_KM_DISTANCE> 0) {
-//       // fetch habits related with count-based categories
-//     }
-//     if(userQuest.quest.RQ_TARGET_MINUTES> 0) {
-//       // if(userQuest.quest.category.)
-//     }
-//   }
-// }
+function In(
+  arg0: QuestStatus[],
+): QuestStatus | import('typeorm').FindOperator<QuestStatus> {
+  throw new Error('Function not implemented.');
+}

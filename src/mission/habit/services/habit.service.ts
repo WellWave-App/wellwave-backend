@@ -7,22 +7,40 @@ import {
 import { CreateHabitDto } from '../dto/create-habit.dto';
 import { ImageService } from '../../../image/image.service';
 import {
+  ExerciseType,
   HabitCategories,
   Habits,
   TrackingType,
 } from '@/.typeorm/entities/habit.entity';
 import { PaginatedResponse } from '@/response/response.interface';
-import {
-  HabitStatus,
-  UserHabits,
-} from '@/.typeorm/entities/user-habits.entity';
+import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
 import { StartHabitChallengeDto } from '../dto/user-habit.dto';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { HabitListFilter } from '../interfaces/habits.interfaces';
 import { QuestService } from '../../quest/services/quest.service';
+import { updateHabitNotiDto } from '../dto/noti-update.dto';
+import { LogsService } from '@/user-logs/services/logs.service';
+import { DateService } from '@/helpers/date/date.services';
+import { LOG_NAME, LogEntity } from '@/.typeorm/entities/logs.entity';
+import { UsersService } from '@/users/services/users.service';
+import { HabitRecommendService } from '@/recommendation/services/habits-recommendation.service';
+import { User, USER_GOAL } from '@/.typeorm/entities/users.entity';
+import { UserHabits } from '../../../.typeorm/entities/user-habits.entity';
+import {
+  RiskCalculator,
+  RiskLevel,
+} from '@/recommendation/utils/risk-calculator.util';
+import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
+import { CreateLogDto } from '@/user-logs/dto/create-log.dto';
+import { RewardService } from '@/users/services/reward.service';
+import { AchievementService } from '@/achievement/services/achievement.service';
+import {
+  RequirementEntity,
+  TrackableProperty,
+} from '@/.typeorm/entities/achievement.entity';
 
 @Injectable()
 export class HabitService {
@@ -33,38 +51,48 @@ export class HabitService {
     private userHabitsRepository: Repository<UserHabits>,
     @InjectRepository(DailyHabitTrack)
     private dailyTrackRepository: Repository<DailyHabitTrack>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @InjectRepository(UserQuests)
+    private userQuestRepository: Repository<UserQuests>,
     private readonly imageService: ImageService,
     private readonly questService: QuestService,
+    private readonly logService: LogsService,
+    private readonly userService: UsersService,
+    private readonly dateService: DateService,
+    private readonly rewardService: RewardService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   async createHabit(
     createHabitDto: CreateHabitDto,
     file?: Express.Multer.File,
   ): Promise<Habits> {
-    const habit = this.habitsRepository.create(createHabitDto);
     if (file) {
       createHabitDto.THUMBNAIL_URL = this.imageService.getImageUrl(
         file.filename,
       );
     }
 
+    const habit = this.habitsRepository.create(createHabitDto);
+
     return await this.habitsRepository.save(habit);
   }
 
   async getDailyHabit(uid: number): Promise<PaginatedResponse<any>> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     // * updated outdate daily habit
     await this.updateOutdatedHabits(uid);
+
+    const today = new Date(this.dateService.getCurrentDate().date);
+    today.setHours(0, 0, 0, 0);
 
     // * helper format function
     const formatResponse = (h: UserHabits) => ({
       CHALLENGE_ID: h.CHALLENGE_ID,
       HID: h.HID,
-      TITLE: h.habits.TITLE,
-      THUMBNAIL_URL: h.habits.THUMBNAIL_URL,
-      EXP_REWARD: h.habits.EXP_REWARD,
+      TITLE: h.habits?.TITLE,
+      THUMBNAIL_URL: h.habits?.THUMBNAIL_URL,
+      EXP_REWARD: h.habits?.EXP_REWARD,
     });
 
     const userDailyHabits = await this.getUserHabits(
@@ -78,12 +106,7 @@ export class HabitService {
 
     const filterTodayDailyHabits = userDailyHabits.data.filter((uh) => {
       const startDate = new Date(uh.START_DATE);
-      return (
-        startDate.getDate() === today.getDate() &&
-        startDate.getMonth() === today.getMonth() &&
-        startDate.getFullYear() === today.getFullYear() &&
-        uh.habits.IS_DAILY
-      );
+      return uh.habits.IS_DAILY && this.dateService.isSameDay(startDate, today);
     });
 
     if (filterTodayDailyHabits.length > 0) {
@@ -101,13 +124,22 @@ export class HabitService {
       .limit(4)
       .getMany();
 
-    const data = await Promise.all(
+    await Promise.all(
       randomHabits.map((h) =>
-        this.startChallenge(uid, { UID: uid, HID: h.HID }),
+        this.startChallenge(uid, { UID: uid, HID: h.HID, DAYS_GOAL: 1 }),
       ),
     );
 
-    const formatted = data.map((uh) => formatResponse(uh));
+    const uhToday = await this.userHabitsRepository.find({
+      where: {
+        UID: uid,
+        habits: { IS_DAILY: true },
+        START_DATE: today,
+        // END_DATE: new Date(today.getDate() + 1),
+      },
+    });
+
+    const formatted = uhToday.map((uh) => formatResponse(uh));
     return {
       data: formatted,
       meta: { total: formatted.length },
@@ -115,7 +147,7 @@ export class HabitService {
   }
 
   async updateOutdatedHabits(uid: number): Promise<void> {
-    const today = new Date();
+    const today = new Date(this.dateService.getCurrentDate().date);
     today.setHours(0, 0, 0, 0); // Set to start of day
 
     // Find all active habits for the user
@@ -130,7 +162,7 @@ export class HabitService {
     const outdatedHabits = userHabits.filter((habit) => {
       const endDate = new Date(habit.END_DATE);
       endDate.setHours(0, 0, 0, 0);
-      return endDate < today;
+      return endDate <= today;
     });
 
     if (outdatedHabits.length === 0) {
@@ -151,7 +183,7 @@ export class HabitService {
   async getHabits(
     userId: number,
     filter: HabitListFilter = HabitListFilter.ALL,
-    category?: HabitCategories,
+    category?: HabitCategories | 'rec',
     page: number = 1,
     limit: number = 10,
     pagination: boolean = false,
@@ -159,27 +191,54 @@ export class HabitService {
     // Start with habits query
     await this.updateOutdatedHabits(userId);
 
-    const habitsQuery = this.habitsRepository.createQueryBuilder('habit');
-
-    if (category) {
-      habitsQuery.andWhere('habit.CATEGORY = :category', { category });
-    }
-
-    // Get all habits first
-    const allHabits = await habitsQuery.getMany();
-
-    // Get user's active habits
+    const habitsQuery = this.habitsRepository
+      .createQueryBuilder('habit')
+      .where('habit.IS_DAILY = false');
     const activeHabits = await this.userHabitsRepository
       .createQueryBuilder('userHabit')
       .where('userHabit.UID = :userId', { userId })
       .andWhere('userHabit.STATUS = :status', { status: HabitStatus.Active })
       .getMany();
 
-    // Create a set of active habit IDs for quick lookup
     const activeHabitIds = new Set(activeHabits.map((h) => h.HID));
+    let filteredHabits;
+    let recommendationScores = new Map();
+    let allHabits = await habitsQuery.getMany();
 
-    // Process habits based on filter
-    let filteredHabits = allHabits;
+    if (category === 'rec') {
+      const user = await this.userRepository.findOne({
+        where: { UID: userId },
+        relations: ['RiskAssessment', 'habits'],
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const allUsers = await this.userRepository.find({
+        relations: ['RiskAssessment', 'habits'],
+      });
+
+      const recommendations = await HabitRecommendService.recommendHabits(
+        allHabits.filter((habit) => !activeHabitIds.has(habit.HID)),
+        user,
+        allUsers,
+        limit || 5,
+      );
+
+      // Store scores for later use
+      recommendationScores = new Map(
+        recommendations.map((rec) => [rec.habit.HID, rec.scoreInfo]),
+      );
+
+      // Extract just the habits for filtering
+      filteredHabits = recommendations.map((rec) => rec.habit);
+    } else {
+      if (category) {
+        habitsQuery.andWhere('habit.CATEGORY = :category', { category });
+        allHabits = await habitsQuery.getMany();
+      }
+    }
 
     switch (filter) {
       case HabitListFilter.DOING:
@@ -192,21 +251,19 @@ export class HabitService {
           (habit) => !activeHabitIds.has(habit.HID),
         );
         break;
-      // For ALL, we keep all habits but will add the status
+      default:
+        filteredHabits = allHabits;
     }
 
-    // Calculate pagination values
     const total = filteredHabits.length;
     const totalPages = pagination ? Math.ceil(total / limit) : undefined;
 
-    // Apply pagination if enabled
     if (pagination) {
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
       filteredHabits = filteredHabits.slice(startIndex, endIndex);
     }
 
-    // Map habits to include active status and challenge info if exists
     const mappedHabits = await Promise.all(
       filteredHabits.map(async (habit) => {
         const isActive = activeHabitIds.has(habit.HID);
@@ -222,11 +279,11 @@ export class HabitService {
             relations: ['dailyTracks'],
           });
 
-          const daysCompleted = activeChallenge.dailyTracks.filter(
-            (track) => track.COMPLETED,
-          ).length;
-
           if (activeChallenge) {
+            const daysCompleted = activeChallenge.dailyTracks.filter(
+              (track) => track.COMPLETED,
+            ).length;
+
             challengeInfo = {
               challengeId: activeChallenge.CHALLENGE_ID,
               startDate: activeChallenge.START_DATE,
@@ -241,17 +298,28 @@ export class HabitService {
           }
         }
 
+        // Get scoreInfo from recommendationScores if available, else null
+        const scoreInfo = recommendationScores.get(habit.HID) || null;
+
         return {
           ...habit,
           isActive,
           challengeInfo,
+          scoreInfo,
         };
       }),
     );
 
-    // Return paginated response
     return {
-      data: mappedHabits,
+      data: mappedHabits.sort((a, b) => {
+        if (b.scoreInfo !== null && a.scoreInfo !== null) {
+          return b.scoreInfo.score - a.scoreInfo.score;
+        } else {
+          // if (a.isActive && !b.isActive) return -1;
+          // if (!a.isActive && b.isActive) return 1;
+          // return 0;
+        }
+      }),
       meta: {
         total,
         ...(pagination && {
@@ -262,6 +330,86 @@ export class HabitService {
         }),
       },
     };
+  }
+
+  // Helper method to calculate match score
+  private async calculateMatchScore(
+    habit: Habits,
+    userId: number,
+  ): Promise<number> {
+    const user = await this.userRepository.findOne({
+      where: { UID: userId },
+      relations: ['RiskAssessment'],
+    });
+
+    if (!user || !user.RiskAssessment) {
+      return 0.7; // Default score if no risk assessment
+    }
+
+    // Calculate individual scores
+    const riskScore = HabitRecommendService['calculateRiskScore'](
+      habit,
+      user.RiskAssessment,
+    );
+    const goalScore = HabitRecommendService['calculateGoalScore'](
+      habit,
+      user.USER_GOAL,
+    );
+
+    // Return weighted average
+    return riskScore * 0.6 + goalScore * 0.4;
+  }
+
+  // Helper method to get recommendation reasons
+  private async getRecommendationReasons(
+    habit: Habits,
+    userId: number,
+  ): Promise<string[]> {
+    const user = await this.userRepository.findOne({
+      where: { UID: userId },
+      relations: ['RiskAssessment'],
+    });
+
+    const reasons: string[] = [];
+
+    // Add goal-based reason
+    switch (user.USER_GOAL) {
+      case USER_GOAL.BUILD_MUSCLE:
+        if (
+          habit.CATEGORY === HabitCategories.Exercise &&
+          habit.EXERCISE_TYPE === ExerciseType.Strength
+        ) {
+          reasons.push('Aligns with your muscle building goal');
+        }
+        break;
+      case USER_GOAL.LOSE_WEIGHT:
+        if (
+          habit.CATEGORY === HabitCategories.Exercise ||
+          habit.CATEGORY === HabitCategories.Diet
+        ) {
+          reasons.push('Supports your weight loss journey');
+        }
+        break;
+      case USER_GOAL.STAY_HEALTHY:
+        reasons.push('Contributes to your overall health maintenance');
+        break;
+    }
+
+    // Add risk-based reason
+    if (user.RiskAssessment) {
+      const riskLevel = RiskCalculator.calculateOverallRiskLevel({
+        diabetes: user.RiskAssessment.DIABETES ?? 0,
+        hypertension: user.RiskAssessment.HYPERTENSION ?? 0,
+        dyslipidemia: user.RiskAssessment.DYSLIPIDEMIA ?? 0,
+        obesity: user.RiskAssessment.OBESITY ?? 0,
+      });
+
+      if (riskLevel !== RiskLevel.LOW) {
+        reasons.push('Suitable for your health profile');
+      }
+    }
+
+    return reasons;
   }
 
   async startChallenge(
@@ -285,7 +433,7 @@ export class HabitService {
       },
     });
 
-    if (activeChallenge) {
+    if (activeChallenge !== null) {
       throw new ConflictException(
         'Active challenge already exists for this habit',
       );
@@ -294,7 +442,7 @@ export class HabitService {
     const userHabit = this.userHabitsRepository.create({
       UID: userId,
       HID: startDto.HID,
-      START_DATE: new Date(),
+      START_DATE: new Date(this.dateService.getCurrentDate().date),
       STATUS: HabitStatus.Active,
       DAYS_GOAL: startDto.DAYS_GOAL || habit.DEFAULT_DAYS_GOAL,
       DAILY_MINUTE_GOAL:
@@ -309,10 +457,12 @@ export class HabitService {
         Friday: false,
         Saturday: false,
       },
+      habits: { HID: startDto.HID },
+      user: { UID: userId },
     });
 
     // Calculate end date
-    const endDate = new Date();
+    const endDate = new Date(this.dateService.getCurrentDate().date);
     endDate.setDate(endDate.getDate() + userHabit.DAYS_GOAL);
     userHabit.END_DATE = endDate;
 
@@ -332,7 +482,7 @@ export class HabitService {
     });
     const trackDate = trackDto.TRACK_DATE
       ? new Date(trackDto.TRACK_DATE)
-      : new Date();
+      : new Date(this.dateService.getCurrentDate().date);
 
     if (!userHabit) {
       throw new NotFoundException('Challenge not found');
@@ -342,7 +492,7 @@ export class HabitService {
       throw new BadRequestException('Challenge is not active');
     }
 
-    if (trackDate > userHabit.END_DATE) {
+    if (trackDate > new Date(userHabit.END_DATE)) {
       throw new BadRequestException('Cannot track after challenge end date');
     }
 
@@ -352,6 +502,7 @@ export class HabitService {
         CHALLENGE_ID: trackDto.CHALLENGE_ID,
         TRACK_DATE: trackDate,
       },
+      relations: ['UserHabits'],
     });
 
     if (!dailyTrack) {
@@ -405,8 +556,20 @@ export class HabitService {
         break;
     }
 
-    // dailyTrack.NOTES = trackDto.notes;
-    await this.dailyTrackRepository.save(dailyTrack);
+    // calculateMetrics, before saving dailyTrack
+    if (userHabit.habits.TRACKING_TYPE === TrackingType.Duration) {
+      const user = await this.userService.getById(userId);
+      if (user) {
+        dailyTrack.calculateMetrics(user, userHabit.habits);
+      }
+    }
+    dailyTrack.MOOD_FEEDBACK = trackDto.MOOD_FEEDBACK;
+
+    const savedTrack = await this.dailyTrackRepository.save(dailyTrack);
+
+    // * update related logs
+    await this.updateRelatedLogs(userId, savedTrack);
+    // * update realted quests
     await this.questService.updateQuestProgress(userId, {
       category: userHabit.habits.CATEGORY,
       exerciseType: userHabit.habits.EXERCISE_TYPE,
@@ -414,11 +577,134 @@ export class HabitService {
       value: trackingValue,
       date: new Date(trackDto.TRACK_DATE),
     });
-    // Update streak and check completion
+    // * update related quests with calculated metrics (if available)
+    if (savedTrack.STEPS_CALCULATED) {
+      await this.questService.updateQuestProgress(userId, {
+        category: userHabit.habits.CATEGORY,
+        exerciseType: userHabit.habits.EXERCISE_TYPE,
+        trackingType: TrackingType.Count,
+        value: savedTrack.STEPS_CALCULATED,
+        date: new Date(trackDto.TRACK_DATE),
+      });
+    }
+
+    if (savedTrack.DISTANCE_KM) {
+      await this.questService.updateQuestProgress(userId, {
+        category: userHabit.habits.CATEGORY,
+        exerciseType: userHabit.habits.EXERCISE_TYPE,
+        trackingType: TrackingType.Distance,
+        value: savedTrack.DISTANCE_KM,
+        date: new Date(trackDto.TRACK_DATE),
+      });
+    }
+
+    if (savedTrack.COMPLETED) {
+      await this.rewardService.rewardUser(userId, {
+        exp: userHabit.habits.EXP_REWARD,
+      });
+    }
+
+    // * track achievement progress
+    if (
+      trackDto.DURATION_MINUTES &&
+      userHabit.habits.CATEGORY === HabitCategories.Exercise
+    ) {
+      await this.achievementService.trackProgress({
+        uid: userHabit.user.UID,
+        entity: RequirementEntity.USER_HABIT_CHALLENGES,
+        property: TrackableProperty.TOTAL_EXERCISE_MINUTE,
+        value: trackDto.DURATION_MINUTES,
+        date: new Date(this.dateService.getCurrentDate().timestamp),
+      });
+    }
+
+    await this.achievementService.trackProgress({
+      uid: userHabit.user.UID,
+      entity: RequirementEntity.USER_HABIT_CHALLENGES,
+      property: TrackableProperty.CONSECUTIVE_DAYS,
+      value: 1,
+      date: new Date(this.dateService.getCurrentDate().timestamp),
+    });
+
+    // *Update streak and check completion
     await this.updateStreakCount(userHabit.CHALLENGE_ID);
     await this.checkChallengeCompletion(userHabit.CHALLENGE_ID);
 
-    return dailyTrack;
+    return savedTrack;
+  }
+
+  async updateRelatedLogs(userId: number, dailyTrack: DailyHabitTrack) {
+    const track = await this.dailyTrackRepository.findOne({
+      where: {
+        TRACK_ID: dailyTrack.TRACK_ID,
+      },
+      relations: ['UserHabits'],
+    });
+
+    if (!track) {
+      throw new NotFoundException(`Not found trackId: ${dailyTrack.TRACK_ID}`);
+    }
+
+    // Only create/update logs if we have calculated values
+    if (track.UserHabits?.habits?.EXERCISE_TYPE) {
+      const trackDate = new Date(track.TRACK_DATE);
+
+      // Handle steps log
+      if (track.STEPS_CALCULATED) {
+        await this.createOrUpdateLog({
+          UID: userId,
+          DATE: trackDate,
+          LOG_NAME: LOG_NAME.STEP_LOG,
+          VALUE: track.STEPS_CALCULATED,
+        });
+      }
+
+      // Handle calories log
+      if (track.CALORIES_BURNED) {
+        await this.createOrUpdateLog({
+          UID: userId,
+          DATE: trackDate,
+          LOG_NAME: LOG_NAME.CAL_BURN_LOG,
+          VALUE: track.CALORIES_BURNED,
+        });
+      }
+
+      // Handle heart rate log
+      if (track.HEART_RATE) {
+        await this.createOrUpdateLog({
+          UID: userId,
+          DATE: trackDate,
+          LOG_NAME: LOG_NAME.HEART_RATE_LOG,
+          VALUE: track.HEART_RATE,
+        });
+      }
+    }
+  }
+
+  // New helper method to create or update logs
+  private async createOrUpdateLog(logData: CreateLogDto): Promise<LogEntity> {
+    try {
+      // First try to create a new log
+      return await this.logService.create(logData);
+    } catch (error) {
+      // If there's a conflict (log already exists), update it instead
+      if (error instanceof ConflictException) {
+        const log = await this.logService.findOne(
+          logData.UID,
+          logData.LOG_NAME,
+          logData.DATE,
+        );
+
+        return await this.logService.update(
+          logData.UID,
+          logData.LOG_NAME,
+          logData.DATE,
+          { VALUE: log.VALUE + logData.VALUE },
+        );
+      }
+      // If it's another type of error, re-throw it
+      throw error;
+    }
   }
 
   private async updateStreakCount(challengeId: number): Promise<void> {
@@ -452,7 +738,7 @@ export class HabitService {
         exerciseType: userHabit.habits.EXERCISE_TYPE,
         trackingType: TrackingType.Count, // Streaks are counted
         value: currentStreak, // Pass the full streak value
-        date: new Date(),
+        date: new Date(this.dateService.getCurrentDate().date),
         progressType: 'streak', // Add this to differentiate streak updates
       });
     }
@@ -461,10 +747,10 @@ export class HabitService {
   private async checkChallengeCompletion(challengeId: number): Promise<void> {
     const userHabit = await this.userHabitsRepository.findOne({
       where: { CHALLENGE_ID: challengeId },
-      relations: ['dailyTracks', 'habits'],
+      relations: ['dailyTracks', 'habits', 'user'],
     });
 
-    const today = new Date();
+    const today = new Date(this.dateService.getCurrentDate().date);
     if (today > userHabit.END_DATE) {
       const completedDays = userHabit.dailyTracks.filter(
         (track) => track.COMPLETED,
@@ -477,11 +763,27 @@ export class HabitService {
           exerciseType: userHabit.habits.EXERCISE_TYPE,
           trackingType: TrackingType.Count,
           value: 1, // One completion
-          date: new Date(),
+          date: new Date(this.dateService.getCurrentDate().date),
           progressType: 'completion',
         });
-        // TODO: Implement reward system
-        // await this.rewardService.awardHabitCompletion(userHabit);
+        // * update acheivement progress
+        await Promise.all([
+          this.achievementService.trackProgress({
+            uid: userHabit.user.UID,
+            entity: RequirementEntity.USER_MISSIONS,
+            property: TrackableProperty.COMPLETED_MISSION,
+            value: 1,
+            date: new Date(this.dateService.getCurrentDate().timestamp),
+          }),
+
+          this.achievementService.trackProgress({
+            uid: userHabit.user.UID,
+            entity: RequirementEntity.USER_MISSIONS,
+            property: TrackableProperty.COMPLETED_MISSION,
+            value: 1,
+            date: new Date(this.dateService.getCurrentDate().timestamp),
+          }),
+        ]);
       } else {
         userHabit.STATUS = HabitStatus.Failed;
       }
@@ -496,19 +798,33 @@ export class HabitService {
     pagination: boolean = false,
     page: number = 1,
     limit: number = 10,
-    isDaily: boolean = false,
+    isDaily?: boolean,
+    startDate?: string,
+    endDate?: string,
   ): Promise<PaginatedResponse<UserHabits>> {
     const queryBuilder = this.userHabitsRepository
       .createQueryBuilder('userHabit')
       .leftJoinAndSelect('userHabit.habits', 'habit')
       .leftJoinAndSelect('userHabit.dailyTracks', 'tracks')
-      .where('userHabit.UID = :userId', { userId })
-      .andWhere('habit.IS_DAILY = :isDaily', { isDaily: isDaily });
+      .where('userHabit.UID = :userId', { userId });
+
+    if (isDaily) {
+      queryBuilder.andWhere('habit.IS_DAILY = :isDaily', { isDaily: isDaily });
+    }
 
     if (status) {
       queryBuilder.andWhere('userHabit.STATUS = :status', { status });
     }
 
+    if (startDate) {
+      queryBuilder.andWhere('userHabit.START_DATE >= :startDate', {
+        startDate,
+      });
+    }
+
+    if (endDate) {
+      queryBuilder.andWhere('userHabit.END_DATE <= :endDate', { endDate });
+    }
     if (pagination) {
       if (page < 1) page = 1;
       if (limit < 1) limit = 10;
@@ -594,6 +910,39 @@ export class HabitService {
     };
   }
 
+  async updateUserHabitsNotification(uid: number, dto: updateHabitNotiDto) {
+    const uh = await this.userHabitsRepository.findOne({
+      where: {
+        CHALLENGE_ID: dto.CHALLENGE_ID,
+        UID: uid,
+      },
+    });
+
+    if (!uh) {
+      throw new NotFoundException('User habit not found');
+    }
+
+    await this.userHabitsRepository.update(uh.CHALLENGE_ID, {
+      ...dto,
+      NOTI_TIME: dto.NOTI_TIME
+        ? this.convertTimeStringToDate(dto.NOTI_TIME)
+        : null,
+    });
+
+    return {
+      ...uh,
+      ...dto,
+    };
+  }
+
+  private convertTimeStringToDate(timeString: string): Date {
+    if (!timeString) return null;
+    const date = new Date(0);
+    const [hours, minutes] = timeString.split(':');
+    date.setHours(Number(hours), Number(minutes), 0, 0);
+    return date;
+  }
+
   // Batch update for daily completed habits
   // @Cron('0 0 * * *') // Run daily at midnight
   // async processDailyHabitCompletion() {
@@ -634,4 +983,125 @@ export class HabitService {
   //     }
   //   }
   // }
+
+  async getMissionHistory(uid: number, date: Date) {
+    /**
+     * expected response
+     *
+     * data : {
+     *  daily_habits: {
+     *    title: string,
+     *    image_url: string,
+     *    status: boolean
+     * }[]
+     *  habits:
+     *  quests:
+     * }
+     *
+     */
+    const startOfDay = this.dateService.getStartOfDay(date);
+    const endOfDay = this.dateService.getEndOfDay(date);
+
+    const [userHabits, userQuests] = await Promise.all([
+      this.userHabitsRepository.find({
+        where: {
+          UID: uid,
+          START_DATE: LessThanOrEqual(startOfDay),
+          END_DATE: MoreThanOrEqual(endOfDay),
+        },
+        relations: ['habits', 'dailyTracks'],
+        select: {
+          habits: {
+            TITLE: true,
+            THUMBNAIL_URL: true,
+            IS_DAILY: true,
+          },
+          dailyTracks: {
+            TRACK_DATE: true,
+            COMPLETED: true,
+          },
+          STATUS: true,
+        },
+      }),
+      this.userQuestRepository.find({
+        where: {
+          UID: uid,
+          START_DATE: LessThanOrEqual(startOfDay),
+          END_DATE: MoreThanOrEqual(endOfDay),
+        },
+        relations: ['quest'],
+        select: {
+          quest: {
+            TITLE: true,
+            IMG_URL: true,
+          },
+          STATUS: true,
+        },
+      }),
+    ]);
+
+    const formatHabits = (habits: UserHabits[], isDaily: boolean) => {
+      return habits
+        .filter((uh) => uh.habits.IS_DAILY === isDaily)
+        .map((uh) => {
+          const tracks = uh.dailyTracks.filter((track) =>
+            this.dateService.isSameDay(track.TRACK_DATE, date),
+          );
+
+          return {
+            TITLE: uh.habits.TITLE,
+            THUMBNAIL_URL: uh.habits.THUMBNAIL_URL,
+            STATUS: {
+              HABIT_STATUS: uh.STATUS,
+              DAILY_TRACK: tracks[0]?.COMPLETED || false,
+            },
+          };
+        });
+    };
+
+    const dailyFormatted = formatHabits(userHabits, true);
+    const habitsFormatted = formatHabits(userHabits, false);
+    const questsFormatted = userQuests.map((uq) => ({
+      TITLE: uq.quest.TITLE,
+      THUMBNAIL_URL: uq.quest.IMG_URL,
+      STATUS: uq.STATUS,
+    }));
+
+    return {
+      data: {
+        daily_habits: dailyFormatted,
+        habits: habitsFormatted,
+        quests: questsFormatted,
+      },
+      meta: {
+        date: startOfDay.toISOString() || null,
+        total:
+          dailyFormatted.length +
+            habitsFormatted.length +
+            questsFormatted.length || 0,
+      },
+    };
+  }
+
+  async remove(hid: number) {
+    const habit = await this.habitsRepository.findOneBy({
+      HID: hid,
+    });
+
+    if (!habit) {
+      throw new NotFoundException(`Habit with ID ${hid} not found`);
+    }
+
+    const iconUrls = habit.THUMBNAIL_URL;
+
+    await this.habitsRepository.remove(habit);
+
+    // Clean up associated images
+    await this.imageService.deleteImageByUrl(iconUrls);
+
+    return {
+      message: `Habit ${habit.TITLE} has been successfully deleted`,
+      hid: hid,
+    };
+  }
 }

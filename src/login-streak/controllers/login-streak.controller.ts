@@ -27,51 +27,12 @@ import {
 @Controller('login-streak')
 export class LoginStreakController {
   constructor(private readonly loginStreakService: LoginStreakService) {}
-
-  @ApiOperation({ summary: 'Get login history statistics' })
-  @ApiParam({ name: 'uid', description: 'User ID' })
-  @ApiQuery({
-    name: 'startDate',
-    required: false,
-    description: 'Start date for stats (YYYY-MM-DD)',
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: false,
-    description: 'End date for stats (YYYY-MM-DD)',
-  })
-  @ApiResponse({ status: 200, description: 'Returns login history statistics' })
-  @Get(':uid/login-history-stats')
-  async getLoginHistoryStats(
-    @Param('uid') uid: number,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const start = new Date(today);
-    const daysToMonday = (dayOfWeek + 6) % 7; // Convert Sunday (0) to 6, Monday (1) to 0, etc.
-    start.setDate(today.getDate() - daysToMonday);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6); // Add 6 days to get to Sunday
-
-    // const startDate
-    const dateStart = startDate ? new Date(startDate) : start;
-    const dateEnd = endDate ? new Date(endDate) : end;
-
-    return await this.loginStreakService.getUserLoginHistoryStats(
-      uid,
-      dateStart,
-      dateEnd,
-    );
-  }
-
-  @ApiOperation({ summary: 'Update user login streak' })
+  @ApiOperation({ summary: 'Get&Update user login streak' })
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Login streak updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard)
-  @Post('update-login')
+  @Get('update-login')
   loggedIn(@Request() req) {
     return this.loginStreakService.updateUserLoginStreak(+req.user.UID);
   }

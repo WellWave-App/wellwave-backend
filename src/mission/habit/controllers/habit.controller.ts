@@ -26,9 +26,7 @@ import {
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
 import { TrackHabitDto } from '../dto/track-habit.dto';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
-import { Role } from '@/auth/roles/roles.enum';
-import { Roles } from '@/auth/roles/roles.decorator';
-import { RoleGuard } from '@/auth/guard/role.guard';
+import { imageFileValidator } from '@/image/imageFileValidator';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -39,17 +37,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-
-const imageFileValidator = new ParseFilePipe({
-  validators: [
-    new FileTypeValidator({ fileType: /(image\/jpeg|image\/png|image\/gif)/ }),
-    new MaxFileSizeValidator({
-      maxSize: 10 * 1024 * 1024,
-      message: 'file must be smaller than 10 MB',
-    }),
-  ],
-  fileIsRequired: false,
-});
+import { updateHabitNotiDto } from '../dto/noti-update.dto';
+import { RoleGuard } from '@/auth/guard/role.guard';
+import { Roles } from '@/auth/roles/roles.decorator';
+import { Role } from '@/auth/roles/roles.enum';
+import { Patch } from '@nestjs/common';
 
 @ApiTags('Habits')
 @ApiBearerAuth()
@@ -106,7 +98,7 @@ export class HabitController {
   getHabits(
     @Request() req,
     @Query('filter') filter?: HabitListFilter,
-    @Query('category') category?: HabitCategories,
+    @Query('category') category?: HabitCategories | 'rec',
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('pagination') pagination?: boolean,
@@ -115,8 +107,8 @@ export class HabitController {
       req.user.UID,
       filter,
       category,
-      page,
-      limit,
+      page || 1,
+      limit || 10,
       pagination,
     );
   }
@@ -261,6 +253,9 @@ export class HabitController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('pagination') pagination?: boolean,
+    @Query('isDaily') isDaily?: boolean,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     return this.habitService.getUserHabits(
       req.user.UID,
@@ -268,6 +263,9 @@ export class HabitController {
       pagination,
       page,
       limit,
+      isDaily,
+      startDate,
+      endDate,
     );
   }
 
@@ -342,5 +340,24 @@ export class HabitController {
   })
   getDaily(@Request() req): Promise<any> {
     return this.habitService.getDailyHabit(req.user.UID);
+  }
+
+  @Patch('/noti-set')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  updateUserHabitsNotification(
+    @Request() req,
+    @Body() dto: updateHabitNotiDto,
+  ) {
+    return this.habitService.updateUserHabitsNotification(req.user.UID, dto);
+  }
+
+  @Get('/history')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  getMissionHistory(
+    @Request() req,
+    @Query('date') date?: string, // YYYY-MM-DD
+  ) {
+    const dateFormat = new Date(date);
+    return this.habitService.getMissionHistory(req.user.UID, dateFormat);
   }
 }

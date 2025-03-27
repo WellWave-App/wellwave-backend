@@ -20,6 +20,17 @@ import { HabitModule } from './mission/habit/habit.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { FilterAdminInterceptor } from './Interceptors/filterAdmin.interceptor';
 import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.module';
+import { AchievementModule } from './achievement/achievement.module';
+import { LeaderboardModule } from './leagues/leagues.module';
+import { OtpModule } from './otp/otp.module';
+import { NotificationHistoryModule } from './notification_history/notification_history.module';
+import { HelperModule } from './helpers/helper.module';
+import { TestingModule } from '@nestjs/testing';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksModule } from './scheduler/tasks.module';
+import { ShopModule } from './shop/shop.module';
+import { FriendModule } from './friend/friend.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -40,6 +51,11 @@ import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.mo
           join(__dirname, '.typeorm', 'entities', '*.entity{.ts,.js}'),
         ],
         synchronize: true,
+        timezone: 'Asia/Bangkok',
+        extra: {
+          timezone: 'Asia/Bangkok',
+        },
+        dateStrings: true,
       }),
       inject: [ConfigService],
     }),
@@ -57,6 +73,17 @@ import { CheckinChallengeModule } from './checkin-challenge/checkin-challenge.mo
     QuestModule,
     HabitModule,
     CheckinChallengeModule,
+    AchievementModule,
+    LeaderboardModule,
+    OtpModule,
+    NotificationHistoryModule,
+    HelperModule,
+    TestingModule,
+    ScheduleModule.forRoot(),
+    TasksModule,
+    ShopModule,
+    FriendModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

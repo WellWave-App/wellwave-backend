@@ -33,17 +33,7 @@ import { Article } from '@/.typeorm/entities/article.entity';
 import { PaginatedResponse } from '@/response/response.interface';
 import { ArticleService } from '../services/article.service';
 import { ArticleParams } from '../repositories/article.repository';
-
-const imageFileValidator = new ParseFilePipe({
-  validators: [
-    new FileTypeValidator({ fileType: /(image\/jpeg|image\/png|image\/gif)/ }),
-    new MaxFileSizeValidator({
-      maxSize: 10 * 1024 * 1024,
-      message: 'file must be smaller than 10 MB',
-    }),
-  ],
-  fileIsRequired: false,
-});
+import { imageFileValidator } from '@/image/imageFileValidator';
 
 @ApiTags('Article')
 @Controller('article')

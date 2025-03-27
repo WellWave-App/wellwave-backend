@@ -11,6 +11,7 @@ import { User } from '@/.typeorm/entities/users.entity';
 import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
 import { RiskCalculator } from './utils/risk-calculator.util';
 import { RiskAssessmentEntity } from '@/.typeorm/entities/assessment.entity';
+import { HabitRecommendService } from './services/habits-recommendation.service';
 
 @Module({
   imports: [
@@ -19,7 +20,15 @@ import { RiskAssessmentEntity } from '@/.typeorm/entities/assessment.entity';
     TypeOrmModule.forFeature([Article, UserReadHistory, RiskAssessmentEntity]),
   ],
   controllers: [RecommendationController],
-  providers: [ArticleRecommendationService, RiskCalculator],
-  exports: [ArticleRecommendationService, RiskCalculator],
+  providers: [
+    RiskCalculator,
+    ArticleRecommendationService,
+    HabitRecommendService,
+  ],
+  exports: [
+    RiskCalculator,
+    ArticleRecommendationService,
+    HabitRecommendService,
+  ],
 })
 export class RecommendationModule {}

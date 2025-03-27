@@ -25,6 +25,7 @@ import { TrackQuestDto } from '../dtos/track-quest.dto';
 import { QuestListFilter } from '../interfaces/quests.interfaces';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { imageFileValidator } from '@/image/imageFileValidator';
 import {
   ApiTags,
   ApiOperation,
@@ -33,20 +34,13 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-
-const imageFileValidator = new ParseFilePipe({
-  validators: [
-    new FileTypeValidator({ fileType: /(image\/jpeg|image\/png|image\/gif)/ }),
-    new MaxFileSizeValidator({
-      maxSize: 10 * 1024 * 1024,
-      message: 'file must be smaller than 10 MB',
-    }),
-  ],
-  fileIsRequired: false,
-});
+import { RoleGuard } from '@/auth/guard/role.guard';
+import { Roles } from '@/auth/roles/roles.decorator';
+import { Role } from '@/auth/roles/roles.enum';
 
 @ApiTags('Quest')
 @Controller('quest')
+@UseGuards(JwtAuthGuard, RoleGuard)
 export class QuestController {
   constructor(private readonly questService: QuestService) {}
 
@@ -59,7 +53,7 @@ export class QuestController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiBody({ type: CreateQuestDto })
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   @UseInterceptors(FileInterceptor('file'))
   createQuest(
     @Body() createQuestDto: CreateQuestDto,
@@ -73,7 +67,7 @@ export class QuestController {
   @ApiQuery({ name: 'category', enum: HabitCategories, required: false })
   @ApiResponse({ status: 200, description: 'Retrieved quests successfully' })
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getQuests(
     @Request() req,
     @Query('filter') filter: QuestListFilter = QuestListFilter.ALL,
@@ -92,7 +86,7 @@ export class QuestController {
   @ApiResponse({ status: 404, description: 'Quest not found' })
   @ApiResponse({ status: 409, description: 'Quest already active' })
   @Post('/start/:questId')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   startQuest(
     @Request() req,
     @Param('questId') questId: number,
@@ -100,22 +94,22 @@ export class QuestController {
     return this.questService.startQuest(req.user.UID, questId);
   }
 
-  @ApiOperation({ summary: 'Track progress for a quest' })
-  @ApiBody({ type: TrackQuestDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Progress tracked successfully',
-    type: QuestProgress,
-  })
-  @ApiResponse({ status: 404, description: 'Active quest not found' })
-  @Post('/track')
-  @UseGuards(JwtAuthGuard)
-  trackProgress(
-    @Request() req,
-    @Body() trackDto: TrackQuestDto,
-  ): Promise<QuestProgress> {
-    return this.questService.trackProgress(req.user.UID, trackDto);
-  }
+  // @ApiOperation({ summary: 'Track progress for a quest' })
+  // @ApiBody({ type: TrackQuestDto })
+  // @ApiResponse({
+  //   status: 201,
+  //   description: 'Progress tracked successfully',
+  //   type: QuestProgress,
+  // })
+  // @ApiResponse({ status: 404, description: 'Active quest not found' })
+  // @Post('/track')
+  // @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  // trackProgress(
+  //   @Request() req,
+  //   @Body() trackDto: TrackQuestDto,
+  // ): Promise<QuestProgress> {
+  //   return this.questService.trackProgress(req.user.UID, trackDto);
+  // }
 
   @ApiOperation({ summary: 'Get statistics for a specific quest' })
   @ApiParam({
@@ -128,11 +122,17 @@ export class QuestController {
   })
   @ApiResponse({ status: 404, description: 'Quest not found' })
   @Get('/stats/:questId')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   getQuestStats(
     @Request() req,
     @Param('questId') questId: number,
   ): Promise<any> {
     return this.questService.getQuestStats(req.user.UID, questId);
+  }
+
+  @Delete('/:qid')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  deleteQuest(@Param('qid') qid: number) {
+    return this.questService.remove(qid);
   }
 }

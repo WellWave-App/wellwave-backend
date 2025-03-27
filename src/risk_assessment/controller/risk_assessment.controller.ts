@@ -5,11 +5,12 @@ import {
   Delete,
   Get,
   Param,
+  Patch, 
   Body,
 } from '@nestjs/common';
 import { RiskAssessmentService } from '../service/risk_assessment.service';
 import { CreateRiskAssessmentDto } from '../dto/create-risk-assessment.dto';
-import { UpdateRiskAssessmentDto } from '../dto/update-risk-assessment.dto';
+import { UpdateRiskAssessmentDto, PartialUpdateRiskAssessmentDto } from '../dto/update-risk-assessment.dto';
 import {
   ApiBody,
   ApiOperation,
@@ -87,5 +88,21 @@ export class RiskAssessmentController {
   @ApiResponse({ status: 404, description: 'Risk assessment not found' })
   findOneUser(@Param('uid') uid: number) {
     return this.riskAssessmentService.findOneUser(uid);
+  }
+
+  @Patch(':uid')
+  @ApiOperation({ summary: 'Partially update an existing risk assessment' })
+  @ApiParam({ name: 'uid', type: Number, description: 'User ID' })
+  @ApiBody({ type: PartialUpdateRiskAssessmentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Risk assessment updated partially',
+  })
+  @ApiResponse({ status: 404, description: 'Risk assessment not found' })
+  partialUpdate(
+    @Param('uid') uid: number,
+    @Body() updateRiskDto: PartialUpdateRiskAssessmentDto,
+  ) {
+    return this.riskAssessmentService.partialUpdate(uid, updateRiskDto);
   }
 }

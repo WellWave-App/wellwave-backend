@@ -9,6 +9,10 @@ export class RiskCalculator {
   // Converts numerical scores to normalized weights for recommendation
   static calculateDiabetesWeight(score: number): number {
     // Based on RiskDiseaseCondition logic
+    // ต่ำ 0 - 2
+    // กลาง 3 - 5
+    // สูง 6 - 8
+    // สูงมาก 9+
     if (score <= 2) {
       return 0.25; // Low risk
     } else if (score >= 3 && score <= 5) {
@@ -22,23 +26,30 @@ export class RiskCalculator {
 
   static calculateHypertensionWeight(score: number): number {
     // Based on RiskHypertensionCondition logic
-    return score === 0 ? 0.25 : 1.0; // Either low or high risk
+    // ต่ำ 0-1
+    // สูง 2+
+    return score <= 1 ? 0.25 : 1.0; // Either low or high risk
   }
 
   static calculateDyslipidemiaWeight(score: number): number {
     // Based on RiskDyslipidemiaCondition logic
-    return score === 0 ? 0.25 : 1.0; // Either low or high risk
-  }
-
-  static calculateObesityWeight(score: number): number {
-    // Based on RiskObesityCondition logic
-    if (score === 0) {
+    // ต่ำ 0-1
+    // กลาง 2
+    // สูง 3-4
+    if (score <= 1) {
       return 0.25; // Low risk
     } else if (score === 2) {
       return 0.5; // Moderate risk
     } else {
       return 1.0; // High risk
     }
+  }
+
+  static calculateObesityWeight(score: number): number {
+    // Based on RiskObesityCondition logic
+    // ต่ำ 0
+    // สูง 1
+    return score === 0 ? 0.25 : 1.0; // Either low or high risk
   }
 
   // Calculates the overall risk level based on all scores
