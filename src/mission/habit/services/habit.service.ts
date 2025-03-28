@@ -558,7 +558,11 @@ export class HabitService {
     }
 
     // calculateMetrics, before saving dailyTrack
-    if (userHabit.habits.TRACKING_TYPE === TrackingType.Duration) {
+    // if (userHabit.habits.TRACKING_TYPE === TrackingType.Duration) {
+    if (
+      userHabit.habits.TRACKING_TYPE === TrackingType.Duration ||
+      trackDto.DURATION_MINUTES >= 0
+    ) {
       const user = await this.userService.getById(userId);
       if (user) {
         dailyTrack.calculateMetrics(user, userHabit.habits);
