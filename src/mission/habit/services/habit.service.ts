@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateHabitDto } from '../dto/create-habit.dto';
@@ -15,7 +16,7 @@ import {
 import { PaginatedResponse } from '@/response/response.interface';
 import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
 import { StartHabitChallengeDto } from '../dto/user-habit.dto';
-import { TrackHabitDto } from '../dto/track-habit.dto';
+import { TrackHabitDto, UpdateDailyTrackDto } from '../dto/track-habit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
@@ -1102,5 +1103,32 @@ export class HabitService {
       message: `Habit ${habit.TITLE} has been successfully deleted`,
       hid: hid,
     };
+  }
+
+  async updateDailyTrack(updateDto: UpdateDailyTrackDto) {
+    try {
+      const track = await this.dailyTrackRepository.findOne({
+        where: {
+          TRACK_ID: updateDto.TRACK_ID,
+        },
+        relations: ['UserHabits'],
+      });
+
+      if (!track) {
+        throw new NotFoundException(`track id ${updateDto.TRACK_ID} not found`);
+      }
+
+      const updated = Object.assign(track, updateDto);
+      await this.dailyTrackRepository.save(updated);
+      return updated;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error; // Rethrow specific errors
+      }
+
+      throw new InternalServerErrorException(
+        `Error updating track: ${error.message}`,
+      );
+    }
   }
 }
