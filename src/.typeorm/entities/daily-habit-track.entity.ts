@@ -56,13 +56,13 @@ export class DailyHabitTrack {
   @Column({ name: 'COUNT_VALUE', type: 'int', nullable: true })
   COUNT_VALUE: number; // Count-based tracking for steps
 
-  @Column({ name: 'STEPS_CALCULATED', type: 'int', nullable: true })
+  @Column({ name: 'STEPS_CALCULATED', type: 'float', nullable: true })
   STEPS_CALCULATED: number;
 
-  @Column({ name: 'CALORIES_BURNED', type: 'int', nullable: true })
+  @Column({ name: 'CALORIES_BURNED', type: 'float', nullable: true })
   CALORIES_BURNED: number;
 
-  @Column({ name: 'HEART_RATE', type: 'int', nullable: true })
+  @Column({ name: 'HEART_RATE', type: 'float', nullable: true })
   HEART_RATE: number;
 
   calculateMetrics(user: User, habit: Habits) {

@@ -40,7 +40,8 @@ export class TrackHabitDto {
 }
 
 export class UpdateDailyTrackDto extends PartialType(TrackHabitDto) {
+  @IsNotEmpty()
+  TRACK_ID: number;
+  @IsOptional()
   STATUS?: DailyStatus;
-  MINUTES_SPENT?: number;
-  MOOD_FEEDBACK?: Moods;
 }

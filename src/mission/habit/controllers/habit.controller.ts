@@ -24,7 +24,7 @@ import {
   UserHabits,
 } from '@/.typeorm/entities/user-habits.entity';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
-import { TrackHabitDto } from '../dto/track-habit.dto';
+import { TrackHabitDto, UpdateDailyTrackDto } from '../dto/track-habit.dto';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { imageFileValidator } from '@/image/imageFileValidator';
 import {
@@ -359,5 +359,11 @@ export class HabitController {
   ) {
     const dateFormat = new Date(date);
     return this.habitService.getMissionHistory(req.user.UID, dateFormat);
+  }
+
+  @Patch('/track')
+  @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
+  updateDailyTrack(@Request() req, @Body() dto: UpdateDailyTrackDto) {
+    return this.habitService.updateDailyTrack(dto);
   }
 }

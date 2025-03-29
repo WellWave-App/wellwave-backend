@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateHabitDto } from '../dto/create-habit.dto';
@@ -15,7 +16,7 @@ import {
 import { PaginatedResponse } from '@/response/response.interface';
 import { HabitStatus } from '@/.typeorm/entities/user-habits.entity';
 import { StartHabitChallengeDto } from '../dto/user-habit.dto';
-import { TrackHabitDto } from '../dto/track-habit.dto';
+import { TrackHabitDto, UpdateDailyTrackDto } from '../dto/track-habit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
@@ -557,7 +558,7 @@ export class HabitService {
     }
 
     // calculateMetrics, before saving dailyTrack
-    if (userHabit.habits.TRACKING_TYPE === TrackingType.Duration) {
+    if (userHabit.habits.EXERCISE_TYPE && trackDto.DURATION_MINUTES >= 0) {
       const user = await this.userService.getById(userId);
       if (user) {
         dailyTrack.calculateMetrics(user, userHabit.habits);
@@ -630,7 +631,12 @@ export class HabitService {
     await this.updateStreakCount(userHabit.CHALLENGE_ID);
     await this.checkChallengeCompletion(userHabit.CHALLENGE_ID);
 
-    return savedTrack;
+    return await this.dailyTrackRepository.findOne({
+      where: {
+        TRACK_ID: savedTrack.TRACK_ID,
+      },
+      relations: ['UserHabits'],
+    });
   }
 
   async updateRelatedLogs(userId: number, dailyTrack: DailyHabitTrack) {
@@ -685,6 +691,16 @@ export class HabitService {
   private async createOrUpdateLog(logData: CreateLogDto): Promise<LogEntity> {
     try {
       // First try to create a new log
+      const log = await this.logService.findOne(
+        logData.UID,
+        logData.LOG_NAME,
+        logData.DATE,
+      );
+
+      if (log) {
+        throw new ConflictException('Log already exists');
+      }
+
       return await this.logService.create(logData);
     } catch (error) {
       // If there's a conflict (log already exists), update it instead
@@ -751,45 +767,44 @@ export class HabitService {
     });
 
     const today = new Date(this.dateService.getCurrentDate().date);
-    if (today > userHabit.END_DATE) {
-      const completedDays = userHabit.dailyTracks.filter(
-        (track) => track.COMPLETED,
-      ).length;
+    const completedDays = userHabit.dailyTracks.filter(
+      (track) => track.COMPLETED,
+    ).length;
 
-      if (completedDays >= userHabit.DAYS_GOAL) {
-        userHabit.STATUS = HabitStatus.Completed;
-        await this.questService.updateQuestProgress(userHabit.UID, {
-          category: userHabit.habits.CATEGORY,
-          exerciseType: userHabit.habits.EXERCISE_TYPE,
-          trackingType: TrackingType.Count,
-          value: 1, // One completion
-          date: new Date(this.dateService.getCurrentDate().date),
-          progressType: 'completion',
-        });
-        // * update acheivement progress
-        await Promise.all([
-          this.achievementService.trackProgress({
-            uid: userHabit.user.UID,
-            entity: RequirementEntity.USER_MISSIONS,
-            property: TrackableProperty.COMPLETED_MISSION,
-            value: 1,
-            date: new Date(this.dateService.getCurrentDate().timestamp),
-          }),
+    if (completedDays >= userHabit.DAYS_GOAL) {
+      userHabit.STATUS = HabitStatus.Completed;
 
-          this.achievementService.trackProgress({
-            uid: userHabit.user.UID,
-            entity: RequirementEntity.USER_MISSIONS,
-            property: TrackableProperty.COMPLETED_MISSION,
-            value: 1,
-            date: new Date(this.dateService.getCurrentDate().timestamp),
-          }),
-        ]);
-      } else {
-        userHabit.STATUS = HabitStatus.Failed;
-      }
+      await this.questService.updateQuestProgress(userHabit.UID, {
+        category: userHabit.habits.CATEGORY,
+        exerciseType: userHabit.habits.EXERCISE_TYPE,
+        trackingType: TrackingType.Count,
+        value: 1, // One completion
+        date: new Date(this.dateService.getCurrentDate().date),
+        progressType: 'completion',
+      });
+      // * update acheivement progress
+      await Promise.all([
+        this.achievementService.trackProgress({
+          uid: userHabit.user.UID,
+          entity: RequirementEntity.USER_MISSIONS,
+          property: TrackableProperty.COMPLETED_MISSION,
+          value: 1,
+          date: new Date(this.dateService.getCurrentDate().timestamp),
+        }),
 
-      await this.userHabitsRepository.save(userHabit);
+        this.achievementService.trackProgress({
+          uid: userHabit.user.UID,
+          entity: RequirementEntity.USER_MISSIONS,
+          property: TrackableProperty.COMPLETED_MISSION,
+          value: 1,
+          date: new Date(this.dateService.getCurrentDate().timestamp),
+        }),
+      ]);
+    } else if (today >= new Date(userHabit.END_DATE)) {
+      userHabit.STATUS = HabitStatus.Failed;
     }
+
+    await this.userHabitsRepository.save(userHabit);
   }
 
   async getUserHabits(
@@ -1103,5 +1118,32 @@ export class HabitService {
       message: `Habit ${habit.TITLE} has been successfully deleted`,
       hid: hid,
     };
+  }
+
+  async updateDailyTrack(updateDto: UpdateDailyTrackDto) {
+    try {
+      const track = await this.dailyTrackRepository.findOne({
+        where: {
+          TRACK_ID: updateDto.TRACK_ID,
+        },
+        relations: ['UserHabits'],
+      });
+
+      if (!track) {
+        throw new NotFoundException(`track id ${updateDto.TRACK_ID} not found`);
+      }
+
+      const updated = Object.assign(track, updateDto);
+      await this.dailyTrackRepository.save(updated);
+      return updated;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error; // Rethrow specific errors
+      }
+
+      throw new InternalServerErrorException(
+        `Error updating track: ${error.message}`,
+      );
+    }
   }
 }
