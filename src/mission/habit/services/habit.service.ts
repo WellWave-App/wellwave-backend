@@ -558,11 +558,7 @@ export class HabitService {
     }
 
     // calculateMetrics, before saving dailyTrack
-    // if (userHabit.habits.TRACKING_TYPE === TrackingType.Duration) {
-    if (
-      userHabit.habits.TRACKING_TYPE === TrackingType.Duration ||
-      trackDto.DURATION_MINUTES >= 0
-    ) {
+    if (userHabit.habits.EXERCISE_TYPE && trackDto.DURATION_MINUTES >= 0) {
       const user = await this.userService.getById(userId);
       if (user) {
         dailyTrack.calculateMetrics(user, userHabit.habits);
@@ -635,7 +631,12 @@ export class HabitService {
     await this.updateStreakCount(userHabit.CHALLENGE_ID);
     await this.checkChallengeCompletion(userHabit.CHALLENGE_ID);
 
-    return savedTrack;
+    return await this.dailyTrackRepository.findOne({
+      where: {
+        TRACK_ID: savedTrack.TRACK_ID,
+      },
+      relations: ['UserHabits'],
+    });
   }
 
   async updateRelatedLogs(userId: number, dailyTrack: DailyHabitTrack) {
@@ -690,6 +691,16 @@ export class HabitService {
   private async createOrUpdateLog(logData: CreateLogDto): Promise<LogEntity> {
     try {
       // First try to create a new log
+      const log = await this.logService.findOne(
+        logData.UID,
+        logData.LOG_NAME,
+        logData.DATE,
+      );
+
+      if (log) {
+        throw new ConflictException('Log already exists');
+      }
+
       return await this.logService.create(logData);
     } catch (error) {
       // If there's a conflict (log already exists), update it instead
