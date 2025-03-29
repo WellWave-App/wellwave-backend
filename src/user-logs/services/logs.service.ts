@@ -19,6 +19,7 @@ import { CreateLogDto } from '../dto/create-log.dto';
 import { UpdateLogDto } from '../dto/update-log.dto';
 import { LogEntity, LOG_NAME } from '../../.typeorm/entities/logs.entity';
 import { User } from '../../.typeorm/entities/users.entity';
+import { DateService } from '../../helpers/date/date.services';
 
 interface LogStandardRange {
   min: number;
@@ -47,6 +48,7 @@ export class LogsService {
     private logsRepository: Repository<LogEntity>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private readonly dateService: DateService,
   ) {}
 
   async create(createLogDto: CreateLogDto): Promise<LogEntity> {
@@ -168,7 +170,10 @@ export class LogsService {
     if (startDate && endDate) {
       whereCondition.DATE = Between(startDate, endDate);
     } else if (startDate) {
-      whereCondition.DATE = Between(startDate, new Date());
+      whereCondition.DATE = Between(
+        startDate,
+        new Date(this.dateService.getCurrentDate().date),
+      );
     } else if (endDate) {
       whereCondition.DATE = Between(new Date('1970-01-01'), endDate);
     }
@@ -190,7 +195,7 @@ export class LogsService {
       throw new NotFoundException(`User with ID ${uid} not found`);
     }
 
-    const today = new Date();
+    const today = new Date(this.dateService.getCurrentDate().date);
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -230,7 +235,9 @@ export class LogsService {
       throw new NotFoundException(`User with ID ${uid} not found`);
     }
     // Convert string date to Date object
-    const inputDate = date ? new Date(date) : new Date();
+    const inputDate = date
+      ? new Date(date)
+      : new Date(this.dateService.getCurrentDate().date);
     if (isNaN(inputDate.getTime())) {
       throw new BadRequestException('Invalid start date');
     }
@@ -268,7 +275,7 @@ export class LogsService {
     const WeekDateInformation = {
       dateSelected: date
         ? this.formatDate(new Date(date))
-        : this.formatDate(new Date()),
+        : this.formatDate(new Date(this.dateService.getCurrentDate().date)),
       startOfWeek: this.formatDate(start),
       endOfWeek: this.formatDate(end),
     };
