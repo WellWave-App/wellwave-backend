@@ -12,12 +12,14 @@ import { DiseaseType } from '@/.typeorm/entities/disease-types.entity';
 import { RiskCalculator } from './utils/risk-calculator.util';
 import { RiskAssessmentEntity } from '@/.typeorm/entities/assessment.entity';
 import { HabitRecommendService } from './services/habits-recommendation.service';
+import { HelperModule } from '@/helpers/helper.module';
 
 @Module({
   imports: [
     forwardRef(() => ArticleModule),
     forwardRef(() => UserReadHistoryModule),
     TypeOrmModule.forFeature([Article, UserReadHistory, RiskAssessmentEntity]),
+    HelperModule,
   ],
   controllers: [RecommendationController],
   providers: [

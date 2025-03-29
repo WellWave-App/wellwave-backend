@@ -633,7 +633,7 @@ export class UsersController {
     sortMissionBy?: 'date' | 'mission_type' | 'activity_type',
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
   ) {
-    const today = new Date();
+    const today = new Date(this.dateService.getCurrentDate().timestamp);
     const oneMonthAgo = new Date(today);
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 

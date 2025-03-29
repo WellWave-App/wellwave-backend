@@ -9,6 +9,7 @@ import { RiskCalculator, RiskLevel } from '../utils/risk-calculator.util';
 import { ArticleScore } from '../interfaces/article-score.interface';
 import { PaginatedResponse } from '../../response/response.interface';
 import { RiskAssessmentEntity } from '@/.typeorm/entities/assessment.entity';
+import { DateService } from '@/helpers/date/date.services';
 
 @Injectable()
 export class ArticleRecommendationService {
@@ -19,6 +20,7 @@ export class ArticleRecommendationService {
     private userReadHistoryRepository: Repository<UserReadHistory>,
     @InjectRepository(RiskAssessmentEntity)
     private userRisk: Repository<RiskAssessmentEntity>,
+    private readonly dateService: DateService,
   ) {}
 
   private INTERACTION_WEIGHTS = {
@@ -136,7 +138,7 @@ export class ArticleRecommendationService {
 
     // Calculate article scores based on similar users' reading patterns
     const articleScores = new Map<number, number>();
-    const now = new Date();
+    const now = new Date(this.dateService.getCurrentDate().timestamp);
     const RECENT_THRESHOLD = 7; // days
 
     similarUsersHistory.forEach((history) => {

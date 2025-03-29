@@ -13,6 +13,7 @@ import { ArticleService } from '../../article/services/article.service';
 import { query } from 'express';
 import { PaginatedResponse } from '@/response/response.interface';
 import { UpdateUserReadHistoryDto } from '../dto/update-user-read-history.dto';
+import { DateService } from '../../../helpers/date/date.services';
 
 export class UserReadHistoryReposity {
   constructor(
@@ -20,14 +21,15 @@ export class UserReadHistoryReposity {
     private repository: Repository<UserReadHistory>,
     private usersService: UsersService,
     private articleService: ArticleService,
+    private dateService: DateService
   ) {}
 
   async create(dto: CreateUserReadHistoryDto): Promise<UserReadHistory> {
     try {
       const newHistory = this.repository.create({
         ...dto,
-        FIRST_READ_DATE: new Date(),
-        LASTED_READ_DATE: new Date(),
+        FIRST_READ_DATE: new Date(this.dateService.getCurrentDate().date),
+        LASTED_READ_DATE: new Date(this.dateService.getCurrentDate().date),
       });
 
       return this.repository.save(newHistory);
