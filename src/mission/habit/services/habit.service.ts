@@ -690,21 +690,12 @@ export class HabitService {
   // New helper method to create or update logs
   private async createOrUpdateLog(logData: CreateLogDto): Promise<LogEntity> {
     try {
-      // First try to create a new log
-      const log = await this.logService.findOne(
-        logData.UID,
-        logData.LOG_NAME,
-        logData.DATE,
-      );
-
-      if (log) {
-        throw new ConflictException('Log already exists');
-      }
-
-      return await this.logService.create(logData);
+      return await this.logService.create({
+        ...logData,
+      });
     } catch (error) {
       // If there's a conflict (log already exists), update it instead
-      if (error instanceof ConflictException) {
+      if (error instanceof ConflictException || error.code === '23505') {
         const log = await this.logService.findOne(
           logData.UID,
           logData.LOG_NAME,
