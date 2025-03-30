@@ -56,6 +56,8 @@ export class HabitService {
     private userRepository: Repository<User>,
     @InjectRepository(UserQuests)
     private userQuestRepository: Repository<UserQuests>,
+    @InjectRepository(LogEntity)
+    private logsRepository: Repository<LogEntity>,
     private readonly imageService: ImageService,
     private readonly questService: QuestService,
     private readonly logService: LogsService,
@@ -688,39 +690,31 @@ export class HabitService {
   }
 
   // New helper method to create or update logs
-  private async createOrUpdateLog(logData: CreateLogDto): Promise<LogEntity> {
-    try {
-      // First try to create a new log
-      const log = await this.logService.findOne(
-        logData.UID,
-        logData.LOG_NAME,
-        logData.DATE,
-      );
+  async createOrUpdateLog(createLogDto: CreateLogDto): Promise<LogEntity> {
+    const user = await this.userRepository.findOne({
+      where: { UID: createLogDto.UID },
+    });
 
-      if (log) {
-        throw new ConflictException('Log already exists');
-      }
-
-      return await this.logService.create(logData);
-    } catch (error) {
-      // If there's a conflict (log already exists), update it instead
-      if (error instanceof ConflictException) {
-        const log = await this.logService.findOne(
-          logData.UID,
-          logData.LOG_NAME,
-          logData.DATE,
-        );
-
-        return await this.logService.update(
-          logData.UID,
-          logData.LOG_NAME,
-          logData.DATE,
-          { VALUE: log.VALUE + logData.VALUE },
-        );
-      }
-      // If it's another type of error, re-throw it
-      throw error;
+    if (!user) {
+      throw new NotFoundException(`User with ID ${createLogDto.UID} not found`);
     }
+
+    // Use raw query with ON CONFLICT to handle upsert
+    const result = await this.logsRepository.query(
+      `INSERT INTO "LOGS"("UID", "LOG_NAME", "DATE", "VALUE") 
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT("UID", "LOG_NAME", "DATE") 
+       DO UPDATE SET "VALUE" = "LOGS"."VALUE" + $4
+       RETURNING *`,
+      [
+        createLogDto.UID,
+        createLogDto.LOG_NAME,
+        createLogDto.DATE,
+        createLogDto.VALUE,
+      ],
+    );
+
+    return result[0];
   }
 
   private async updateStreakCount(challengeId: number): Promise<void> {
