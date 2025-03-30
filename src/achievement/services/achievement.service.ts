@@ -133,7 +133,6 @@ export class AchievementService {
       .leftJoinAndSelect('ach.levels', 'levels')
       .orderBy({
         'ach.TITLE': 'ASC',
-        'levels.LEVEL': 'ASC',
       });
 
     if (searchTitle) {
