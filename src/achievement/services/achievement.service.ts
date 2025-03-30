@@ -27,6 +27,7 @@ import { QuestStatus } from '@/.typeorm/entities/user-quests.entity';
 import { UserAchieved } from '@/.typeorm/entities/user-achieved.entity';
 import { NotificationHistoryService } from '@/notification_history/notification_history.service';
 import { PaginatedResponse } from '@/response/response.interface';
+import { UpdateAchievementLevelDto } from '../dto/achievement/updateLevel.dto';
 
 export class TrackAchievementDto {
   uid: number;
@@ -130,17 +131,6 @@ export class AchievementService {
     const queryBuilder = this.achievement
       .createQueryBuilder('ach')
       .leftJoinAndSelect('ach.levels', 'levels')
-      // .select([
-      //   'ach.ACH_ID',
-      //   'ach.TITLE',
-      //   'ach.DESCRIPTION',
-      //   'ach.ACHIEVEMENTS_TYPE',
-      //   'ach.REQUIREMENT',
-      //   'levels.LEVEL',
-      //   'levels.REWARDS',
-      //   'levels.TARGET_VALUE',
-
-      // ])
       .orderBy({
         'ach.TITLE': 'ASC',
         'levels.LEVEL': 'ASC',
@@ -154,7 +144,7 @@ export class AchievementService {
 
     const [data, total] = await queryBuilder
       .skip((page - 1) * limit)
-      .limit(limit)
+      .take(limit)
       .getManyAndCount();
 
     return {
@@ -205,71 +195,113 @@ export class AchievementService {
         throw new NotFoundException(`Achievement with ID ${achId} not found`);
       }
 
-      // Update achievement basic info
-      await queryRunner.manager.update(Achievement, achId, {
-        TITLE: dto.TITLE,
-        DESCRIPTION: dto.DESCRIPTION,
-        ACHIEVEMENTS_TYPE: dto.ACHIEVEMENTS_TYPE,
-        REQUIREMENT: dto.REQUIREMENT,
-        TIME_CONSTRAINT: dto.TIME_CONSTRAINT,
-        PREREQUISITES: dto.PREREQUISITES,
-      });
+      // Update achievement basic info (only update provided fields)
+      const achievementUpdateData = {};
+      if (dto.TITLE) achievementUpdateData['TITLE'] = dto.TITLE;
+      if (dto.DESCRIPTION)
+        achievementUpdateData['DESCRIPTION'] = dto.DESCRIPTION;
+      if (dto.ACHIEVEMENTS_TYPE)
+        achievementUpdateData['ACHIEVEMENTS_TYPE'] = dto.ACHIEVEMENTS_TYPE;
+      if (dto.REQUIREMENT)
+        achievementUpdateData['REQUIREMENT'] = dto.REQUIREMENT;
+      if (dto.TIME_CONSTRAINT)
+        achievementUpdateData['TIME_CONSTRAINT'] = dto.TIME_CONSTRAINT;
+      if (dto.PREREQUISITES)
+        achievementUpdateData['PREREQUISITES'] = dto.PREREQUISITES;
 
-      // Store old icon URLs for cleanup
-      const oldIconUrls = existingAchievement.levels.map((l) => l.ICON_URL);
+      // Only update if there are fields to update
+      if (Object.keys(achievementUpdateData).length > 0) {
+        await queryRunner.manager.update(
+          Achievement,
+          achId,
+          achievementUpdateData,
+        );
+      }
 
-      // Delete existing levels
-      await queryRunner.manager.delete(AchievementLevel, {
-        ACH_ID: achId,
-        // LEVEL: dto.levels[0].LEVEL,
-      });
-
-      // Create new levels
-      if (dto.levels?.length > 0) {
-        const levelData = await Promise.all(
-          dto.levels.map(async (l) => {
-            let iconUrl = l.ICON_URL; // Keep existing URL if no new file
-            if (l.file) {
-              iconUrl = this.imageService.getImageUrl(l.file.filename);
-            }
-
-            return {
-              ACH_ID: achId,
-              LEVEL: l.LEVEL,
-              TARGET_VALUE: l.TARGET_VALUE,
-              TARGET_LEAGUE: l.TARGET_LEAGUE,
-              REWARDS: l.REWARDS,
-              ICON_URL: iconUrl,
-            };
-          }),
+      // Process levels if provided
+      if (dto.levels && dto.levels.length > 0) {
+        // Create a map of existing levels for easy lookup
+        const existingLevelsMap = new Map(
+          existingAchievement.levels.map((level) => [level.LEVEL, level]),
         );
 
-        await queryRunner.manager.save(AchievementLevel, levelData);
+        // Process each level in the DTO
+        await Promise.all(
+          dto.levels.map(async (levelDto) => {
+            // Get existing level or null if it's a new level
+            const existingLevel = existingLevelsMap.get(levelDto.LEVEL);
+
+            // Determine the icon URL
+            let iconUrl = levelDto.ICON_URL; // Use provided URL
+
+            // If a file is uploaded, generate new URL
+            if (levelDto.file) {
+              iconUrl = this.imageService.getImageUrl(levelDto.file.filename);
+
+              // If replacing an existing icon, mark old one for deletion
+              if (
+                existingLevel?.ICON_URL &&
+                existingLevel.ICON_URL !== iconUrl
+              ) {
+                await this.imageService.deleteImageByUrl(
+                  existingLevel.ICON_URL,
+                );
+              }
+            } else if (!iconUrl && existingLevel) {
+              // Keep existing icon if no new one provided
+              iconUrl = existingLevel.ICON_URL;
+            }
+
+            // Prepare level data, merging with existing data
+            const levelData = {
+              ACH_ID: achId,
+              LEVEL: levelDto.LEVEL,
+              ICON_URL: iconUrl,
+              // For other fields, use provided values or fallback to existing values
+              TARGET_VALUE:
+                levelDto.TARGET_VALUE !== undefined
+                  ? levelDto.TARGET_VALUE
+                  : existingLevel?.TARGET_VALUE,
+              TARGET_LEAGUE:
+                levelDto.TARGET_LEAGUE !== undefined
+                  ? levelDto.TARGET_LEAGUE
+                  : existingLevel?.TARGET_LEAGUE,
+              REWARDS:
+                levelDto.REWARDS !== undefined
+                  ? levelDto.REWARDS
+                  : existingLevel?.REWARDS,
+            };
+
+            // If level exists, update it
+            if (existingLevel) {
+              await queryRunner.manager.update(
+                AchievementLevel,
+                { ACH_ID: achId, LEVEL: levelDto.LEVEL },
+                levelData,
+              );
+            } else {
+              // Otherwise create new level
+              await queryRunner.manager.save(AchievementLevel, levelData);
+            }
+          }),
+        );
       }
 
       await queryRunner.commitTransaction();
-
-      // Clean up old images after successful update
-      await Promise.all(
-        oldIconUrls.map(async (url) => {
-          if (url) {
-            await this.imageService.deleteImageByUrl(url);
-          }
-        }),
-      );
-
       return await this.findOne(achId);
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
       // Clean up any new uploaded files on failure
-      await Promise.all(
-        dto.levels.map(async (l) => {
-          if (l.file) {
-            await this.imageService.deleteImage(l.file.filename);
-          }
-        }),
-      );
+      if (dto.levels) {
+        await Promise.all(
+          dto.levels.map(async (l) => {
+            if (l.file) {
+              await this.imageService.deleteImage(l.file.filename);
+            }
+          }),
+        );
+      }
 
       throw error;
     } finally {
@@ -637,5 +669,52 @@ export class AchievementService {
     });
     userAchieved.IS_READ = true;
     return await this.userAchieved.save(userAchieved);
+  }
+
+  async updateAchievementLevel(
+    achId: string,
+    level: number,
+    updateAchievementLevelDto: UpdateAchievementLevelDto,
+    file?: Express.Multer.File,
+  ) {
+    if (file) {
+      updateAchievementLevelDto.ICON_URL = this.imageService.getImageUrl(
+        file.filename,
+      );
+    }
+    // First check if the achievement level exists
+    const achievementLevel = await this.achievementLevel.findOne({
+      where: { ACH_ID: achId, LEVEL: level },
+    });
+
+    if (!achievementLevel) {
+      throw new NotFoundException(
+        `Achievement level with achId ${achId} and level ${level} not found`,
+      );
+    }
+
+    // Update the achievement level properties
+    if (updateAchievementLevelDto.ICON_URL !== undefined) {
+      achievementLevel.ICON_URL = updateAchievementLevelDto.ICON_URL;
+    }
+
+    if (updateAchievementLevelDto.TARGET_VALUE !== undefined) {
+      achievementLevel.TARGET_VALUE = updateAchievementLevelDto.TARGET_VALUE;
+    }
+
+    if (updateAchievementLevelDto.TARGET_LEAGUE !== undefined) {
+      achievementLevel.TARGET_LEAGUE = updateAchievementLevelDto.TARGET_LEAGUE;
+    }
+
+    if (updateAchievementLevelDto.REWARDS !== undefined) {
+      // Merge the rewards to keep any existing properties that aren't being updated
+      achievementLevel.REWARDS = {
+        ...achievementLevel.REWARDS,
+        ...updateAchievementLevelDto.REWARDS,
+      };
+    }
+
+    // Save the updated achievement level
+    return this.achievementLevel.save(achievementLevel);
   }
 }
