@@ -62,10 +62,10 @@ export class QuestService {
     createQuestDto: CreateQuestDto,
     file: Express.Multer.File,
   ): Promise<Quest> {
-    const quest = this.questRepository.create(createQuestDto);
     if (file) {
       createQuestDto.IMG_URL = this.imageService.getImageUrl(file.filename);
     }
+    const quest = this.questRepository.create(createQuestDto);
     return await this.questRepository.save(quest);
   }
 
