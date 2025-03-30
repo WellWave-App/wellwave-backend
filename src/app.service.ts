@@ -21,6 +21,6 @@ export class AppService implements OnModuleInit {
   }
 
   getHello(): string {
-    return 'Hello World!';
+    return 'Hello World We are wellwave 2025!';
   }
 }
