@@ -32,7 +32,7 @@ export class CreateQuestDto {
   @IsNotEmpty()
   @IsNumber()
   @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : value,
+    value === '' ? undefined : Number(value),
   )
   DAY_DURATION: number;
 
@@ -46,14 +46,14 @@ export class CreateQuestDto {
   @IsNumber()
   @IsOptional()
   @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : value,
+    value === '' ? undefined : Number(value),
   )
   EXP_REWARDS?: number;
 
   @IsNumber()
   @IsOptional()
   @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : value,
+    value === '' ? undefined : Number(value),
   )
   GEM_REWARDS?: number;
 
@@ -71,7 +71,10 @@ export class CreateQuestDto {
   )
   EXERCISE_TYPE?: ExerciseType;
 
-  @ApiProperty({ enum: TrackingType, description: 'Type of tracking for the quest' })
+  @ApiProperty({
+    enum: TrackingType,
+    description: 'Type of tracking for the quest',
+  })
   @IsEnum(TrackingType)
   @Transform(({ value }: TransformFnParams) =>
     value === '' ? undefined : value,
@@ -92,7 +95,7 @@ export class CreateQuestDto {
 
   @IsNumber()
   @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : value,
+    value === '' ? undefined : Number(value),
   )
   RQ_TARGET_VALUE: number;
 
