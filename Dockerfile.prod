@@ -10,6 +10,9 @@ RUN npm ci
 COPY . .
 COPY .env .env
 
+# Ensure the images directory exists
+RUN mkdir -p /usr/src/app/assets/images
+
 # Build the application
 RUN npm run build
 
