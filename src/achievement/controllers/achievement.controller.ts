@@ -18,7 +18,10 @@ import {
   AchievementService,
   TrackAchievementDto,
 } from '../services/achievement.service';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
 import { RoleGuard } from '@/auth/guard/role.guard';
 import { Roles } from '@/auth/roles/roles.decorator';
@@ -30,6 +33,7 @@ import {
   RequirementEntity,
   TrackableProperty,
 } from '@/.typeorm/entities/achievement.entity';
+import { UpdateAchievementLevelDto } from '../dto/achievement/updateLevel.dto';
 
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('achievement')
@@ -80,6 +84,7 @@ export class AchievementController {
   getAchLevel(@Param('achId') achId: string) {
     return this.achievementService.findAchievementLevels(achId);
   }
+
   @Post()
   @Roles(Role.ADMIN, Role.MODERATOR)
   @UseInterceptors(
@@ -109,6 +114,60 @@ export class AchievementController {
     return this.achievementService.create(dto);
   }
 
+  @Patch('/:achId')
+  @Roles(Role.ADMIN, Role.MODERATOR)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'levelIcon0', maxCount: 1 },
+      { name: 'levelIcon1', maxCount: 1 },
+      { name: 'levelIcon2', maxCount: 1 },
+      { name: 'levelIcon3', maxCount: 1 },
+      { name: 'levelIcon4', maxCount: 1 },
+    ]),
+  )
+  update(
+    @Param('achId') achId: string,
+    @Body() dto: UpdateAchievementBodyDTO,
+    @UploadedFiles()
+    files: { [key: string]: Express.Multer.File[] },
+  ) {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        achId,
+      )
+    ) {
+      throw new BadRequestException(`Invalid achievement ID format: ${achId}`);
+    }
+    // Attach files to their respective levels
+    if (dto.levels && files) {
+      dto.levels.forEach((level, index) => {
+        const fileKey = `levelIcon${index}`;
+        if (files[fileKey]?.[0]) {
+          level.file = files[fileKey][0];
+        }
+      });
+    }
+
+    return this.achievementService.update(achId, dto);
+  }
+
+  @Patch('/level/:achId/:level')
+  @Roles(Role.ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  async updateAchievementLevel(
+    @Param('achId') achId: string,
+    @Param('level') level: number,
+    @Body() updateAchievementLevelDto: UpdateAchievementLevelDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.achievementService.updateAchievementLevel(
+      achId,
+      +level,
+      updateAchievementLevelDto,
+      file,
+    );
+  }
+
   @Get()
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   findAll(
@@ -128,41 +187,6 @@ export class AchievementController {
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   findOne(@Param('achId') achId: string) {
     return this.achievementService.findOne(achId);
-  }
-
-  @Patch('/:achId')
-  @Roles(Role.ADMIN, Role.MODERATOR)
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'levelIcon0', maxCount: 1 },
-      { name: 'levelIcon1', maxCount: 1 },
-      { name: 'levelIcon2', maxCount: 1 },
-      { name: 'levelIcon3', maxCount: 1 },
-      { name: 'levelIcon4', maxCount: 1 },
-    ]),
-  )
-  update(
-    @Param('achId') achId: string,
-    @Body() dto: UpdateAchievementBodyDTO,
-    @UploadedFile()
-    files: { [key: string]: Express.Multer.File[] },
-  ) {
-    // Attach files to their respective levels
-    if (dto.levels && files) {
-      dto.levels.forEach((level, index) => {
-        const fileKey = `levelIcon${index}`;
-        if (!this.allowedTypes.includes(files[fileKey]?.[0].mimetype)) {
-          throw new BadRequestException(
-            `Invalid file type: ${files[fileKey]?.[0].mimetype}. Only JPEG, PNG, JPG, and GIF are allowed.`,
-          );
-        }
-        if (files[fileKey]?.[0]) {
-          level.file = files[fileKey][0];
-        }
-      });
-    }
-
-    return this.achievementService.update(achId, dto);
   }
 
   @Delete('/:achId')
