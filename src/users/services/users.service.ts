@@ -252,7 +252,7 @@ export class UsersService {
 
     // loginStats
     // get week start date end date
-    const today = new Date();
+    const today = new Date(this.dateService.getCurrentDate().timestamp);
     const dayOfWeek = today.getDay();
     const start = new Date(today);
     const daysToMonday = (dayOfWeek + 6) % 7; // Convert Sunday (0) to 6, Monday (1) to 0, etc.
@@ -456,7 +456,8 @@ export class UsersService {
     const profile = {
       ...userInfo,
       AGE:
-        new Date().getFullYear() - new Date(data.YEAR_OF_BIRTH).getFullYear(),
+        new Date(this.dateService.getCurrentDate().timestamp).getFullYear() -
+        new Date(data.YEAR_OF_BIRTH).getFullYear(),
       RISK_ASSESSMENT,
       LOGIN_STATS: streakLogin,
       COMPLETE_RATE: completeRate,
@@ -742,7 +743,7 @@ export class UsersService {
       };
     }
 
-    const now = new Date();
+    const now = new Date(this.dateService.getCurrentDate().timestamp);
     const lastLogin = new Date(loginStreak.LAST_LOGIN_DATE);
     const daysSinceLastLogin = Math.floor(
       (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24),
@@ -855,7 +856,7 @@ export class UsersService {
       stepLogs.LOGS?.reduce((acc, log) => acc + (log.VALUE || 0), 0) || 0;
 
     // Calculate days left
-    const now = new Date();
+    const now = new Date(this.dateService.getCurrentDate().timestamp);
     const daysLeft =
       now > endOfWeek
         ? 0

@@ -19,7 +19,10 @@ import { StartHabitChallengeDto } from '../dto/user-habit.dto';
 import { TrackHabitDto, UpdateDailyTrackDto } from '../dto/track-habit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
-import { DailyHabitTrack } from '@/.typeorm/entities/daily-habit-track.entity';
+import {
+  DailyHabitTrack,
+  Moods,
+} from '@/.typeorm/entities/daily-habit-track.entity';
 import { HabitListFilter } from '../interfaces/habits.interfaces';
 import { QuestService } from '../../quest/services/quest.service';
 import { updateHabitNotiDto } from '../dto/noti-update.dto';
@@ -34,7 +37,10 @@ import {
   RiskCalculator,
   RiskLevel,
 } from '@/recommendation/utils/risk-calculator.util';
-import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
+import {
+  QuestStatus,
+  UserQuests,
+} from '@/.typeorm/entities/user-quests.entity';
 import { CreateLogDto } from '@/user-logs/dto/create-log.dto';
 import { RewardService } from '@/users/services/reward.service';
 import { AchievementService } from '@/achievement/services/achievement.service';
@@ -42,6 +48,32 @@ import {
   RequirementEntity,
   TrackableProperty,
 } from '@/.typeorm/entities/achievement.entity';
+import { Quest } from '@/.typeorm/entities/quest.entity';
+
+export interface StatisticsQueryParams {
+  page: number;
+  limit: number;
+  category?: HabitCategories;
+  search?: string;
+}
+
+export interface StatisticsResponseMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface StatisticsResponse {
+  data: any[];
+  meta: StatisticsResponseMeta;
+}
+
+export enum ItemType {
+  QUEST = 'เควส',
+  HABIT = 'ภารกิจปรับนิสัย',
+  DAILY_HABIT = 'ภารกิจประจำวัน',
+}
 
 @Injectable()
 export class HabitService {
@@ -56,6 +88,10 @@ export class HabitService {
     private userRepository: Repository<User>,
     @InjectRepository(UserQuests)
     private userQuestRepository: Repository<UserQuests>,
+    @InjectRepository(LogEntity)
+    private logsRepository: Repository<LogEntity>,
+    @InjectRepository(Quest)
+    private questsRepository: Repository<Quest>,
     private readonly imageService: ImageService,
     private readonly questService: QuestService,
     private readonly logService: LogsService,
@@ -688,39 +724,31 @@ export class HabitService {
   }
 
   // New helper method to create or update logs
-  private async createOrUpdateLog(logData: CreateLogDto): Promise<LogEntity> {
-    try {
-      // First try to create a new log
-      const log = await this.logService.findOne(
-        logData.UID,
-        logData.LOG_NAME,
-        logData.DATE,
-      );
+  async createOrUpdateLog(createLogDto: CreateLogDto): Promise<LogEntity> {
+    const user = await this.userRepository.findOne({
+      where: { UID: createLogDto.UID },
+    });
 
-      if (log) {
-        throw new ConflictException('Log already exists');
-      }
-
-      return await this.logService.create(logData);
-    } catch (error) {
-      // If there's a conflict (log already exists), update it instead
-      if (error instanceof ConflictException) {
-        const log = await this.logService.findOne(
-          logData.UID,
-          logData.LOG_NAME,
-          logData.DATE,
-        );
-
-        return await this.logService.update(
-          logData.UID,
-          logData.LOG_NAME,
-          logData.DATE,
-          { VALUE: log.VALUE + logData.VALUE },
-        );
-      }
-      // If it's another type of error, re-throw it
-      throw error;
+    if (!user) {
+      throw new NotFoundException(`User with ID ${createLogDto.UID} not found`);
     }
+
+    // Use raw query with ON CONFLICT to handle upsert
+    const result = await this.logsRepository.query(
+      `INSERT INTO "LOGS"("UID", "LOG_NAME", "DATE", "VALUE") 
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT("UID", "LOG_NAME", "DATE") 
+       DO UPDATE SET "VALUE" = "LOGS"."VALUE" + $4
+       RETURNING *`,
+      [
+        createLogDto.UID,
+        createLogDto.LOG_NAME,
+        createLogDto.DATE,
+        createLogDto.VALUE,
+      ],
+    );
+
+    return result[0];
   }
 
   private async updateStreakCount(challengeId: number): Promise<void> {
@@ -1145,5 +1173,203 @@ export class HabitService {
         `Error updating track: ${error.message}`,
       );
     }
+  }
+
+  async getHabitsQuestsStatistics(
+    params: StatisticsQueryParams,
+  ): Promise<StatisticsResponse> {
+    const { page, limit, category, search } = params;
+    const skip = (page - 1) * limit;
+
+    // Get habits statistics
+    const habitsQuery = this.habitsRepository.createQueryBuilder('habit');
+
+    if (category) {
+      habitsQuery.where('habit.CATEGORY = :category', { category });
+    }
+
+    if (search) {
+      habitsQuery.andWhere('habit.TITLE ILIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    const totalHabits = await habitsQuery.getCount();
+    const habits = await habitsQuery.skip(skip).take(limit).getMany();
+
+    // Get quests statistics
+    const questsQuery = this.questsRepository.createQueryBuilder('quest');
+
+    if (category) {
+      questsQuery.where('quest.RELATED_HABIT_CATEGORY = :category', {
+        category,
+      });
+    }
+
+    if (search) {
+      questsQuery.andWhere('quest.TITLE ILIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    const totalQuests = await questsQuery.getCount();
+    const quests = await questsQuery.skip(skip).take(limit).getMany();
+
+    // Combine and process data
+    const habitsData = await Promise.all(
+      habits.map(async (habit) => {
+        const userHabits = await this.userHabitsRepository.find({
+          where: { HID: habit.HID },
+        });
+
+        const completedUserHabits = userHabits.filter(
+          (uh) => uh.STATUS === HabitStatus.Completed,
+        );
+
+        const completeRate =
+          userHabits.length > 0
+            ? (completedUserHabits.length / userHabits.length) * 100
+            : 0;
+
+        // Get mood feedback stats
+        const moodStats = await this.getMoodFeedbackStats(habit.HID);
+
+        return {
+          title: habit.TITLE,
+          image_url: habit.THUMBNAIL_URL,
+          habitCategory: this.translateCategory(habit.CATEGORY),
+          reward: {
+            exp: habit.EXP_REWARD,
+            gem: habit.GEM_REWARD || 0,
+          },
+          completeRate: Math.round(completeRate * 100) / 100, // Round to 2 decimal places
+          userCompletionCount: {
+            completed: completedUserHabits.length,
+            total: userHabits.length,
+          },
+          moodFeedback: moodStats,
+          type: habit.IS_DAILY ? ItemType.DAILY_HABIT : ItemType.HABIT,
+        };
+      }),
+    );
+
+    const questsData = await Promise.all(
+      quests.map(async (quest) => {
+        const userQuests = await this.userQuestRepository.find({
+          where: { QID: quest.QID },
+        });
+
+        const completedUserQuests = userQuests.filter(
+          (uq) => uq.STATUS === QuestStatus.Completed,
+        );
+
+        const completeRate =
+          userQuests.length > 0
+            ? (completedUserQuests.length / userQuests.length) * 100
+            : 0;
+
+        return {
+          title: quest.TITLE,
+          image_url: quest.IMG_URL,
+          habitCategory: this.translateCategory(quest.RELATED_HABIT_CATEGORY),
+          reward: {
+            exp: quest.EXP_REWARDS,
+            gem: quest.GEM_REWARDS || 0,
+          },
+          completeRate: Math.round(completeRate * 100) / 100, // Round to 2 decimal places
+          userCompletionCount: {
+            completed: completedUserQuests.length,
+            total: userQuests.length,
+          },
+          moodFeedback: '-',
+          type: ItemType.QUEST,
+        };
+      }),
+    );
+
+    // Combine data based on pagination
+    let combinedData = [...habitsData, ...questsData];
+
+    // Sort by name (can be modified to sort by other attributes)
+    combinedData.sort((a, b) => a.title.localeCompare(b.title));
+
+    // Apply pagination to combined data
+    const total = totalHabits + totalQuests;
+    const totalPages = Math.ceil(total / limit);
+
+    // If we fetched both habits and quests separately with pagination,
+    // we need to adjust for the combined result set
+    combinedData = combinedData.slice(0, limit);
+
+    return {
+      data: combinedData,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
+
+  private async getMoodFeedbackStats(habitId: number): Promise<string> {
+    const userHabits = await this.userHabitsRepository.find({
+      where: { HID: habitId },
+    });
+
+    const challengeIds = userHabits.map((uh) => uh.CHALLENGE_ID);
+
+    if (challengeIds.length === 0) {
+      return '-';
+    }
+
+    const dailyTracks = await this.dailyTrackRepository
+      .createQueryBuilder('track')
+      .where('track.CHALLENGE_ID IN (:...challengeIds)', { challengeIds })
+      .andWhere('track.MOOD_FEEDBACK IS NOT NULL')
+      .getMany();
+
+    if (dailyTracks.length === 0) {
+      return '-';
+    }
+
+    // Count occurrences of each mood
+    const moodCounts = {
+      [Moods.HOPELESS]: 0,
+      [Moods.STRESSED]: 0,
+      [Moods.NEUTRAL]: 0,
+      [Moods.SATISFIED]: 0,
+      [Moods.CHEERFUL]: 0,
+    };
+
+    dailyTracks.forEach((track) => {
+      if (track.MOOD_FEEDBACK) {
+        moodCounts[track.MOOD_FEEDBACK]++;
+      }
+    });
+
+    // Find the most common mood
+    let mostCommonMood = Moods.NEUTRAL;
+    let highestCount = 0;
+
+    for (const [mood, count] of Object.entries(moodCounts)) {
+      if (count > highestCount) {
+        highestCount = count;
+        mostCommonMood = mood as Moods;
+      }
+    }
+
+    // If no moods found, return dash
+    return highestCount > 0 ? mostCommonMood : '-';
+  }
+
+  private translateCategory(category: HabitCategories): string {
+    const translations = {
+      [HabitCategories.Exercise]: 'ออกกำลังกาย',
+      [HabitCategories.Sleep]: 'พักผ่อน',
+      [HabitCategories.Diet]: 'รับประทานอาหาร',
+    };
+
+    return translations[category] || category;
   }
 }

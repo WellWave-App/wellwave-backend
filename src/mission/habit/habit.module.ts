@@ -19,6 +19,8 @@ import { User } from '@/.typeorm/entities/users.entity';
 import { RecommendationModule } from '@/recommendation/recommendation.module';
 import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
 import { AchievementModule } from '@/achievement/achievement.module';
+import { LogEntity } from '@/.typeorm/entities/logs.entity';
+import { Quest } from '@/.typeorm/entities/quest.entity';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { AchievementModule } from '@/achievement/achievement.module';
       DailyHabitTrack,
       User,
       UserQuests,
+      LogEntity,
+      Quest,
     ]),
     ImageModule,
     QuestModule,
@@ -44,7 +48,7 @@ import { AchievementModule } from '@/achievement/achievement.module';
     UsersModule,
     HelperModule,
     RecommendationModule,
-    AchievementModule
+    AchievementModule,
   ],
   controllers: [HabitController],
   providers: [HabitService, ExerciseCalculator],

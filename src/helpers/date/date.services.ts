@@ -112,7 +112,7 @@ export class DateService {
    */
   getRelativeTimeString(date: Date): string {
     const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-    const now = new Date();
+    const now = new Date(this.getCurrentDate().timestamp);
     const diff = date.getTime() - now.getTime();
     const diffInDays = Math.round(diff / (1000 * 60 * 60 * 24));
 
@@ -318,5 +318,4 @@ export class DateService {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   }
-  
 }

@@ -17,6 +17,7 @@ import {
 } from '@/.typeorm/entities/noti-bedtime-setting.entity';
 import { WaterPlanSettingEntity } from '@/.typeorm/entities/noti-water-plan.entity';
 import { BedtimeDTO, WaterPlanDTO, WaterRangeDTO } from '../dto/setting.dto';
+import { DateService } from '@/helpers/date/date.services';
 
 @Injectable()
 export class NotiSettingService {
@@ -29,6 +30,7 @@ export class NotiSettingService {
     private waterRangeRepo: Repository<WaterRangeSettingsEntity>,
     @InjectRepository(WaterPlanSettingEntity)
     private waterPlanRepo: Repository<WaterPlanSettingEntity>,
+    private readonly dateService: DateService,
   ) {}
 
   async getNotiSetting(
@@ -106,7 +108,7 @@ export class NotiSettingService {
       UID: uid,
       NOTIFICATION_TYPE: notificationType,
       IS_ACTIVE: isActive,
-      CREATE_AT: new Date(),
+      CREATE_AT: new Date(this.dateService.getCurrentDate().timestamp),
     });
 
     return await this.notificationRepo.save(notificationSetting);
