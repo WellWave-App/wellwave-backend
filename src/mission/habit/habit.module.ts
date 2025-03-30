@@ -20,6 +20,7 @@ import { RecommendationModule } from '@/recommendation/recommendation.module';
 import { UserQuests } from '@/.typeorm/entities/user-quests.entity';
 import { AchievementModule } from '@/achievement/achievement.module';
 import { LogEntity } from '@/.typeorm/entities/logs.entity';
+import { Quest } from '@/.typeorm/entities/quest.entity';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { LogEntity } from '@/.typeorm/entities/logs.entity';
       User,
       UserQuests,
       LogEntity,
+      Quest,
     ]),
     ImageModule,
     QuestModule,

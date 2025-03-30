@@ -42,6 +42,12 @@ import { RoleGuard } from '@/auth/guard/role.guard';
 import { Roles } from '@/auth/roles/roles.decorator';
 import { Role } from '@/auth/roles/roles.enum';
 import { Patch } from '@nestjs/common';
+import { PaginatedResponse } from '../../../response/response.interface';
+import {
+  PaginationDto,
+  UserStatsFilterDto,
+  UserStatsResponseDto,
+} from '../dto/admin-summary.dto';
 
 @ApiTags('Habits')
 @ApiBearerAuth()
@@ -365,5 +371,28 @@ export class HabitController {
   @Roles(Role.ADMIN, Role.MODERATOR, Role.USER)
   updateDailyTrack(@Request() req, @Body() dto: UpdateDailyTrackDto) {
     return this.habitService.updateDailyTrack(dto);
+  }
+
+  @Get('mission-stats')
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'category', required: false, enum: HabitCategories })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns statistics for habits and quests',
+  })
+  async getHabitsQuestsStatistics(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('category') category?: HabitCategories,
+    @Query('search') search?: string,
+  ) {
+    return this.habitService.getHabitsQuestsStatistics({
+      page: +page,
+      limit: +limit,
+      category,
+      search,
+    });
   }
 }
