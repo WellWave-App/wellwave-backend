@@ -42,12 +42,6 @@ import { RoleGuard } from '@/auth/guard/role.guard';
 import { Roles } from '@/auth/roles/roles.decorator';
 import { Role } from '@/auth/roles/roles.enum';
 import { Patch } from '@nestjs/common';
-import { PaginatedResponse } from '../../../response/response.interface';
-import {
-  PaginationDto,
-  UserStatsFilterDto,
-  UserStatsResponseDto,
-} from '../dto/admin-summary.dto';
 
 @ApiTags('Habits')
 @ApiBearerAuth()
