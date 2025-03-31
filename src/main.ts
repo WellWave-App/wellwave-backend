@@ -11,10 +11,26 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   //open access
   app.enableCors({
-    origin: '*',
+    origin: [
+      'http://localhost', 
+      'http://localhost:80',
+      'http://localhost:8080',
+      'http://ce67-16.cloud.ce.kmitl.ac.th',
+      'http://ce67-16.cloud.ce.kmitl.ac.th:8080',
+      'http://10.240.67.24',
+      'http://10.240.67.24:8080'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: [
+      'Content-Type', 
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+      'Access-Control-Request-Method',
+      'Access-Control-Request-Headers'
+    ],
   });
   
   // set up swagger

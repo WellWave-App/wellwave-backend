@@ -50,7 +50,7 @@ import { AdminModule } from './admin/admin.module';
         entities: [
           join(__dirname, '.typeorm', 'entities', '*.entity{.ts,.js}'),
         ],
-        synchronize: true,
+        synchronize: false,
         timezone: 'Asia/Bangkok',
         extra: {
           timezone: 'Asia/Bangkok',

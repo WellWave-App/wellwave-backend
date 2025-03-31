@@ -102,9 +102,13 @@ export class CreateHabitDto {
   )
   THUMBNAIL_URL?: string;
 
-  @Transform(({ value }: TransformFnParams) =>
-    value === '' ? undefined : Boolean(value),
-  )
+  @Transform(({ value }: TransformFnParams) => {
+    if (value === '') return undefined;
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return Boolean(value);
+  })
   @IsOptional()
   @IsBoolean()
   IS_DAILY: boolean;
