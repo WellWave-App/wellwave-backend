@@ -130,7 +130,7 @@ export class LeaderboardService {
           usersInLeague.map((ul) => {
             const userCompletedCount =
               ul.user?.habits?.filter((h) => h.STATUS === HabitStatus.Completed)
-                .length || 5;
+                .length || 0;
 
             if (userCompletedCount >= 5) {
               this.leaderboardRepo.update(
@@ -144,6 +144,13 @@ export class LeaderboardService {
                   GROUP_NUMBER: null, // Will be reassigned in next league
                 },
               );
+              this.achievementService.trackProgress({
+                uid: ul.UID,
+                value: this.getLeagueValue(LeagueType.BRONZE),
+                entity: RequirementEntity.USER_LEADERBOARD,
+                property: TrackableProperty.CURRENT_LEAGUE,
+                date: new Date(this.dateService.getCurrentDate().timestamp),
+              });
             }
           }),
         );
@@ -206,6 +213,14 @@ export class LeaderboardService {
                 GROUP_NUMBER: null, // Will be reassigned in next league
               },
             );
+
+            await this.achievementService.trackProgress({
+              uid: user.UID,
+              value: this.getLeagueValue(nextLeague),
+              entity: RequirementEntity.USER_LEADERBOARD,
+              property: TrackableProperty.CURRENT_LEAGUE,
+              date: new Date(this.dateService.getCurrentDate().timestamp),
+            });
           }
         }
 
@@ -407,5 +422,16 @@ export class LeaderboardService {
         error.message || 'Failed to process request',
       );
     }
+  }
+
+  private getLeagueValue(league: string): number {
+    const leagues = {
+      bronze: 1,
+      silver: 2,
+      gold: 3,
+      emerald: 4,
+      diamond: 5,
+    };
+    return leagues[league] || 0;
   }
 }
