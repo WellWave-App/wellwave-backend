@@ -132,6 +132,8 @@ export class AchievementService {
       .createQueryBuilder('ach')
       .leftJoinAndSelect('ach.levels', 'levels')
       .orderBy({
+        'ach.ACH_ID': 'DESC',
+        'ach.CREATED_AT': 'DESC',
         'ach.TITLE': 'ASC',
       });
 
