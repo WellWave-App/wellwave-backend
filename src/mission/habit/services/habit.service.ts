@@ -1194,6 +1194,9 @@ export class HabitService {
       });
     }
 
+    // Sort habits by creation date and ID (newest first)
+    habitsQuery.orderBy('habit.CREATED_AT', 'DESC').addOrderBy('habit.HID', 'DESC');
+
     const totalHabits = await habitsQuery.getCount();
     const habits = await habitsQuery.skip(skip).take(limit).getMany();
 
@@ -1211,6 +1214,9 @@ export class HabitService {
         search: `%${search}%`,
       });
     }
+
+    // Sort quests by creation date and ID (newest first)
+    questsQuery.orderBy('quest.CREATED_AT', 'DESC').addOrderBy('quest.QID', 'DESC');
 
     const totalQuests = await questsQuery.getCount();
     const quests = await questsQuery.skip(skip).take(limit).getMany();
@@ -1249,6 +1255,8 @@ export class HabitService {
           },
           moodFeedback: moodStats,
           type: habit.IS_DAILY ? ItemType.DAILY_HABIT : ItemType.HABIT,
+          createdAt: habit.CREATED_AT, // Add creation date for sorting
+          id: habit.HID, // Add ID for sorting
         };
       }),
     );
@@ -1283,22 +1291,31 @@ export class HabitService {
           },
           moodFeedback: '-',
           type: ItemType.QUEST,
+          createdAt: quest.CREATED_AT, // Add creation date for sorting
+          id: quest.QID, // Add ID for sorting
         };
       }),
     );
 
-    // Combine data based on pagination
+    // Combine data
     let combinedData = [...habitsData, ...questsData];
 
-    // Sort by name (can be modified to sort by other attributes)
-    combinedData.sort((a, b) => a.title.localeCompare(b.title));
+    // Sort by newest first (using creation date as primary key and ID as secondary)
+    combinedData.sort((a, b) => {
+      // First compare by creation date (newest first)
+      const dateComparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      
+      // If dates are the same, compare by ID (highest/newest first)
+      if (dateComparison === 0) {
+        return b.id - a.id;
+      }
+      
+      return dateComparison;
+    });
 
     // Apply pagination to combined data
     const total = totalHabits + totalQuests;
     const totalPages = Math.ceil(total / limit);
-
-    // If we fetched both habits and quests separately with pagination,
-    // we need to adjust for the combined result set
     combinedData = combinedData.slice(0, limit);
 
     return {
@@ -1311,6 +1328,7 @@ export class HabitService {
       },
     };
   }
+  
 
   private async getMoodFeedbackStats(habitId: number): Promise<string> {
     const userHabits = await this.userHabitsRepository.find({

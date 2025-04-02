@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { AchievementLevel } from './achievement_level.entity';
 import { LeagueType } from '@/leagues/enum/lagues.enum';
 
@@ -103,4 +103,10 @@ export class Achievement {
     eager: true,
   })
   levels?: AchievementLevel[];
+
+  @CreateDateColumn({ name: 'CREATED_AT', type: 'date' })
+  CREATED_AT: Date;
+
+  @UpdateDateColumn({ name: 'UPDATED_AT', type: 'date' })
+  UPDATED_AT: Date;
 }

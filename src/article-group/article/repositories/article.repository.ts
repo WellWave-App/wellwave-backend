@@ -132,9 +132,9 @@ export class ArticleRepository {
       .skip((page - 1) * limit)
       .take(limit)
       .orderBy({
-        'article.VIEW_COUNT': 'DESC',
-        'article.TOPIC': 'ASC',
+        'article.AID': 'DESC',
         'article.PUBLISH_DATE': 'DESC',
+        'article.TOPIC': 'ASC',
       });
 
     const data = await queryBuilder.getMany();

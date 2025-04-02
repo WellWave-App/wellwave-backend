@@ -219,7 +219,8 @@ export class ShopService {
       .createQueryBuilder('shopItem')
       .leftJoinAndSelect('shopItem.expBooster', 'expBooster')
       .leftJoinAndSelect('shopItem.gemExchange', 'gemExchange')
-      .leftJoinAndSelect('shopItem.mysteryBoxes', 'mysteryBoxes');
+      .leftJoinAndSelect('shopItem.mysteryBoxes', 'mysteryBoxes')
+      .orderBy('shopItem.ITEM_ID', 'DESC');
 
     if (name) {
       queryBuilder.where('shopItem.ITEM_NAME LIKE :name', {
